@@ -24,6 +24,12 @@ export function formatCurrency(value: number, market: string | MarketType = 'KRX
   return numberFormatter(currencyForMarket(market)).format(value);
 }
 
+export function formatNumber(value: number) {
+  return new Intl.NumberFormat('ko-KR', {
+    maximumFractionDigits: 2,
+  }).format(value);
+}
+
 export function formatPercent(value: number) {
   const sign = value > 0 ? '+' : value < 0 ? '' : '';
   return `${sign}${value.toFixed(2)}%`;

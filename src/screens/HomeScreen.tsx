@@ -4,17 +4,21 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { DataStatusCard } from '../components/DataStatusCard';
 import {
-  Chip,
   MetricBadge,
   Page,
   PrimaryButton,
   SectionHeading,
   SurfaceCard,
 } from '../components/ui';
-import { quickActions, todoItems } from '../data/mock';
-import { useFeedData, usePortfolioData, useRemindersData } from '../hooks/useFoloData';
+import {
+  useFeedData,
+  useMyTradesData,
+  usePortfolioData,
+  useRemindersData,
+} from '../hooks/useFoloData';
 import {
   formatCurrency,
+  formatNumber,
   formatPercent,
   formatRelativeDate,
   formatSignedCurrency,
@@ -23,42 +27,25 @@ import {
 import type { RootStackParamList } from '../navigation/types';
 import { tokens } from '../theme/tokens';
 
-const toneMap = {
-  caution: 'danger',
-  brand: 'brand',
-  teal: 'positive',
-} as const;
-
 export function HomeScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const portfolio = usePortfolioData();
   const feed = useFeedData();
   const reminders = useRemindersData();
-
-  const isApiConnected =
-    portfolio.source === 'api' &&
-    feed.source === 'api' &&
-    reminders.source === 'api';
+  const myTrades = useMyTradesData();
   const reminderSummary = reminders.data.reminders[0];
+  const combinedError =
+    portfolio.error ?? reminders.error ?? myTrades.error ?? feed.error;
+  const combinedLoading =
+    portfolio.loading || reminders.loading || myTrades.loading || feed.loading;
 
   return (
     <Page
       eyebrow="Today"
-      title="오늘의 투자 루틴"
-      subtitle="기획서의 HOME 탭을 기준으로 요약, TODO, 친구 활동 미리보기를 백엔드 계약과 함께 묶었습니다."
-      action={
-        <Chip
-          active
-          label={isApiConnected ? 'API 연결' : '샘플 데이터'}
-          tone={isApiConnected ? 'positive' : 'brand'}
-        />
-      }
+      title="오늘의 투자 현황"
+      subtitle="포트폴리오 요약, 리마인더, 내 거래, 친구 피드를 실제 백엔드 응답 기준으로 묶었습니다."
     >
-      <DataStatusCard
-        error={portfolio.error ?? feed.error ?? reminders.error}
-        loading={portfolio.loading || feed.loading || reminders.loading}
-        source={isApiConnected ? 'api' : 'fallback'}
-      />
+      <DataStatusCard error={combinedError} loading={combinedLoading} />
 
       <SurfaceCard tone="hero">
         <View style={styles.summaryHeader}>
@@ -71,15 +58,11 @@ export function HomeScreen() {
               {formatSignedCurrency(portfolio.data.totalReturn)}
             </Text>
           </View>
-          <Chip
-            active
-            label={
-              reminderSummary
-                ? `${reminderSummary.ticker} · ${reminderSummary.dayOfMonth}일`
-                : '리마인더 없음'
-            }
-            tone="brand"
-          />
+          <Text style={styles.summaryMeta}>
+            {reminderSummary
+              ? `${reminderSummary.ticker} · 매월 ${reminderSummary.dayOfMonth}일`
+              : '등록된 리마인더가 없습니다.'}
+          </Text>
         </View>
         <View style={styles.metricRow}>
           <MetricBadge
@@ -96,75 +79,109 @@ export function HomeScreen() {
         </View>
       </SurfaceCard>
 
-      <SectionHeading
-        title="바로 이어서"
-        description="토스처럼 행동 유도는 가볍게, 하지만 흐름은 명확하게 이어지도록 설계했습니다."
-      />
       <SurfaceCard>
-        <View style={styles.actionRow}>
-          {quickActions.map((action) => (
-            <Chip
-              key={action}
-              label={action}
-              onPress={() => {
-                if (action === '리마인더') {
-                  navigation.navigate('Reminders');
-                  return;
-                }
-                navigation.navigate('MainTabs', { screen: 'AddTrade' });
-              }}
-            />
-          ))}
-        </View>
-        <PrimaryButton
-          label="거래 기록 추가로 이동"
-          onPress={() => navigation.navigate('MainTabs', { screen: 'AddTrade' })}
+        <SectionHeading
+          title="바로 실행"
+          description="실제 앱에서 가장 자주 이어지는 두 동선을 상단에 고정했습니다."
         />
+        <View style={styles.actionStack}>
+          <PrimaryButton
+            label="거래 기록 추가"
+            onPress={() => navigation.navigate('MainTabs', { screen: 'AddTrade' })}
+          />
+          <PrimaryButton
+            label="리마인더 관리"
+            onPress={() => navigation.navigate('Reminders')}
+            variant="secondary"
+          />
+        </View>
       </SurfaceCard>
 
-      <SectionHeading
-        title="투자 TODO"
-        description="계획을 카드로 보이고 완료 여부를 직관적으로 읽을 수 있게 구성했습니다."
-      />
       <SurfaceCard>
-        {todoItems.map((item, index) => (
-          <View
-            key={item.title}
-            style={[styles.todoRow, index < todoItems.length - 1 && styles.divider]}
-          >
-            <View style={styles.todoText}>
-              <Text style={styles.todoTitle}>{item.title}</Text>
-              <Text style={styles.todoMeta}>{item.meta}</Text>
-            </View>
-            <Chip label={item.status} tone={toneMap[item.tone]} />
-          </View>
-        ))}
-      </SurfaceCard>
-
-      <SectionHeading
-        title="최근 친구 활동"
-        description="Feed 진입을 유도하는 미리보기 섹션입니다."
-      />
-      <SurfaceCard>
-        {feed.data.trades.slice(0, 3).map((item, index) => (
-          <Pressable
-            key={item.tradeId}
-            onPress={() => navigation.navigate('TradeDetail', { tradeId: item.tradeId })}
-            style={[styles.friendRow, index < 2 && styles.divider]}
-          >
-            <View style={styles.avatar}>
-              <Text style={styles.avatarText}>{item.user.nickname.slice(0, 1)}</Text>
-            </View>
-            <View style={styles.friendText}>
-              <Text style={styles.friendName}>{item.user.nickname}</Text>
-              <Text style={styles.friendSummary}>
-                {item.ticker} {tradeTypeLabel(item.tradeType)} ·{' '}
-                {formatSignedCurrency(item.quantity * item.price, item.market)}
+        <SectionHeading
+          title="리마인더"
+          description={`총 ${reminders.data.reminders.length}개`}
+        />
+        {reminders.data.reminders.length === 0 ? (
+          <Text style={styles.emptyText}>
+            아직 등록된 리마인더가 없습니다. 적립식 투자 루틴을 만들면 이곳에 표시됩니다.
+          </Text>
+        ) : (
+          reminders.data.reminders.slice(0, 3).map((item, index) => (
+            <View
+              key={item.reminderId}
+              style={[styles.listRow, index < Math.min(2, reminders.data.reminders.length - 1) && styles.divider]}
+            >
+              <Text style={styles.listTitle}>
+                {item.ticker} · {item.name}
+              </Text>
+              <Text style={styles.listMeta}>
+                매월 {item.dayOfMonth}일 · {formatCurrency(item.amount)}
               </Text>
             </View>
-            <Text style={styles.friendTime}>{formatRelativeDate(item.tradedAt)}</Text>
-          </Pressable>
-        ))}
+          ))
+        )}
+      </SurfaceCard>
+
+      <SurfaceCard>
+        <SectionHeading
+          title="내 최근 거래"
+          description={`총 ${myTrades.data.totalCount}건`}
+        />
+        {myTrades.data.trades.length === 0 ? (
+          <Text style={styles.emptyText}>
+            아직 기록된 거래가 없습니다. 첫 거래를 추가하면 포트폴리오와 프로필이 함께 채워집니다.
+          </Text>
+        ) : (
+          myTrades.data.trades.slice(0, 3).map((item, index) => (
+            <Pressable
+              key={item.tradeId}
+              onPress={() => navigation.navigate('TradeDetail', { tradeId: item.tradeId })}
+              style={[styles.listRow, index < Math.min(2, myTrades.data.trades.length - 1) && styles.divider]}
+            >
+              <Text style={styles.listTitle}>
+                {item.ticker} · {tradeTypeLabel(item.tradeType)}
+              </Text>
+              <Text style={styles.listMeta}>
+                {formatNumber(item.totalAmount)} · {formatRelativeDate(item.tradedAt)}
+              </Text>
+            </Pressable>
+          ))
+        )}
+      </SurfaceCard>
+
+      <SurfaceCard>
+        <SectionHeading
+          title="친구 피드"
+          description="팔로우한 사용자의 거래가 시간순으로 쌓입니다."
+        />
+        {feed.data.trades.length === 0 ? (
+          <Text style={styles.emptyText}>
+            아직 친구 피드가 비어 있습니다. 친구를 팔로우하면 최근 거래가 여기에 표시됩니다.
+          </Text>
+        ) : (
+          feed.data.trades.slice(0, 3).map((item, index) => (
+            <Pressable
+              key={item.tradeId}
+              onPress={() => navigation.navigate('TradeDetail', { tradeId: item.tradeId })}
+              style={[styles.friendRow, index < Math.min(2, feed.data.trades.length - 1) && styles.divider]}
+            >
+              <View style={styles.avatar}>
+                <Text style={styles.avatarText}>
+                  {item.user.nickname.slice(0, 1).toUpperCase()}
+                </Text>
+              </View>
+              <View style={styles.friendText}>
+                <Text style={styles.friendName}>{item.user.nickname}</Text>
+                <Text style={styles.friendSummary}>
+                  {item.ticker} {tradeTypeLabel(item.tradeType)} ·{' '}
+                  {formatSignedCurrency(item.quantity * item.price, item.market)}
+                </Text>
+              </View>
+              <Text style={styles.friendTime}>{formatRelativeDate(item.tradedAt)}</Text>
+            </Pressable>
+          ))
+        )}
       </SurfaceCard>
     </Page>
   );
@@ -194,21 +211,17 @@ const styles = StyleSheet.create({
     fontFamily: tokens.typography.heading,
     fontWeight: '700',
   },
+  summaryMeta: {
+    fontSize: 13,
+    color: tokens.colors.brandStrong,
+    fontFamily: tokens.typography.body,
+  },
   metricRow: {
     flexDirection: 'row',
     gap: 12,
   },
-  actionRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+  actionStack: {
     gap: 10,
-  },
-  todoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 2,
-    gap: 12,
   },
   divider: {
     borderBottomWidth: 1,
@@ -216,18 +229,23 @@ const styles = StyleSheet.create({
     paddingBottom: 16,
     marginBottom: 16,
   },
-  todoText: {
-    flex: 1,
+  listRow: {
     gap: 6,
   },
-  todoTitle: {
-    fontSize: 16,
+  listTitle: {
+    fontSize: 15,
     color: tokens.colors.navy,
     fontFamily: tokens.typography.heading,
     fontWeight: '700',
   },
-  todoMeta: {
+  listMeta: {
     fontSize: 13,
+    color: tokens.colors.inkSoft,
+    fontFamily: tokens.typography.body,
+  },
+  emptyText: {
+    fontSize: 14,
+    lineHeight: 22,
     color: tokens.colors.inkSoft,
     fontFamily: tokens.typography.body,
   },
@@ -246,6 +264,7 @@ const styles = StyleSheet.create({
   },
   avatarText: {
     color: tokens.colors.navy,
+    fontSize: 15,
     fontFamily: tokens.typography.heading,
     fontWeight: '800',
   },

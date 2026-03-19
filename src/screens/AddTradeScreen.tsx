@@ -7,7 +7,6 @@ import type { MarketType, TradeType, TradeVisibility } from '../api/contracts';
 import { foloApi } from '../api/services';
 import { DataStatusCard } from '../components/DataStatusCard';
 import { Chip, Page, PrimaryButton, SectionHeading, SurfaceCard } from '../components/ui';
-import { setupMethods, tradeForm } from '../data/mock';
 import { useStockPriceData, useStockSearchData } from '../hooks/useFoloData';
 import { formatCurrency, formatPercent } from '../lib/format';
 import type { RootStackParamList } from '../navigation/types';
@@ -26,18 +25,19 @@ const tradeTypeOptions: Array<{ label: string; value: TradeType }> = [
 
 export function AddTradeScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const [query, setQuery] = useState<string>(tradeForm.ticker);
+  const [query, setQuery] = useState<string>('');
   const search = useStockSearchData(query);
-  const [selectedTicker, setSelectedTicker] = useState<string>(tradeForm.ticker);
-  const [selectedMarket, setSelectedMarket] = useState<MarketType>(tradeForm.market);
+  const [selectedTicker, setSelectedTicker] = useState<string>('');
+  const [selectedMarket, setSelectedMarket] = useState<MarketType>('NASDAQ');
   const stockPrice = useStockPriceData(selectedTicker, selectedMarket);
   const [tradeType, setTradeType] = useState<TradeType>('BUY');
   const [quantity, setQuantity] = useState<string>('1');
-  const [price, setPrice] = useState<string>(String(tradeForm.price));
-  const [comment, setComment] = useState<string>(tradeForm.comment);
+  const [price, setPrice] = useState<string>('');
+  const [comment, setComment] = useState<string>('');
   const [visibility, setVisibility] = useState<TradeVisibility>('FRIENDS_ONLY');
   const [submitMessage, setSubmitMessage] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const searchReady = query.trim().length >= 2;
 
   const selectedStock =
     search.data.stocks.find((item) => item.ticker === selectedTicker) ??
@@ -47,6 +47,16 @@ export function AddTradeScreen() {
   async function handleSubmit() {
     if (!selectedStock) {
       setSubmitMessage('종목을 먼저 선택해 주세요.');
+      return;
+    }
+
+    if ((Number(quantity) || 0) <= 0) {
+      setSubmitMessage('수량은 0보다 커야 합니다.');
+      return;
+    }
+
+    if ((Number(price) || stockPrice.data.currentPrice) <= 0) {
+      setSubmitMessage('가격을 확인해 주세요.');
       return;
     }
 
@@ -60,7 +70,7 @@ export function AddTradeScreen() {
         tradeType,
         quantity: Number(quantity) || 0,
         price: Number(price) || stockPrice.data.currentPrice,
-        comment,
+        comment: comment.trim() || null,
         visibility,
         tradedAt: new Date().toISOString(),
       });
@@ -69,9 +79,7 @@ export function AddTradeScreen() {
       navigation.navigate('TradeDetail', { tradeId: trade.tradeId });
     } catch (error) {
       setSubmitMessage(
-        error instanceof Error
-          ? `${error.message} 등록은 데모 상태로 유지합니다.`
-          : '거래 등록에 실패했습니다.',
+        error instanceof Error ? error.message : '거래 등록에 실패했습니다.',
       );
     } finally {
       setSubmitting(false);
@@ -82,25 +90,17 @@ export function AddTradeScreen() {
     <Page
       eyebrow="Capture"
       title="거래 기록 추가"
-      subtitle="종목 선택, 매수·매도 구분, 가격 범위 안내, 공개 범위 설정까지 한 화면에서 이어지는 형태로 정리했습니다."
-      action={
-        <Chip
-          active
-          label={search.source === 'api' ? '실시간 검색' : '샘플 검색'}
-          tone={search.source === 'api' ? 'positive' : 'brand'}
-        />
-      }
+      subtitle="종목 검색 결과와 현재가 정보를 바탕으로 실제 거래를 바로 저장합니다."
     >
       <DataStatusCard
         error={search.error ?? stockPrice.error}
-        loading={search.loading || stockPrice.loading}
-        source={search.source === 'api' && stockPrice.source === 'api' ? 'api' : 'fallback'}
+        loading={(searchReady && search.loading) || (Boolean(selectedTicker) && stockPrice.loading)}
       />
 
       <SurfaceCard tone="hero">
         <SectionHeading
           title="빠른 입력 패널"
-          description="기획서의 TradeAddScreen 흐름을 그대로 반영한 컴포저 프리뷰입니다."
+          description="국장은 종목번호, 미국장은 티커로 검색할 수 있습니다."
         />
         <View style={styles.toggleRow}>
           {tradeTypeOptions.map((option) => (
@@ -118,42 +118,59 @@ export function AddTradeScreen() {
           <Text style={styles.fieldLabel}>종목 검색</Text>
           <TextInput
             onChangeText={setQuery}
-            placeholder="티커 또는 종목명"
+            placeholder="예: AAPL, 005930, Apple, 삼성"
             placeholderTextColor={tokens.colors.inkMute}
             style={styles.input}
             value={query}
           />
+          <Text style={styles.fieldSupporting}>
+            검색은 2자 이상부터 시작됩니다.
+          </Text>
         </View>
 
-        <View style={styles.searchResults}>
-          {search.data.stocks.slice(0, 4).map((item) => (
-            <Pressable
-              key={item.ticker}
-              onPress={() => {
-                setSelectedTicker(item.ticker);
-                setSelectedMarket(item.market);
-                setQuery(item.ticker);
-                setPrice(String(item.currentPrice));
-              }}
-              style={[styles.searchItem, selectedTicker === item.ticker && styles.searchItemActive]}
-            >
-              <View style={styles.searchText}>
-                <Text style={styles.searchTicker}>{item.ticker}</Text>
-                <Text style={styles.searchName}>{item.name}</Text>
-              </View>
-              <Text style={styles.searchPrice}>
-                {formatCurrency(item.currentPrice, item.market)}
-              </Text>
-            </Pressable>
-          ))}
-        </View>
+        {searchReady ? (
+          <View style={styles.searchResults}>
+            {search.data.stocks.slice(0, 6).map((item) => (
+              <Pressable
+                key={item.ticker}
+                onPress={() => {
+                  setSelectedTicker(item.ticker);
+                  setSelectedMarket(item.market);
+                  setQuery(item.ticker);
+                  setPrice(String(item.currentPrice || ''));
+                }}
+                style={[
+                  styles.searchItem,
+                  selectedTicker === item.ticker && styles.searchItemActive,
+                ]}
+              >
+                <View style={styles.searchText}>
+                  <Text style={styles.searchTicker}>{item.ticker}</Text>
+                  <Text style={styles.searchName}>
+                    {item.name} · {item.market}
+                  </Text>
+                </View>
+                <Text style={styles.searchPrice}>
+                  {formatCurrency(item.currentPrice, item.market)}
+                </Text>
+              </Pressable>
+            ))}
+            {!search.loading && !search.error && search.data.stocks.length === 0 ? (
+              <Text style={styles.emptyText}>검색 결과가 없습니다.</Text>
+            ) : null}
+          </View>
+        ) : (
+          <Text style={styles.emptyText}>종목명 또는 티커를 2자 이상 입력해 주세요.</Text>
+        )}
 
         <View style={styles.formGrid}>
           <View style={styles.inputGroup}>
-            <Text style={styles.fieldLabel}>수량 / 금액</Text>
+            <Text style={styles.fieldLabel}>수량</Text>
             <TextInput
               keyboardType="decimal-pad"
               onChangeText={setQuantity}
+              placeholder="예: 1"
+              placeholderTextColor={tokens.colors.inkMute}
               style={styles.input}
               value={quantity}
             />
@@ -163,6 +180,8 @@ export function AddTradeScreen() {
             <TextInput
               keyboardType="decimal-pad"
               onChangeText={setPrice}
+              placeholder="현재가를 반영하거나 직접 입력"
+              placeholderTextColor={tokens.colors.inkMute}
               style={styles.input}
               value={price}
             />
@@ -180,6 +199,8 @@ export function AddTradeScreen() {
           <TextInput
             multiline
             onChangeText={setComment}
+            placeholder="매수/매도 이유를 남겨두세요."
+            placeholderTextColor={tokens.colors.inkMute}
             style={[styles.input, styles.textArea]}
             value={comment}
           />
@@ -198,21 +219,42 @@ export function AddTradeScreen() {
 
         {submitMessage ? <Text style={styles.submitMessage}>{submitMessage}</Text> : null}
         <PrimaryButton
-          label={submitting ? '등록 중...' : '거래 등록 시도'}
+          disabled={submitting}
+          label={submitting ? '등록 중...' : '거래 등록'}
           onPress={handleSubmit}
         />
       </SurfaceCard>
 
-      <SectionHeading
-        title="초기 포트폴리오 세팅"
-        description="PortfolioSetupScreen에서 들어갈 수 있는 3가지 진입 방식을 바로 비교할 수 있게 배치했습니다."
-      />
-      {setupMethods.map((method) => (
-        <SurfaceCard key={method.title}>
-          <Text style={styles.methodTitle}>{method.title}</Text>
-          <Text style={styles.methodDescription}>{method.description}</Text>
+      {selectedStock ? (
+        <SurfaceCard>
+          <SectionHeading
+            title="선택 종목 스냅샷"
+            description="검색한 종목의 현재 가격 정보입니다."
+          />
+          <View style={styles.snapshotRow}>
+            <Text style={styles.snapshotLabel}>종목</Text>
+            <Text style={styles.snapshotValue}>
+              {selectedStock.ticker} · {selectedStock.name}
+            </Text>
+          </View>
+          <View style={styles.snapshotRow}>
+            <Text style={styles.snapshotLabel}>시장</Text>
+            <Text style={styles.snapshotValue}>{selectedStock.market}</Text>
+          </View>
+          <View style={styles.snapshotRow}>
+            <Text style={styles.snapshotLabel}>현재가</Text>
+            <Text style={styles.snapshotValue}>
+              {formatCurrency(stockPrice.data.currentPrice, selectedStock.market)}
+            </Text>
+          </View>
+          <View style={styles.snapshotRow}>
+            <Text style={styles.snapshotLabel}>당일 등락률</Text>
+            <Text style={styles.snapshotValue}>
+              {formatPercent(stockPrice.data.dayReturnRate)}
+            </Text>
+          </View>
         </SurfaceCard>
-      ))}
+      ) : null}
     </Page>
   );
 }
@@ -257,6 +299,12 @@ const styles = StyleSheet.create({
   },
   searchResults: {
     gap: 10,
+  },
+  emptyText: {
+    fontSize: 14,
+    lineHeight: 22,
+    color: tokens.colors.inkSoft,
+    fontFamily: tokens.typography.body,
   },
   searchItem: {
     backgroundColor: 'rgba(255,255,255,0.76)',
@@ -305,16 +353,20 @@ const styles = StyleSheet.create({
     color: tokens.colors.inkSoft,
     fontFamily: tokens.typography.body,
   },
-  methodTitle: {
-    fontSize: 18,
-    color: tokens.colors.navy,
-    fontFamily: tokens.typography.heading,
-    fontWeight: '800',
+  snapshotRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 12,
   },
-  methodDescription: {
+  snapshotLabel: {
     fontSize: 14,
-    lineHeight: 22,
     color: tokens.colors.inkSoft,
     fontFamily: tokens.typography.body,
+  },
+  snapshotValue: {
+    fontSize: 14,
+    color: tokens.colors.navy,
+    fontFamily: tokens.typography.heading,
+    fontWeight: '700',
   },
 });

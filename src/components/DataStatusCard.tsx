@@ -4,27 +4,21 @@ import { SurfaceCard } from './ui';
 import { tokens } from '../theme/tokens';
 
 export function DataStatusCard({
-  source,
   loading,
   error,
 }: {
-  source: 'api' | 'fallback';
   loading: boolean;
   error: string | null;
 }) {
-  if (!loading && source === 'api' && !error) {
+  if (!loading && !error) {
     return null;
   }
 
-  const title = loading
-    ? '백엔드 데이터를 불러오는 중입니다.'
-    : source === 'fallback'
-      ? '백엔드 미연결 상태라 샘플 데이터로 표시 중입니다.'
-      : '데이터 상태를 확인해 주세요.';
-
   return (
     <SurfaceCard tone="muted">
-      <Text style={styles.title}>{title}</Text>
+      <Text style={styles.title}>
+        {loading ? '백엔드 데이터를 불러오는 중입니다.' : '데이터 상태를 확인해 주세요.'}
+      </Text>
       {error ? <Text style={styles.description}>{error}</Text> : null}
     </SurfaceCard>
   );

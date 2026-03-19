@@ -19,6 +19,51 @@ export type ApiResponse<T> = {
   timestamp: string;
 };
 
+export type SignupRequest = {
+  email: string;
+  password: string;
+  nickname: string;
+  profileImage: string | null;
+};
+
+export type SignupResponse = {
+  userId: number;
+  nickname: string;
+  email: string;
+  verificationRequired: boolean;
+};
+
+export type LoginRequest = {
+  email: string;
+  password: string;
+};
+
+export type RefreshRequest = {
+  refreshToken: string;
+};
+
+export type LogoutRequest = {
+  refreshToken: string;
+};
+
+export type VerifyEmailRequest = {
+  email: string;
+};
+
+export type ConfirmEmailRequest = {
+  email: string;
+  code: string;
+};
+
+export type AuthResponse = {
+  userId: number;
+  nickname: string;
+  email: string;
+  profileImage: string | null;
+  accessToken: string;
+  refreshToken: string;
+};
+
 export type FeedTradeUser = {
   userId: number;
   nickname: string;
@@ -76,7 +121,7 @@ export type PortfolioResponse = {
   dayReturn: number;
   dayReturnRate: number;
   holdings: PortfolioHoldingItem[];
-  syncedAt: string;
+  syncedAt: string | null;
   isFullyVisible: boolean;
 };
 
@@ -183,6 +228,11 @@ export type NotificationListResponse = {
   hasNext: boolean;
 };
 
+export type NotificationReadResponse = {
+  notificationId: number;
+  isRead: boolean;
+};
+
 export type ReminderItem = {
   reminderId: number;
   ticker: string;
@@ -234,6 +284,49 @@ export type UserSearchResponse = {
   users: UserSearchItem[];
   totalCount: number;
   hasNext: boolean;
+};
+
+export type PublicProfileResponse = {
+  userId: number;
+  nickname: string;
+  profileImage: string | null;
+  bio: string | null;
+  followerCount: number;
+  followingCount: number;
+  isFollowing: boolean;
+  portfolioVisibility: PortfolioVisibility;
+  isAccessible: boolean;
+};
+
+export type FollowActionResponse = {
+  followingId: number;
+  nickname: string;
+  isFollowing: boolean;
+};
+
+export type FollowUserItem = {
+  userId: number;
+  nickname: string;
+  profileImage: string | null;
+  isFollowing: boolean;
+};
+
+export type FollowListResponse = {
+  followers: FollowUserItem[] | null;
+  followings: FollowUserItem[] | null;
+  totalCount: number;
+  hasNext: boolean;
+};
+
+export type UpdateKisKeyRequest = {
+  kisAppKey: string;
+  kisAppSecret: string;
+};
+
+export type PortfolioSyncResponse = {
+  syncedHoldings: number;
+  syncedTrades: number;
+  syncedAt: string;
 };
 
 export type UpdateMyProfileRequest = {

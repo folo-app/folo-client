@@ -52,12 +52,11 @@ export function ProfileEditScreen() {
         portfolioVisibility,
         returnVisibility,
       });
+      profile.refresh();
       setSubmitMessage('프로필이 저장되었습니다.');
     } catch (error) {
       setSubmitMessage(
-        error instanceof Error
-          ? `${error.message} 저장은 데모 모드로 유지합니다.`
-          : '프로필 저장에 실패했습니다.',
+        error instanceof Error ? error.message : '프로필 저장에 실패했습니다.',
       );
     } finally {
       setSaving(false);
@@ -69,15 +68,8 @@ export function ProfileEditScreen() {
       eyebrow="Profile Edit"
       title="프로필 편집"
       subtitle="`PATCH /users/me` 계약에 맞춘 편집 화면입니다."
-      action={
-        <Chip
-          active
-          label={profile.source === 'api' ? 'API 연결' : '샘플 데이터'}
-          tone={profile.source === 'api' ? 'positive' : 'brand'}
-        />
-      }
     >
-      <DataStatusCard error={profile.error} loading={profile.loading} source={profile.source} />
+      <DataStatusCard error={profile.error} loading={profile.loading} />
 
       <SurfaceCard>
         <SectionHeading
@@ -125,7 +117,11 @@ export function ProfileEditScreen() {
           ))}
         </View>
         {submitMessage ? <Text style={styles.message}>{submitMessage}</Text> : null}
-        <PrimaryButton label={saving ? '저장 중...' : '프로필 저장'} onPress={handleSave} />
+        <PrimaryButton
+          disabled={saving}
+          label={saving ? '저장 중...' : '프로필 저장'}
+          onPress={handleSave}
+        />
       </SurfaceCard>
     </Page>
   );

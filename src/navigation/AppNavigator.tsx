@@ -7,18 +7,25 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+import { useAuth } from '../auth/AuthProvider';
 import { BottomNav } from '../components/BottomNav';
 import { AddTradeScreen } from '../screens/AddTradeScreen';
+import { EmailVerificationScreen } from '../screens/EmailVerificationScreen';
 import { FeedScreen } from '../screens/FeedScreen';
 import { HoldingDetailScreen } from '../screens/HoldingDetailScreen';
 import { HomeScreen } from '../screens/HomeScreen';
+import { LoginScreen } from '../screens/LoginScreen';
 import { NotificationsScreen } from '../screens/NotificationsScreen';
-import { OnboardingScreen } from '../screens/OnboardingScreen';
 import { PortfolioScreen } from '../screens/PortfolioScreen';
 import { ProfileEditScreen } from '../screens/ProfileEditScreen';
 import { ProfileScreen } from '../screens/ProfileScreen';
 import { RemindersScreen } from '../screens/RemindersScreen';
+import { PeopleScreen } from '../screens/PeopleScreen';
+import { SignupScreen } from '../screens/SignupScreen';
+import { SplashScreen } from '../screens/SplashScreen';
 import { TradeDetailScreen } from '../screens/TradeDetailScreen';
+import { UserProfileScreen } from '../screens/UserProfileScreen';
+import { KisConnectScreen } from '../screens/KisConnectScreen';
 import { tokens } from '../theme/tokens';
 import type { MainTabParamList, RootStackParamList } from './types';
 
@@ -74,25 +81,58 @@ function MainTabsNavigator() {
   );
 }
 
-export function AppNavigator() {
+function RootNavigator() {
+  const { status } = useAuth();
+
   return (
-    <SafeAreaProvider>
-      <NavigationContainer theme={navigationTheme}>
-        <Stack.Navigator
-          initialRouteName="Onboarding"
-          screenOptions={{
-            headerShown: false,
-            contentStyle: { backgroundColor: tokens.colors.canvas },
-          }}
-        >
-          <Stack.Screen component={OnboardingScreen} name="Onboarding" />
+    <Stack.Navigator
+      initialRouteName={status === 'authenticated' ? 'MainTabs' : 'Login'}
+      screenOptions={{
+        headerShown: false,
+        contentStyle: { backgroundColor: tokens.colors.canvas },
+      }}
+    >
+      {status === 'authenticated' ? (
+        <>
           <Stack.Screen component={MainTabsNavigator} name="MainTabs" />
           <Stack.Screen component={TradeDetailScreen} name="TradeDetail" />
           <Stack.Screen component={HoldingDetailScreen} name="HoldingDetail" />
           <Stack.Screen component={NotificationsScreen} name="Notifications" />
           <Stack.Screen component={RemindersScreen} name="Reminders" />
           <Stack.Screen component={ProfileEditScreen} name="ProfileEdit" />
-        </Stack.Navigator>
+          <Stack.Screen component={PeopleScreen} name="People" />
+          <Stack.Screen component={UserProfileScreen} name="UserProfile" />
+          <Stack.Screen component={KisConnectScreen} name="KisConnect" />
+        </>
+      ) : (
+        <>
+          <Stack.Screen component={LoginScreen} name="Login" />
+          <Stack.Screen component={SignupScreen} name="Signup" />
+          <Stack.Screen
+            component={EmailVerificationScreen}
+            name="EmailVerification"
+          />
+        </>
+      )}
+    </Stack.Navigator>
+  );
+}
+
+export function AppNavigator() {
+  const { status } = useAuth();
+
+  if (status === 'booting') {
+    return (
+      <SafeAreaProvider>
+        <SplashScreen />
+      </SafeAreaProvider>
+    );
+  }
+
+  return (
+    <SafeAreaProvider>
+      <NavigationContainer theme={navigationTheme}>
+        <RootNavigator />
       </NavigationContainer>
     </SafeAreaProvider>
   );

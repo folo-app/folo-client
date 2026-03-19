@@ -9,11 +9,24 @@ export type MainTabParamList = {
 };
 
 export type RootStackParamList = {
-  Onboarding: undefined;
+  Login: undefined;
+  Signup: undefined;
+  EmailVerification:
+    | {
+        email?: string;
+        nickname?: string;
+      }
+    | undefined;
   MainTabs: NavigatorScreenParams<MainTabParamList> | undefined;
   TradeDetail: { tradeId: number };
   HoldingDetail: { holdingId: number };
   Notifications: undefined;
   Reminders: undefined;
   ProfileEdit: undefined;
+  People: undefined;
+  UserProfile: {
+    userId: number;
+    nickname?: string;
+  };
+  KisConnect: undefined;
 };

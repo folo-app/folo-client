@@ -20,6 +20,7 @@ type PrimaryButtonProps = {
   label: string;
   onPress?: () => void;
   variant?: 'primary' | 'secondary';
+  disabled?: boolean;
 };
 
 type ChipProps = {
@@ -69,21 +70,25 @@ export function PrimaryButton({
   label,
   onPress,
   variant = 'primary',
+  disabled = false,
 }: PrimaryButtonProps) {
   return (
     <Pressable
       accessibilityRole="button"
+      disabled={disabled}
       onPress={onPress}
       style={({ pressed }) => [
         styles.button,
         variant === 'primary' ? styles.buttonPrimary : styles.buttonSecondary,
-        pressed && styles.buttonPressed,
+        disabled && styles.buttonDisabled,
+        pressed && !disabled && styles.buttonPressed,
       ]}
     >
       <Text
         style={[
           styles.buttonText,
           variant === 'primary' ? styles.buttonPrimaryText : styles.buttonSecondaryText,
+          disabled && styles.buttonTextDisabled,
         ]}
       >
         {label}
@@ -277,8 +282,14 @@ const styles = StyleSheet.create({
     fontFamily: tokens.typography.heading,
     fontWeight: '700',
   },
+  buttonTextDisabled: {
+    opacity: 0.9,
+  },
   buttonPressed: {
     opacity: 0.88,
+  },
+  buttonDisabled: {
+    opacity: 0.58,
   },
   chip: {
     borderRadius: tokens.radius.pill,

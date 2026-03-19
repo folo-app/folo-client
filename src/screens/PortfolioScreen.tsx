@@ -1,14 +1,16 @@
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import type { PortfolioSyncResponse } from '../api/contracts';
+import { foloApi } from '../api/services';
 import { DataStatusCard } from '../components/DataStatusCard';
-import { Heatmap } from '../components/Heatmap';
-import { Chip, MetricBadge, Page, PrimaryButton, SectionHeading, SurfaceCard } from '../components/ui';
-import { heatmap } from '../data/mock';
+import { MetricBadge, Page, PrimaryButton, SectionHeading, SurfaceCard } from '../components/ui';
 import { usePortfolioData } from '../hooks/useFoloData';
 import {
   formatCurrency,
+  formatDateLabel,
   formatPercent,
   formatSignedCurrency,
   formatWeight,
@@ -16,15 +18,12 @@ import {
 import type { RootStackParamList } from '../navigation/types';
 import { tokens } from '../theme/tokens';
 
-const ranking = [
-  { rank: 1, user: '서연', returnRate: '+18.2%' },
-  { rank: 2, user: '민준', returnRate: '+15.6%' },
-  { rank: 3, user: '지수', returnRate: '+13.1%' },
-] as const;
-
 export function PortfolioScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const portfolio = usePortfolioData();
+  const [syncing, setSyncing] = useState(false);
+  const [syncError, setSyncError] = useState<string | null>(null);
+  const [syncResult, setSyncResult] = useState<PortfolioSyncResponse | null>(null);
 
   const allocation = portfolio.data.holdings.map((item) => ({
     name: item.name,
@@ -33,20 +32,31 @@ export function PortfolioScreen() {
     color: item.market === 'KRX' ? '#0F766E' : '#2563EB',
   }));
 
+  async function handleSync() {
+    setSyncing(true);
+    setSyncError(null);
+
+    try {
+      const result = await foloApi.syncPortfolio();
+      setSyncResult(result);
+      portfolio.refresh();
+    } catch (error) {
+      setSyncError(error instanceof Error ? error.message : '동기화에 실패했습니다.');
+    } finally {
+      setSyncing(false);
+    }
+  }
+
   return (
     <Page
       eyebrow="Portfolio"
-      title="수익률, 자산배분, 잔디를 한 번에"
-      subtitle="토스식 숫자 표현을 기본으로 두고, 장기투자 맥락은 잔디와 랭킹으로 확장한 메인 대시보드입니다."
-      action={
-        <Chip
-          active
-          label={portfolio.source === 'api' ? 'API 연결' : '샘플 데이터'}
-          tone={portfolio.source === 'api' ? 'positive' : 'brand'}
-        />
-      }
+      title="수익률과 자산배분"
+      subtitle="실제 포트폴리오 합산 결과와 보유 종목 정보를 백엔드 계산값 그대로 보여줍니다."
     >
-      <DataStatusCard error={portfolio.error} loading={portfolio.loading} source={portfolio.source} />
+      <DataStatusCard
+        error={portfolio.error ?? syncError}
+        loading={portfolio.loading || syncing}
+      />
 
       <SurfaceCard tone="hero">
         <Text style={styles.summaryLabel}>총 평가금액</Text>
@@ -68,81 +78,117 @@ export function PortfolioScreen() {
 
       <SurfaceCard>
         <SectionHeading
-          title="자산 배분"
-          description="차트 대신 먼저 막대형 정보 구조로 시작해 데이터 연동 전에도 의도가 잘 보이도록 만들었습니다."
+          title="포트폴리오 상태"
+          description="합산 값과 마지막 반영 시점을 확인할 수 있습니다."
         />
-        {allocation.map((item) => (
-          <View key={item.name} style={styles.allocationRow}>
-            <View style={styles.allocationMeta}>
-              <Text style={styles.allocationName}>{item.name}</Text>
-              <Text style={styles.allocationValue}>{item.value}</Text>
-            </View>
-            <View style={styles.allocationBarTrack}>
-              <View
-                style={[
-                  styles.allocationBarFill,
-                  { width: `${item.ratio}%`, backgroundColor: item.color },
-                ]}
-              />
-            </View>
-            <Text style={styles.allocationRatio}>{item.ratio}%</Text>
-          </View>
-        ))}
-      </SurfaceCard>
-
-      <SurfaceCard>
-        <SectionHeading
-          title="보유 종목"
-          description="상세 화면으로 이어질 카드를 백엔드 holding projection 기준으로 구성했습니다."
-        />
-        {portfolio.data.holdings.map((holding, index) => (
-          <Pressable
-            key={holding.holdingId}
-            onPress={() =>
-              navigation.navigate('HoldingDetail', { holdingId: holding.holdingId })
-            }
-            style={[
-              styles.holdingRow,
-              index < portfolio.data.holdings.length - 1 && styles.divider,
-            ]}
-          >
-            <View style={styles.holdingText}>
-              <Text style={styles.holdingTicker}>{holding.ticker}</Text>
-              <Text style={styles.holdingName}>
-                {holding.name} · {formatWeight(holding.weight)}
-              </Text>
-            </View>
-            <View style={styles.holdingMetrics}>
-              <Text style={styles.holdingReturn}>{formatPercent(holding.returnRate)}</Text>
-              <Text style={styles.holdingValue}>
-                {formatCurrency(holding.totalValue, holding.market)}
-              </Text>
-            </View>
-          </Pressable>
-        ))}
-        <PrimaryButton
-          label="프로필 설정 보기"
-          onPress={() => navigation.navigate('MainTabs', { screen: 'Profile' })}
-          variant="secondary"
-        />
-      </SurfaceCard>
-
-      <SurfaceCard>
-        <SectionHeading
-          title="잔디 & 랭킹"
-          description="기획서의 GRASS, Ranking 기능을 빠르게 검토할 수 있는 목업입니다."
-        />
-        <Heatmap values={heatmap} />
-        <View style={styles.rankingCard}>
-          {ranking.map((item) => (
-            <View key={item.user} style={styles.rankingRow}>
-              <Text style={styles.rankingRank}>{item.rank}</Text>
-              <Text style={styles.rankingUser}>{item.user}</Text>
-              <Text style={styles.rankingReturn}>{item.returnRate}</Text>
-            </View>
-          ))}
+        <View style={styles.statusRow}>
+          <Text style={styles.statusLabel}>보유 종목 수</Text>
+          <Text style={styles.statusValue}>{portfolio.data.holdings.length}개</Text>
         </View>
+        <View style={styles.statusRow}>
+          <Text style={styles.statusLabel}>공개 상태</Text>
+          <Text style={styles.statusValue}>
+            {portfolio.data.isFullyVisible ? '전체 공개 가능' : '일부 제한'}
+          </Text>
+        </View>
+        <View style={styles.statusRow}>
+          <Text style={styles.statusLabel}>최근 반영 시각</Text>
+          <Text style={styles.statusValue}>
+            {portfolio.data.syncedAt ? formatDateLabel(portfolio.data.syncedAt) : '반영 기록 없음'}
+          </Text>
+        </View>
+        <View style={styles.actionStack}>
+          <PrimaryButton
+            label={syncing ? '동기화 중...' : '동기화 실행'}
+            onPress={handleSync}
+            disabled={syncing}
+          />
+          <PrimaryButton
+            label="KIS 키 등록"
+            onPress={() => navigation.navigate('KisConnect')}
+            variant="secondary"
+          />
+        </View>
+        {syncResult ? (
+          <Text style={styles.syncMeta}>
+            최근 sync: 보유 종목 {syncResult.syncedHoldings}개, 거래 {syncResult.syncedTrades}건
+          </Text>
+        ) : null}
       </SurfaceCard>
+
+      {portfolio.data.holdings.length === 0 ? (
+        <SurfaceCard>
+          <SectionHeading
+            title="보유 종목"
+            description="거래를 추가하면 실제 보유 종목이 여기에 집계됩니다."
+          />
+          <Text style={styles.emptyText}>
+            아직 보유 종목이 없습니다. 첫 거래를 등록하면 포트폴리오 배분과 수익률이 계산됩니다.
+          </Text>
+          <PrimaryButton
+            label="거래 기록 추가"
+            onPress={() => navigation.navigate('MainTabs', { screen: 'AddTrade' })}
+          />
+        </SurfaceCard>
+      ) : (
+        <>
+          <SurfaceCard>
+            <SectionHeading
+              title="자산 배분"
+              description="현재 보유 종목 비중을 시각적으로 확인합니다."
+            />
+            {allocation.map((item) => (
+              <View key={item.name} style={styles.allocationRow}>
+                <View style={styles.allocationMeta}>
+                  <Text style={styles.allocationName}>{item.name}</Text>
+                  <Text style={styles.allocationValue}>{item.value}</Text>
+                </View>
+                <View style={styles.allocationBarTrack}>
+                  <View
+                    style={[
+                      styles.allocationBarFill,
+                      { width: `${item.ratio}%`, backgroundColor: item.color },
+                    ]}
+                  />
+                </View>
+                <Text style={styles.allocationRatio}>{item.ratio}%</Text>
+              </View>
+            ))}
+          </SurfaceCard>
+
+          <SurfaceCard>
+            <SectionHeading
+              title="보유 종목"
+              description="항목을 누르면 종목별 상세 지표로 이동합니다."
+            />
+            {portfolio.data.holdings.map((holding, index) => (
+              <Pressable
+                key={holding.holdingId}
+                onPress={() =>
+                  navigation.navigate('HoldingDetail', { holdingId: holding.holdingId })
+                }
+                style={[
+                  styles.holdingRow,
+                  index < portfolio.data.holdings.length - 1 && styles.divider,
+                ]}
+              >
+                <View style={styles.holdingText}>
+                  <Text style={styles.holdingTicker}>{holding.ticker}</Text>
+                  <Text style={styles.holdingName}>
+                    {holding.name} · {formatWeight(holding.weight)}
+                  </Text>
+                </View>
+                <View style={styles.holdingMetrics}>
+                  <Text style={styles.holdingReturn}>{formatPercent(holding.returnRate)}</Text>
+                  <Text style={styles.holdingValue}>
+                    {formatCurrency(holding.totalValue, holding.market)}
+                  </Text>
+                </View>
+              </Pressable>
+            ))}
+          </SurfaceCard>
+        </>
+      )}
     </Page>
   );
 }
@@ -168,6 +214,30 @@ const styles = StyleSheet.create({
   metricRow: {
     flexDirection: 'row',
     gap: 12,
+  },
+  statusRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  actionStack: {
+    gap: 10,
+  },
+  statusLabel: {
+    fontSize: 14,
+    color: tokens.colors.inkSoft,
+    fontFamily: tokens.typography.body,
+  },
+  statusValue: {
+    fontSize: 14,
+    color: tokens.colors.navy,
+    fontFamily: tokens.typography.heading,
+    fontWeight: '700',
+  },
+  syncMeta: {
+    fontSize: 13,
+    color: tokens.colors.brandStrong,
+    fontFamily: tokens.typography.body,
   },
   allocationRow: {
     gap: 8,
@@ -244,35 +314,10 @@ const styles = StyleSheet.create({
     color: tokens.colors.inkSoft,
     fontFamily: tokens.typography.body,
   },
-  rankingCard: {
-    backgroundColor: tokens.colors.surfaceMuted,
-    borderRadius: 18,
-    padding: 16,
-    gap: 12,
-  },
-  rankingRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  rankingRank: {
-    width: 20,
+  emptyText: {
     fontSize: 14,
-    color: tokens.colors.brandStrong,
-    fontFamily: tokens.typography.heading,
-    fontWeight: '800',
-  },
-  rankingUser: {
-    flex: 1,
-    fontSize: 14,
-    color: tokens.colors.navy,
-    fontFamily: tokens.typography.heading,
-    fontWeight: '700',
-  },
-  rankingReturn: {
-    fontSize: 14,
-    color: tokens.colors.positive,
-    fontFamily: tokens.typography.heading,
-    fontWeight: '700',
+    lineHeight: 22,
+    color: tokens.colors.inkSoft,
+    fontFamily: tokens.typography.body,
   },
 });

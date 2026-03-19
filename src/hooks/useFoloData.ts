@@ -1,17 +1,6 @@
 import { useEffect, useState } from 'react';
 
 import { foloApi } from '../api/services';
-import {
-  mockCommentsByTradeId,
-  mockFeedResponse,
-  mockMyProfileResponse,
-  mockNotificationListResponse,
-  mockPortfolioResponse,
-  mockReminderListResponse,
-  mockStockPrices,
-  mockStockSearchResponse,
-  mockTradeDetails,
-} from '../api/mockFallbacks';
 import type {
   CommentListResponse,
   FeedResponse,
@@ -22,26 +11,23 @@ import type {
   StockPriceResponse,
   StockSearchResponse,
   TradeDetailResponse,
+  TradeListResponse,
 } from '../api/contracts';
-
-type Source = 'api' | 'fallback';
 
 export type Loadable<T> = {
   data: T;
   loading: boolean;
-  source: Source;
   error: string | null;
   refresh: () => void;
 };
 
 function useLoadable<T>(
   loader: () => Promise<T>,
-  fallback: T,
+  initialData: T,
   deps: ReadonlyArray<unknown>,
 ): Loadable<T> {
-  const [data, setData] = useState<T>(fallback);
+  const [data, setData] = useState<T>(initialData);
   const [loading, setLoading] = useState(true);
-  const [source, setSource] = useState<Source>('fallback');
   const [error, setError] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
 
@@ -49,6 +35,7 @@ function useLoadable<T>(
     let alive = true;
 
     setLoading(true);
+    setError(null);
 
     loader()
       .then((result) => {
@@ -56,15 +43,13 @@ function useLoadable<T>(
           return;
         }
         setData(result);
-        setSource('api');
         setError(null);
       })
       .catch((reason) => {
         if (!alive) {
           return;
         }
-        setData(fallback);
-        setSource('fallback');
+        setData(initialData);
         setError(reason instanceof Error ? reason.message : '데이터를 불러오지 못했습니다.');
       })
       .finally(() => {
@@ -81,54 +66,115 @@ function useLoadable<T>(
   return {
     data,
     loading,
-    source,
     error,
     refresh: () => setRefreshKey((value) => value + 1),
   };
 }
 
+const emptyFeedResponse: FeedResponse = {
+  trades: [],
+  nextCursor: null,
+  hasNext: false,
+};
+
+const emptyPortfolioResponse: PortfolioResponse = {
+  portfolioId: 0,
+  totalInvested: 0,
+  totalValue: 0,
+  totalReturn: 0,
+  totalReturnRate: 0,
+  dayReturn: 0,
+  dayReturnRate: 0,
+  holdings: [],
+  syncedAt: null,
+  isFullyVisible: true,
+};
+
+const emptyTradeDetail: TradeDetailResponse = {
+  tradeId: 0,
+  user: {
+    userId: 0,
+    nickname: '',
+    profileImage: null,
+  },
+  ticker: '',
+  name: '',
+  market: 'KRX',
+  tradeType: 'BUY',
+  quantity: 0,
+  price: 0,
+  totalAmount: 0,
+  comment: null,
+  visibility: 'FRIENDS_ONLY',
+  reactions: [],
+  commentCount: 0,
+  tradedAt: '',
+};
+
+const emptyCommentList: CommentListResponse = {
+  comments: [],
+  totalCount: 0,
+  hasNext: false,
+};
+
+const emptyMyProfile: MyProfileResponse = {
+  userId: 0,
+  nickname: '',
+  profileImage: null,
+  bio: null,
+  followerCount: 0,
+  followingCount: 0,
+  portfolioVisibility: 'FRIENDS_ONLY',
+  returnVisibility: 'RATE_ONLY',
+  createdAt: '',
+};
+
+const emptyNotifications: NotificationListResponse = {
+  notifications: [],
+  unreadCount: 0,
+  hasNext: false,
+};
+
+const emptyReminders: ReminderListResponse = {
+  reminders: [],
+};
+
+const emptyTradeList: TradeListResponse = {
+  trades: [],
+  totalCount: 0,
+  hasNext: false,
+};
+
 export function useFeedData(): Loadable<FeedResponse> {
-  return useLoadable(() => foloApi.getFeed(), mockFeedResponse, []);
+  return useLoadable(() => foloApi.getFeed(), emptyFeedResponse, []);
 }
 
 export function usePortfolioData(): Loadable<PortfolioResponse> {
-  return useLoadable(() => foloApi.getPortfolio(), mockPortfolioResponse, []);
+  return useLoadable(() => foloApi.getPortfolio(), emptyPortfolioResponse, []);
 }
 
 export function useTradeDetailData(tradeId: number): Loadable<TradeDetailResponse> {
-  return useLoadable(
-    () => foloApi.getTradeDetail(tradeId),
-    mockTradeDetails[tradeId] ?? mockTradeDetails[101],
-    [tradeId],
-  );
+  return useLoadable(() => foloApi.getTradeDetail(tradeId), emptyTradeDetail, [tradeId]);
 }
 
 export function useTradeCommentsData(tradeId: number): Loadable<CommentListResponse> {
-  return useLoadable(
-    () => foloApi.getTradeComments(tradeId),
-    mockCommentsByTradeId[tradeId] ?? {
-      comments: [],
-      totalCount: 0,
-      hasNext: false,
-    },
-    [tradeId],
-  );
+  return useLoadable(() => foloApi.getTradeComments(tradeId), emptyCommentList, [tradeId]);
 }
 
 export function useMyProfileData(): Loadable<MyProfileResponse> {
-  return useLoadable(() => foloApi.getMyProfile(), mockMyProfileResponse, []);
+  return useLoadable(() => foloApi.getMyProfile(), emptyMyProfile, []);
 }
 
 export function useNotificationsData(): Loadable<NotificationListResponse> {
-  return useLoadable(
-    () => foloApi.getNotifications(),
-    mockNotificationListResponse,
-    [],
-  );
+  return useLoadable(() => foloApi.getNotifications(), emptyNotifications, []);
 }
 
 export function useRemindersData(): Loadable<ReminderListResponse> {
-  return useLoadable(() => foloApi.getReminders(), mockReminderListResponse, []);
+  return useLoadable(() => foloApi.getReminders(), emptyReminders, []);
+}
+
+export function useMyTradesData(): Loadable<TradeListResponse> {
+  return useLoadable(() => foloApi.getMyTrades(), emptyTradeList, []);
 }
 
 const emptySearchResponse: StockSearchResponse = { stocks: [] };
@@ -150,12 +196,12 @@ export function useStockSearchData(query: string): Loadable<StockSearchResponse>
 
   return useLoadable(
     () => {
-      if (!trimmed) {
+      if (trimmed.length < 2) {
         return Promise.resolve(emptySearchResponse);
       }
       return foloApi.searchStocks(trimmed);
     },
-    trimmed ? mockStockSearchResponse : emptySearchResponse,
+    emptySearchResponse,
     [trimmed],
   );
 }
@@ -173,7 +219,7 @@ export function useStockPriceData(
       }
       return foloApi.getStockPrice(normalizedTicker, market);
     },
-    normalizedTicker ? mockStockPrices[normalizedTicker] ?? emptyPriceResponse : emptyPriceResponse,
+    emptyPriceResponse,
     [normalizedTicker, market ?? null],
   );
 }

@@ -14,13 +14,14 @@ export class ApiClientError extends Error {
 type RequestOptions = Omit<RequestInit, 'body'> & {
   body?: BodyInit | object | null;
   requiresAuth?: boolean;
+  allowEmptyData?: boolean;
 };
 
 export async function apiRequest<T>(
   path: string,
   options: RequestOptions = {},
 ): Promise<T> {
-  const { requiresAuth = true, headers, body, ...rest } = options;
+  const { requiresAuth = true, allowEmptyData = false, headers, body, ...rest } = options;
   const finalHeaders = new Headers(headers);
 
   if (body && !finalHeaders.has('Content-Type')) {
@@ -30,7 +31,7 @@ export async function apiRequest<T>(
   if (requiresAuth) {
     if (!foloApiConfig.accessToken) {
       throw new ApiClientError(
-        'EXPO_PUBLIC_FOLO_ACCESS_TOKEN이 없어 샘플 데이터로 대체합니다.',
+        '로그인이 필요합니다.',
         'MISSING_ACCESS_TOKEN',
       );
     }
@@ -54,12 +55,12 @@ export async function apiRequest<T>(
     throw new ApiClientError('백엔드 응답을 해석하지 못했습니다.', 'INVALID_JSON');
   }
 
-  if (!response.ok || !payload.success || payload.data === null) {
+  if (!response.ok || !payload.success || (payload.data === null && !allowEmptyData)) {
     throw new ApiClientError(
       payload.error?.message ?? payload.message ?? '요청이 실패했습니다.',
       payload.error?.code,
     );
   }
 
-  return payload.data;
+  return (payload.data ?? undefined) as T;
 }
