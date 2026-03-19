@@ -38,11 +38,55 @@ type AuthContextValue = {
 };
 
 const SESSION_STORAGE_KEY = '@folo/auth-session';
+const inMemoryStorage = new Map<string, string>();
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
+function isUnavailableStorageError(error: unknown) {
+  return (
+    error instanceof Error &&
+    (error.message.includes('Native module is null') ||
+      error.message.includes('legacy storage'))
+  );
+}
+
+async function getStorageItem(key: string) {
+  try {
+    return await AsyncStorage.getItem(key);
+  } catch (error) {
+    if (isUnavailableStorageError(error)) {
+      return inMemoryStorage.get(key) ?? null;
+    }
+    throw error;
+  }
+}
+
+async function setStorageItem(key: string, value: string) {
+  try {
+    await AsyncStorage.setItem(key, value);
+  } catch (error) {
+    if (isUnavailableStorageError(error)) {
+      inMemoryStorage.set(key, value);
+      return;
+    }
+    throw error;
+  }
+}
+
+async function removeStorageItem(key: string) {
+  try {
+    await AsyncStorage.removeItem(key);
+  } catch (error) {
+    if (isUnavailableStorageError(error)) {
+      inMemoryStorage.delete(key);
+      return;
+    }
+    throw error;
+  }
+}
+
 async function readStoredSession() {
-  const raw = await AsyncStorage.getItem(SESSION_STORAGE_KEY);
+  const raw = await getStorageItem(SESSION_STORAGE_KEY);
 
   if (!raw) {
     return null;
@@ -51,18 +95,18 @@ async function readStoredSession() {
   try {
     return JSON.parse(raw) as AuthResponse;
   } catch {
-    await AsyncStorage.removeItem(SESSION_STORAGE_KEY);
+    await removeStorageItem(SESSION_STORAGE_KEY);
     return null;
   }
 }
 
 async function persistSession(session: AuthResponse) {
-  await AsyncStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(session));
+  await setStorageItem(SESSION_STORAGE_KEY, JSON.stringify(session));
   setFoloAccessToken(session.accessToken);
 }
 
 async function clearSessionStorage() {
-  await AsyncStorage.removeItem(SESSION_STORAGE_KEY);
+  await removeStorageItem(SESSION_STORAGE_KEY);
   setFoloAccessToken('');
 }
 
