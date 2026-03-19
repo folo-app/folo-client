@@ -3,18 +3,24 @@ import type {
   AuthResponse,
   CommentListResponse,
   ConfirmEmailRequest,
+  ConfirmImportRequest,
+  ConfirmImportResponse,
   CreateCommentRequest,
   CreateCommentResponse,
   CreateReminderRequest,
   CreateTradeRequest,
+  CsvImportResponse,
   FeedResponse,
   FollowActionResponse,
   FollowListResponse,
+  KisConnectionStartResponse,
+  KisConnectionStatusResponse,
   LoginRequest,
   LogoutRequest,
   MyProfileResponse,
   NotificationListResponse,
   NotificationReadResponse,
+  OcrImportResponse,
   PortfolioResponse,
   PortfolioSyncResponse,
   PublicProfileResponse,
@@ -35,6 +41,12 @@ import type {
   VerifyEmailRequest,
 } from './contracts';
 
+type UploadAsset = {
+  uri: string;
+  name: string;
+  mimeType?: string | null;
+};
+
 function withQuery(path: string, query: Record<string, string | number | undefined | null>) {
   const params = new URLSearchParams();
 
@@ -46,6 +58,28 @@ function withQuery(path: string, query: Record<string, string | number | undefin
 
   const text = params.toString();
   return text ? `${path}?${text}` : path;
+}
+
+function buildUploadFormData(
+  fieldName: string,
+  file: UploadAsset,
+  extraFields?: Record<string, string | undefined>,
+) {
+  const formData = new FormData();
+
+  formData.append(fieldName, {
+    uri: file.uri,
+    name: file.name,
+    type: file.mimeType ?? 'application/octet-stream',
+  } as never);
+
+  Object.entries(extraFields ?? {}).forEach(([key, value]) => {
+    if (value) {
+      formData.append(key, value);
+    }
+  });
+
+  return formData;
 }
 
 export const foloApi = {
@@ -103,6 +137,24 @@ export const foloApi = {
       method: 'POST',
     });
   },
+  importPortfolioCsv(file: UploadAsset, broker?: string) {
+    return apiRequest<CsvImportResponse>('/portfolio/import/csv', {
+      method: 'POST',
+      body: buildUploadFormData('file', file, { broker }),
+    });
+  },
+  importPortfolioOcr(image: UploadAsset) {
+    return apiRequest<OcrImportResponse>('/portfolio/import/ocr', {
+      method: 'POST',
+      body: buildUploadFormData('image', image),
+    });
+  },
+  confirmPortfolioImport(body: ConfirmImportRequest) {
+    return apiRequest<ConfirmImportResponse>('/portfolio/import/confirm', {
+      method: 'POST',
+      body,
+    });
+  },
   getTradeDetail(tradeId: number) {
     return apiRequest<TradeDetailResponse>(`/trades/${tradeId}`);
   },
@@ -133,6 +185,14 @@ export const foloApi = {
       method: 'PATCH',
       body,
       allowEmptyData: true,
+    });
+  },
+  getKisConnectionStatus() {
+    return apiRequest<KisConnectionStatusResponse>('/integrations/kis/connect/status');
+  },
+  startKisConnection() {
+    return apiRequest<KisConnectionStartResponse>('/integrations/kis/connect/start', {
+      method: 'POST',
     });
   },
   followUser(userId: number) {

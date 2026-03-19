@@ -1,115 +1,367 @@
+import * as DocumentPicker from 'expo-document-picker';
+import * as ImagePicker from 'expo-image-picker';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { StyleSheet, Text, View } from 'react-native';
+import { useState } from 'react';
+import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
-import { Chip, Page, PrimaryButton, SectionHeading, SurfaceCard } from '../components/ui';
+import type {
+  CsvImportResponse,
+  ImportPreviewItem,
+  OcrImportResponse,
+} from '../api/contracts';
+import { foloApi } from '../api/services';
+import { Page, PrimaryButton, SectionHeading, SurfaceCard } from '../components/ui';
+import { formatCurrency, tradeTypeLabel } from '../lib/format';
 import type { RootStackParamList } from '../navigation/types';
 import { tokens } from '../theme/tokens';
 
+function toValidPreviewIds(items: ImportPreviewItem[]) {
+  return items.filter((item) => item.valid && item.selected).map((item) => item.importResultId);
+}
+
 export function ImportOnboardingScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const [broker, setBroker] = useState('');
+  const [csvPreview, setCsvPreview] = useState<CsvImportResponse | null>(null);
+  const [selectedCsvIds, setSelectedCsvIds] = useState<number[]>([]);
+  const [ocrPreview, setOcrPreview] = useState<OcrImportResponse | null>(null);
+  const [csvUploading, setCsvUploading] = useState(false);
+  const [ocrUploading, setOcrUploading] = useState(false);
+  const [confirming, setConfirming] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+
+  async function handlePickCsv() {
+    setCsvUploading(true);
+    setMessage(null);
+
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: ['text/csv', 'text/comma-separated-values', 'application/vnd.ms-excel'],
+        copyToCacheDirectory: true,
+      });
+
+      if (result.canceled || !result.assets?.[0]) {
+        return;
+      }
+
+      const asset = result.assets[0];
+      const preview = await foloApi.importPortfolioCsv(
+        {
+          uri: asset.uri,
+          name: asset.name,
+          mimeType: asset.mimeType,
+        },
+        broker.trim() || undefined,
+      );
+
+      setCsvPreview(preview);
+      setSelectedCsvIds(toValidPreviewIds(preview.preview));
+      setOcrPreview(null);
+    } catch (error) {
+      setMessage(
+        error instanceof Error ? error.message : 'CSV 업로드에 실패했습니다.',
+      );
+    } finally {
+      setCsvUploading(false);
+    }
+  }
+
+  async function handlePickOcr() {
+    setOcrUploading(true);
+    setMessage(null);
+
+    try {
+      const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+      if (!permission.granted) {
+        setMessage('사진 보관함 접근 권한이 필요합니다.');
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        quality: 1,
+      });
+
+      if (result.canceled || !result.assets?.[0]) {
+        return;
+      }
+
+      const asset = result.assets[0];
+      const preview = await foloApi.importPortfolioOcr({
+        uri: asset.uri,
+        name: asset.fileName ?? `ocr-${Date.now()}.jpg`,
+        mimeType: asset.mimeType,
+      });
+
+      setOcrPreview(preview);
+      setCsvPreview(null);
+    } catch (error) {
+      setMessage(
+        error instanceof Error ? error.message : 'OCR 업로드에 실패했습니다.',
+      );
+    } finally {
+      setOcrUploading(false);
+    }
+  }
+
+  async function handleConfirmImport(importResultIds: number[]) {
+    if (importResultIds.length === 0) {
+      setMessage('저장할 항목을 먼저 선택해 주세요.');
+      return;
+    }
+
+    setConfirming(true);
+    setMessage(null);
+
+    try {
+      const result = await foloApi.confirmPortfolioImport({ importResultIds });
+      setMessage(`${result.savedTrades}건의 거래를 저장했습니다.`);
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'MainTabs', params: { screen: 'Portfolio' } }],
+      });
+    } catch (error) {
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : '가져온 거래 저장에 실패했습니다.',
+      );
+    } finally {
+      setConfirming(false);
+    }
+  }
+
+  function toggleCsvSelection(importResultId: number) {
+    setSelectedCsvIds((current) =>
+      current.includes(importResultId)
+        ? current.filter((item) => item !== importResultId)
+        : [...current, importResultId],
+    );
+  }
 
   return (
     <Page
       eyebrow="Import"
-      title="포트폴리오 시작하기"
-      subtitle="초기 세팅은 CSV/OCR 가져오기를 중심으로 안내하고, 수동 입력은 개별 거래 보정용으로 둡니다."
+      title="CSV / OCR로 가져오기"
+      subtitle="직접 추가가 메인 경로이고, 이 화면은 증권사 내역이나 캡처 화면을 한 번에 불러오는 보조 기능입니다."
     >
       <SurfaceCard tone="hero">
         <SectionHeading
-          title="권장 순서"
-          description="실제 앱의 첫 경험은 대량 가져오기와 계좌 스냅샷 복원에 맞춥니다."
+          title="직접 추가가 더 빠르다면"
+          description="처음 포트폴리오를 만드는 경우에는 수동으로 종목을 고르고 수량과 평단만 넣는 흐름이 기본입니다."
         />
-        <View style={styles.stepList}>
-          <View style={styles.stepRow}>
-            <Chip active label="1" tone="brand" />
-            <View style={styles.stepText}>
-              <Text style={styles.stepTitle}>CSV로 거래 내역 불러오기</Text>
-              <Text style={styles.stepDescription}>
-                증권사 내역을 한 번에 가져와 초기 포트폴리오를 채우는 메인 경로입니다.
-              </Text>
-            </View>
-            <Chip label="준비 중" />
-          </View>
-          <View style={styles.stepRow}>
-            <Chip active label="2" tone="brand" />
-            <View style={styles.stepText}>
-              <Text style={styles.stepTitle}>OCR로 보유 화면 스캔</Text>
-              <Text style={styles.stepDescription}>
-                모바일 스크린샷이나 캡처 이미지를 인식해 빠르게 초안을 만듭니다.
-              </Text>
-            </View>
-            <Chip label="준비 중" />
-          </View>
-          <View style={styles.stepRow}>
-            <Chip active label="3" tone="brand" />
-            <View style={styles.stepText}>
-              <Text style={styles.stepTitle}>수동으로 거래 한 건 추가</Text>
-              <Text style={styles.stepDescription}>
-                가져오기 이후 누락 거래 보정이나 메모 작성은 수동 입력이 더 적합합니다.
-              </Text>
-            </View>
-            <Chip label="사용 가능" tone="positive" />
-          </View>
-        </View>
+        <PrimaryButton
+          label="직접 추가로 돌아가기"
+          onPress={() => navigation.navigate('PortfolioSetup')}
+          variant="secondary"
+        />
       </SurfaceCard>
 
       <SurfaceCard>
         <SectionHeading
-          title="현재 상태"
-          description="백엔드는 CSV/OCR endpoint를 이미 갖고 있고, 프론트 업로드 UI는 다음 단계에서 붙입니다."
+          title="CSV 가져오기"
+          description="증권사 거래 내역 CSV를 업로드하면 파싱 결과를 미리 보고 저장할 항목을 고를 수 있습니다."
         />
-        <Text style={styles.bodyText}>
-          지금은 수동 입력 화면을 계속 사용할 수 있고, CSV/OCR 업로드 화면은 준비중 구조로 우선 배치했습니다.
-        </Text>
-        <View style={styles.actionStack}>
-          <PrimaryButton
-            label="수동 거래 입력"
-            onPress={() => navigation.navigate('MainTabs', { screen: 'AddTrade' })}
-          />
-          <PrimaryButton
-            label="KIS 연결 준비 상태 보기"
-            onPress={() => navigation.navigate('KisConnect')}
-            variant="secondary"
-          />
-        </View>
+        <TextInput
+          autoCapitalize="characters"
+          onChangeText={setBroker}
+          placeholder="브로커 코드(선택)"
+          placeholderTextColor={tokens.colors.inkMute}
+          style={styles.input}
+          value={broker}
+        />
+        <PrimaryButton
+          disabled={csvUploading}
+          label={csvUploading ? 'CSV 업로드 중...' : 'CSV 파일 선택'}
+          onPress={handlePickCsv}
+        />
+
+        {csvPreview ? (
+          <View style={styles.previewBlock}>
+            <Text style={styles.previewSummary}>
+              파싱 성공 {csvPreview.parsedTrades}건 · 실패 {csvPreview.failedTrades}건
+            </Text>
+            {csvPreview.preview.map((item) => {
+              const isSelected = selectedCsvIds.includes(item.importResultId);
+
+              return (
+                <Pressable
+                  key={item.importResultId}
+                  disabled={!item.valid}
+                  onPress={() => toggleCsvSelection(item.importResultId)}
+                  style={[
+                    styles.previewRow,
+                    item.valid && isSelected && styles.previewRowSelected,
+                    !item.valid && styles.previewRowInvalid,
+                  ]}
+                >
+                  <View style={styles.previewText}>
+                    <Text style={styles.previewTitle}>
+                      {item.ticker ?? '미식별'} · {item.name ?? '이름 없음'}
+                    </Text>
+                    <Text style={styles.previewMeta}>
+                      {item.tradeType ? tradeTypeLabel(item.tradeType) : '분류 없음'} ·{' '}
+                      {item.quantity ?? '-'}주 ·{' '}
+                      {item.price && item.market
+                        ? formatCurrency(item.price, item.market)
+                        : item.price ?? '-'}
+                    </Text>
+                  </View>
+                  <Text
+                    style={[
+                      styles.previewStatus,
+                      item.valid ? styles.previewStatusValid : styles.previewStatusInvalid,
+                    ]}
+                  >
+                    {item.valid ? (isSelected ? '선택됨' : '선택') : '오류'}
+                  </Text>
+                </Pressable>
+              );
+            })}
+
+            <PrimaryButton
+              disabled={confirming || selectedCsvIds.length === 0}
+              label={confirming ? '저장 중...' : `${selectedCsvIds.length}건 저장`}
+              onPress={() => handleConfirmImport(selectedCsvIds)}
+            />
+          </View>
+        ) : null}
       </SurfaceCard>
+
+      <SurfaceCard>
+        <SectionHeading
+          title="OCR 가져오기"
+          description="보유 화면 캡처를 업로드하면 파싱된 한 건을 확인한 뒤 포트폴리오에 반영할 수 있습니다."
+        />
+        <PrimaryButton
+          disabled={ocrUploading}
+          label={ocrUploading ? 'OCR 업로드 중...' : '이미지 선택'}
+          onPress={handlePickOcr}
+          variant="secondary"
+        />
+
+        {ocrPreview ? (
+          <View style={styles.previewBlock}>
+            <Text style={styles.previewSummary}>
+              OCR 신뢰도 {(ocrPreview.confidence * 100).toFixed(0)}%
+            </Text>
+
+            {ocrPreview.parsed ? (
+              <>
+                <View style={styles.ocrCard}>
+                  <Text style={styles.previewTitle}>
+                    {ocrPreview.parsed.name} · {ocrPreview.parsed.ticker}
+                  </Text>
+                  <Text style={styles.previewMeta}>
+                    {tradeTypeLabel(ocrPreview.parsed.tradeType)} ·{' '}
+                    {ocrPreview.parsed.quantity}주 · {ocrPreview.parsed.price}
+                  </Text>
+                </View>
+                <PrimaryButton
+                  disabled={confirming}
+                  label={confirming ? '저장 중...' : '이 거래 저장'}
+                  onPress={() =>
+                    handleConfirmImport([ocrPreview.parsed!.importResultId])
+                  }
+                />
+              </>
+            ) : (
+              <Text style={styles.helperText}>
+                파일명 또는 이미지에서 거래를 파싱하지 못했습니다.
+              </Text>
+            )}
+          </View>
+        ) : null}
+      </SurfaceCard>
+
+      {message ? <Text style={styles.message}>{message}</Text> : null}
     </Page>
   );
 }
 
 const styles = StyleSheet.create({
-  stepList: {
-    gap: 14,
+  input: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: 'rgba(214, 224, 234, 0.92)',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    fontSize: 15,
+    color: tokens.colors.navy,
+    fontFamily: tokens.typography.body,
   },
-  stepRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
+  previewBlock: {
     gap: 12,
   },
-  stepText: {
-    flex: 1,
-    gap: 4,
+  previewSummary: {
+    fontSize: 14,
+    color: tokens.colors.brandStrong,
+    fontFamily: tokens.typography.body,
   },
-  stepTitle: {
+  previewRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: 12,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: 'rgba(214, 224, 234, 0.92)',
+    paddingHorizontal: 14,
+    paddingVertical: 14,
+  },
+  previewRowSelected: {
+    backgroundColor: tokens.colors.brandSoft,
+    borderColor: tokens.colors.brandStrong,
+  },
+  previewRowInvalid: {
+    backgroundColor: tokens.colors.dangerSoft,
+  },
+  previewText: {
+    flex: 1,
+    gap: 6,
+  },
+  previewTitle: {
     fontSize: 15,
     color: tokens.colors.navy,
     fontFamily: tokens.typography.heading,
     fontWeight: '700',
   },
-  stepDescription: {
+  previewMeta: {
     fontSize: 13,
-    lineHeight: 20,
     color: tokens.colors.inkSoft,
     fontFamily: tokens.typography.body,
   },
-  bodyText: {
-    fontSize: 14,
+  previewStatus: {
+    fontSize: 12,
+    fontFamily: tokens.typography.heading,
+    fontWeight: '700',
+  },
+  previewStatusValid: {
+    color: tokens.colors.brandStrong,
+  },
+  previewStatusInvalid: {
+    color: tokens.colors.danger,
+  },
+  ocrCard: {
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: 'rgba(214, 224, 234, 0.92)',
+    paddingHorizontal: 14,
+    paddingVertical: 14,
+    gap: 6,
+  },
+  helperText: {
+    fontSize: 13,
+    color: tokens.colors.inkSoft,
+    fontFamily: tokens.typography.body,
+  },
+  message: {
+    fontSize: 13,
     lineHeight: 22,
-    color: tokens.colors.inkSoft,
+    color: tokens.colors.brandStrong,
     fontFamily: tokens.typography.body,
-  },
-  actionStack: {
-    gap: 10,
   },
 });

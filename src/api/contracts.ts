@@ -323,6 +323,26 @@ export type UpdateKisKeyRequest = {
   kisAppSecret: string;
 };
 
+export type KisConnectionStatusResponse = {
+  connected: boolean;
+  phase: 'READY' | 'CONFIG_MISSING' | 'PREPARING';
+  oauthEnabled: boolean;
+  clientConfigured: boolean;
+  connectionAvailable: boolean;
+  lastSyncedAt: string | null;
+  nextStep: string;
+};
+
+export type KisConnectionStartResponse = {
+  started: boolean;
+  phase: 'READY' | 'CONFIG_MISSING' | 'PREPARING';
+  authorizationUrl: string | null;
+  authorizationMethod: 'POST' | 'GET' | null;
+  requestFields: Record<string, string> | null;
+  state: string | null;
+  nextStep: string;
+};
+
 export type PortfolioSyncResponse = {
   syncedHoldings: number;
   syncedTrades: number;
@@ -368,4 +388,51 @@ export type UpdateReminderRequest = {
 
 export type CreateCommentRequest = {
   content: string;
+};
+
+export type ImportPreviewItem = {
+  importResultId: number;
+  ticker: string | null;
+  name: string | null;
+  market: MarketType | null;
+  tradeType: TradeType | null;
+  quantity: number | null;
+  price: number | null;
+  tradedAt: string | null;
+  valid: boolean;
+  errorMessage: string | null;
+  selected: boolean;
+};
+
+export type CsvImportResponse = {
+  importJobId: number;
+  parsedTrades: number;
+  failedTrades: number;
+  preview: ImportPreviewItem[];
+};
+
+export type ConfirmImportRequest = {
+  importResultIds: number[];
+};
+
+export type ConfirmImportResponse = {
+  savedTrades: number;
+  confirmedImportResultIds: number[];
+  tradeIds: number[];
+};
+
+export type OcrImportParsedTrade = {
+  importResultId: number;
+  ticker: string;
+  name: string;
+  tradeType: TradeType;
+  quantity: number;
+  price: number;
+  tradedAt: string;
+};
+
+export type OcrImportResponse = {
+  importJobId: number;
+  parsed: OcrImportParsedTrade | null;
+  confidence: number;
 };

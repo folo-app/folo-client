@@ -191,18 +191,21 @@ const emptyPriceResponse: StockPriceResponse = {
   updatedAt: '',
 };
 
-export function useStockSearchData(query: string): Loadable<StockSearchResponse> {
+export function useStockSearchData(
+  query: string,
+  minimumLength = 2,
+): Loadable<StockSearchResponse> {
   const trimmed = query.trim();
 
   return useLoadable(
     () => {
-      if (trimmed.length < 2) {
+      if (trimmed.length < minimumLength) {
         return Promise.resolve(emptySearchResponse);
       }
       return foloApi.searchStocks(trimmed);
     },
     emptySearchResponse,
-    [trimmed],
+    [trimmed, minimumLength],
   );
 }
 
