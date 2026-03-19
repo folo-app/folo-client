@@ -2,6 +2,7 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { Avatar } from '../components/Avatar';
 import { DataStatusCard } from '../components/DataStatusCard';
 import { Chip, Page, PrimaryButton, SectionHeading, SurfaceCard } from '../components/ui';
 import { useFeedData } from '../hooks/useFoloData';
@@ -61,9 +62,7 @@ export function FeedScreen() {
             <SurfaceCard>
               <View style={styles.cardHeader}>
                 <View style={styles.identity}>
-                  <View style={styles.avatar}>
-                    <Text style={styles.avatarText}>{item.user.nickname.slice(0, 1)}</Text>
-                  </View>
+                  <Avatar imageUrl={item.user.profileImage} name={item.user.nickname} size={44} />
                   <View style={styles.identityText}>
                     <Text style={styles.user}>{item.user.nickname}</Text>
                     <Text style={styles.handle}>
@@ -136,20 +135,6 @@ const styles = StyleSheet.create({
     gap: 12,
     alignItems: 'center',
     flex: 1,
-  },
-  avatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 16,
-    backgroundColor: tokens.colors.surfaceMuted,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarText: {
-    fontSize: 17,
-    color: tokens.colors.navy,
-    fontFamily: tokens.typography.heading,
-    fontWeight: '800',
   },
   identityText: {
     gap: 4,

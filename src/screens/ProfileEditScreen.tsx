@@ -4,6 +4,7 @@ import { StyleSheet, Text, TextInput, View } from 'react-native';
 import type { PortfolioVisibility, ReturnVisibility } from '../api/contracts';
 import { foloApi } from '../api/services';
 import { DataStatusCard } from '../components/DataStatusCard';
+import { ProfileImageField } from '../components/ProfileImageField';
 import { Chip, Page, PrimaryButton, SectionHeading, SurfaceCard } from '../components/ui';
 import { useMyProfileData } from '../hooks/useFoloData';
 import { tokens } from '../theme/tokens';
@@ -23,6 +24,9 @@ const returnVisibilityOptions: Array<{ label: string; value: ReturnVisibility }>
 export function ProfileEditScreen() {
   const profile = useMyProfileData();
   const [nickname, setNickname] = useState(profile.data.nickname);
+  const [profileImage, setProfileImage] = useState<string | null>(
+    profile.data.profileImage,
+  );
   const [bio, setBio] = useState(profile.data.bio ?? '');
   const [portfolioVisibility, setPortfolioVisibility] = useState<PortfolioVisibility>(
     profile.data.portfolioVisibility,
@@ -35,6 +39,7 @@ export function ProfileEditScreen() {
 
   useEffect(() => {
     setNickname(profile.data.nickname);
+    setProfileImage(profile.data.profileImage);
     setBio(profile.data.bio ?? '');
     setPortfolioVisibility(profile.data.portfolioVisibility);
     setReturnVisibility(profile.data.returnVisibility);
@@ -47,7 +52,7 @@ export function ProfileEditScreen() {
     try {
       await foloApi.updateMyProfile({
         nickname,
-        profileImage: profile.data.profileImage,
+        profileImage,
         bio,
         portfolioVisibility,
         returnVisibility,
@@ -80,6 +85,13 @@ export function ProfileEditScreen() {
           <Text style={styles.label}>닉네임</Text>
           <TextInput onChangeText={setNickname} style={styles.input} value={nickname} />
         </View>
+        <ProfileImageField
+          fallbackName={nickname || 'Folo'}
+          helper="프로필 사진은 갤러리에서 선택한 뒤 바로 업로드됩니다."
+          label="프로필 이미지"
+          onChange={setProfileImage}
+          value={profileImage}
+        />
         <View style={styles.inputGroup}>
           <Text style={styles.label}>바이오</Text>
           <TextInput

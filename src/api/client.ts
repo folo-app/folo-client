@@ -60,16 +60,25 @@ export async function apiRequest<T>(
     finalHeaders.set('Authorization', `Bearer ${foloApiConfig.accessToken}`);
   }
 
-  const response = await fetch(`${foloApiConfig.baseUrl}${path}`, {
-    ...rest,
-    headers: finalHeaders,
-    body:
-      body === undefined || body === null
-        ? undefined
-        : isBodyInitLike(body)
-          ? body
-          : JSON.stringify(body),
-  });
+  let response: Response;
+
+  try {
+    response = await fetch(`${foloApiConfig.baseUrl}${path}`, {
+      ...rest,
+      headers: finalHeaders,
+      body:
+        body === undefined || body === null
+          ? undefined
+          : isBodyInitLike(body)
+            ? body
+            : JSON.stringify(body),
+    });
+  } catch (error) {
+    throw new ApiClientError(
+      `서버에 연결하지 못했습니다. 백엔드 실행 상태와 CORS 설정을 확인해 주세요. (${foloApiConfig.baseUrl})`,
+      'NETWORK_ERROR',
+    );
+  }
 
   let payload: ApiResponse<T> | null = null;
 

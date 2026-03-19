@@ -23,6 +23,7 @@ import type {
   OcrImportResponse,
   PortfolioResponse,
   PortfolioSyncResponse,
+  ProfileImageUploadResponse,
   PublicProfileResponse,
   RefreshRequest,
   ReminderItem,
@@ -30,6 +31,7 @@ import type {
   SignupRequest,
   SignupResponse,
   StockPriceResponse,
+  StockDiscoverResponse,
   StockSearchResponse,
   TradeDetailResponse,
   TradeListResponse,
@@ -155,6 +157,13 @@ export const foloApi = {
       body,
     });
   },
+  uploadProfileImage(file: UploadAsset) {
+    return apiRequest<ProfileImageUploadResponse>('/uploads/profile-image', {
+      method: 'POST',
+      body: buildUploadFormData('file', file),
+      requiresAuth: false,
+    });
+  },
   getTradeDetail(tradeId: number) {
     return apiRequest<TradeDetailResponse>(`/trades/${tradeId}`);
   },
@@ -275,6 +284,11 @@ export const foloApi = {
   searchStocks(query: string, market?: string) {
     return apiRequest<StockSearchResponse>(
       withQuery('/stocks/search', { q: query, market }),
+    );
+  },
+  discoverStocks(limit = 12) {
+    return apiRequest<StockDiscoverResponse>(
+      withQuery('/stocks/discover', { limit }),
     );
   },
   getStockPrice(ticker: string, market?: string) {

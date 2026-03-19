@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { useAuth } from '../auth/AuthProvider';
+import { Avatar } from '../components/Avatar';
 import { DataStatusCard } from '../components/DataStatusCard';
 import { Chip, Page, PrimaryButton, SectionHeading, SurfaceCard } from '../components/ui';
 import {
@@ -56,11 +57,12 @@ export function ProfileScreen() {
 
       <SurfaceCard tone="hero">
         <View style={styles.profileHeader}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>
-              {(profile.data.nickname || session?.nickname || '?').slice(0, 1)}
-            </Text>
-          </View>
+          <Avatar
+            backgroundColor={tokens.colors.navy}
+            imageUrl={profile.data.profileImage}
+            name={profile.data.nickname || session?.nickname || '?'}
+            size={72}
+          />
           <View style={styles.profileText}>
             <Text style={styles.name}>{profile.data.nickname || session?.nickname || '내 계정'}</Text>
             {session?.email ? <Text style={styles.handle}>{session.email}</Text> : null}
@@ -223,20 +225,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 16,
     alignItems: 'center',
-  },
-  avatar: {
-    width: 72,
-    height: 72,
-    borderRadius: 24,
-    backgroundColor: tokens.colors.navy,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarText: {
-    color: tokens.colors.surface,
-    fontSize: 28,
-    fontFamily: tokens.typography.heading,
-    fontWeight: '800',
   },
   profileText: {
     flex: 1,

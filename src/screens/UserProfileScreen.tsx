@@ -7,6 +7,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import { useAuth } from '../auth/AuthProvider';
 import type { PublicProfileResponse } from '../api/contracts';
 import { foloApi } from '../api/services';
+import { Avatar } from '../components/Avatar';
 import { DataStatusCard } from '../components/DataStatusCard';
 import { Chip, Page, PrimaryButton, SectionHeading, SurfaceCard } from '../components/ui';
 import { visibilityLabel } from '../lib/format';
@@ -81,9 +82,12 @@ export function UserProfileScreen() {
         <>
           <SurfaceCard tone="hero">
             <View style={styles.header}>
-              <View style={styles.avatar}>
-                <Text style={styles.avatarText}>{profile.nickname.slice(0, 1).toUpperCase()}</Text>
-              </View>
+              <Avatar
+                backgroundColor={tokens.colors.navy}
+                imageUrl={profile.profileImage}
+                name={profile.nickname}
+                size={72}
+              />
               <View style={styles.headerText}>
                 <Text style={styles.name}>{profile.nickname}</Text>
                 <Text style={styles.bio}>{profile.bio ?? '등록된 소개가 없습니다.'}</Text>
@@ -148,20 +152,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 16,
     alignItems: 'center',
-  },
-  avatar: {
-    width: 72,
-    height: 72,
-    borderRadius: 24,
-    backgroundColor: tokens.colors.navy,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarText: {
-    color: tokens.colors.surface,
-    fontSize: 28,
-    fontFamily: tokens.typography.heading,
-    fontWeight: '800',
   },
   headerText: {
     gap: 6,

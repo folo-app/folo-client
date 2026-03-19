@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { StyleSheet, Text } from 'react-native';
 
 import { useAuth } from '../auth/AuthProvider';
+import { ProfileImageField } from '../components/ProfileImageField';
 import {
   AuthField,
   AuthNotice,
@@ -21,14 +22,13 @@ export function SignupScreen() {
   const [email, setEmail] = useState('');
   const [nickname, setNickname] = useState('');
   const [password, setPassword] = useState('');
-  const [profileImage, setProfileImage] = useState('');
+  const [profileImage, setProfileImage] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   async function handleSignup() {
     const normalizedEmail = email.trim().toLowerCase();
     const normalizedNickname = nickname.trim();
-    const normalizedProfileImage = profileImage.trim();
 
     if (!normalizedEmail || !normalizedNickname || !password) {
       setMessage('이메일, 닉네임, 비밀번호를 모두 입력해 주세요.');
@@ -43,7 +43,7 @@ export function SignupScreen() {
         email: normalizedEmail,
         nickname: normalizedNickname,
         password,
-        profileImage: normalizedProfileImage || null,
+        profileImage,
       });
 
       navigation.navigate('EmailVerification', {
@@ -102,13 +102,11 @@ export function SignupScreen() {
         secureTextEntry
         value={password}
       />
-      <AuthField
-        autoCapitalize="none"
-        autoComplete="url"
-        helper="선택 사항입니다. 가입 후 프로필 화면에서도 수정할 수 있습니다."
-        label="프로필 이미지 URL"
-        onChangeText={setProfileImage}
-        placeholder="https://..."
+      <ProfileImageField
+        fallbackName={nickname || email || 'Folo'}
+        helper="선택 사항입니다. URL 입력 대신 사진 앨범에서 바로 고를 수 있습니다."
+        label="프로필 이미지"
+        onChange={setProfileImage}
         value={profileImage}
       />
 

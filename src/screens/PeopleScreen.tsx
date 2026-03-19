@@ -6,6 +6,7 @@ import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useAuth } from '../auth/AuthProvider';
 import type { FollowUserItem, UserSearchItem } from '../api/contracts';
 import { foloApi } from '../api/services';
+import { Avatar } from '../components/Avatar';
 import { DataStatusCard } from '../components/DataStatusCard';
 import {
   Chip,
@@ -161,9 +162,7 @@ export function PeopleScreen() {
         style={styles.userRow}
       >
         <View style={styles.userIdentity}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>{user.nickname.slice(0, 1).toUpperCase()}</Text>
-          </View>
+          <Avatar imageUrl={user.profileImage} name={user.nickname} size={44} />
           <View style={styles.userText}>
             <Text style={styles.userName}>{user.nickname}</Text>
             <Text style={styles.userMeta}>
@@ -329,20 +328,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 12,
     flex: 1,
-  },
-  avatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 16,
-    backgroundColor: tokens.colors.surfaceMuted,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarText: {
-    fontSize: 17,
-    color: tokens.colors.navy,
-    fontFamily: tokens.typography.heading,
-    fontWeight: '800',
   },
   userText: {
     gap: 4,

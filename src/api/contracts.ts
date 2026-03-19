@@ -251,12 +251,18 @@ export type StockSearchItem = {
   ticker: string;
   name: string;
   market: MarketType;
+  logoUrl: string | null;
   currentPrice: number;
   dayReturnRate: number;
 };
 
 export type StockSearchResponse = {
   stocks: StockSearchItem[];
+};
+
+export type StockDiscoverResponse = {
+  krxStocks: StockSearchItem[];
+  usStocks: StockSearchItem[];
 };
 
 export type StockPriceResponse = {
@@ -435,4 +441,12 @@ export type OcrImportResponse = {
   importJobId: number;
   parsed: OcrImportParsedTrade | null;
   confidence: number;
+};
+
+export type ProfileImageUploadResponse = {
+  url: string;
+  path: string;
+  fileName: string;
+  contentType: string;
+  size: number;
 };

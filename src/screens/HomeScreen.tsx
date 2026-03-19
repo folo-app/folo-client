@@ -2,6 +2,7 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { Avatar } from '../components/Avatar';
 import { DataStatusCard } from '../components/DataStatusCard';
 import {
   MetricBadge,
@@ -166,11 +167,7 @@ export function HomeScreen() {
               onPress={() => navigation.navigate('TradeDetail', { tradeId: item.tradeId })}
               style={[styles.friendRow, index < Math.min(2, feed.data.trades.length - 1) && styles.divider]}
             >
-              <View style={styles.avatar}>
-                <Text style={styles.avatarText}>
-                  {item.user.nickname.slice(0, 1).toUpperCase()}
-                </Text>
-              </View>
+              <Avatar imageUrl={item.user.profileImage} name={item.user.nickname} size={42} />
               <View style={styles.friendText}>
                 <Text style={styles.friendName}>{item.user.nickname}</Text>
                 <Text style={styles.friendSummary}>
@@ -253,20 +250,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 14,
-  },
-  avatar: {
-    width: 42,
-    height: 42,
-    borderRadius: 16,
-    backgroundColor: tokens.colors.surfaceMuted,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarText: {
-    color: tokens.colors.navy,
-    fontSize: 15,
-    fontFamily: tokens.typography.heading,
-    fontWeight: '800',
   },
   friendText: {
     flex: 1,
