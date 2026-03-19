@@ -97,10 +97,24 @@ export function AddTradeScreen() {
         loading={(searchReady && search.loading) || (Boolean(selectedTicker) && stockPrice.loading)}
       />
 
+      <SurfaceCard tone="muted">
+        <SectionHeading
+          title="처음 시작하는 경우"
+          description="초기 포트폴리오 복원은 CSV/OCR 가져오기를 먼저 쓰고, 이 화면은 개별 거래 보정에 쓰는 흐름으로 재정리했습니다."
+        />
+        <View style={styles.importActionStack}>
+          <PrimaryButton
+            label="CSV/OCR 시작 가이드"
+            onPress={() => navigation.navigate('ImportOnboarding')}
+            variant="secondary"
+          />
+        </View>
+      </SurfaceCard>
+
       <SurfaceCard tone="hero">
         <SectionHeading
           title="빠른 입력 패널"
-          description="국장은 종목번호, 미국장은 티커로 검색할 수 있습니다."
+          description="국장은 종목번호, 미국장은 티커로 검색할 수 있습니다. 개별 거래를 직접 보정할 때 사용합니다."
         />
         <View style={styles.toggleRow}>
           {tradeTypeOptions.map((option) => (
@@ -260,6 +274,9 @@ export function AddTradeScreen() {
 }
 
 const styles = StyleSheet.create({
+  importActionStack: {
+    gap: 10,
+  },
   toggleRow: {
     flexDirection: 'row',
     gap: 10,

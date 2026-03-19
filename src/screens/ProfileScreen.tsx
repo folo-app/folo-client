@@ -112,7 +112,7 @@ export function ProfileScreen() {
             variant="secondary"
           />
           <PrimaryButton
-            label="KIS 연결"
+            label="KIS 연결 준비 상태"
             onPress={() => navigation.navigate('KisConnect')}
             variant="secondary"
           />

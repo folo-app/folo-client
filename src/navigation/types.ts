@@ -29,4 +29,5 @@ export type RootStackParamList = {
     nickname?: string;
   };
   KisConnect: undefined;
+  ImportOnboarding: undefined;
 };

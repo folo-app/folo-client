@@ -82,16 +82,16 @@ export function HomeScreen() {
       <SurfaceCard>
         <SectionHeading
           title="바로 실행"
-          description="실제 앱에서 가장 자주 이어지는 두 동선을 상단에 고정했습니다."
+          description="초기 세팅은 CSV/OCR 가져오기를 먼저, 수동 기록은 보정용으로 안내합니다."
         />
         <View style={styles.actionStack}>
           <PrimaryButton
-            label="거래 기록 추가"
-            onPress={() => navigation.navigate('MainTabs', { screen: 'AddTrade' })}
+            label="포트폴리오 시작하기"
+            onPress={() => navigation.navigate('ImportOnboarding')}
           />
           <PrimaryButton
-            label="리마인더 관리"
-            onPress={() => navigation.navigate('Reminders')}
+            label="수동 거래 입력"
+            onPress={() => navigation.navigate('MainTabs', { screen: 'AddTrade' })}
             variant="secondary"
           />
         </View>
@@ -130,7 +130,7 @@ export function HomeScreen() {
         />
         {myTrades.data.trades.length === 0 ? (
           <Text style={styles.emptyText}>
-            아직 기록된 거래가 없습니다. 첫 거래를 추가하면 포트폴리오와 프로필이 함께 채워집니다.
+            아직 기록된 거래가 없습니다. 초기 세팅은 CSV/OCR 가져오기를 먼저 쓰고, 수동 입력은 누락 거래 보정에 쓰는 흐름으로 바꿨습니다.
           </Text>
         ) : (
           myTrades.data.trades.slice(0, 3).map((item, index) => (

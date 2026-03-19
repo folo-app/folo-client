@@ -1,10 +1,7 @@
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import type { PortfolioSyncResponse } from '../api/contracts';
-import { foloApi } from '../api/services';
 import { DataStatusCard } from '../components/DataStatusCard';
 import { MetricBadge, Page, PrimaryButton, SectionHeading, SurfaceCard } from '../components/ui';
 import { usePortfolioData } from '../hooks/useFoloData';
@@ -21,9 +18,6 @@ import { tokens } from '../theme/tokens';
 export function PortfolioScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const portfolio = usePortfolioData();
-  const [syncing, setSyncing] = useState(false);
-  const [syncError, setSyncError] = useState<string | null>(null);
-  const [syncResult, setSyncResult] = useState<PortfolioSyncResponse | null>(null);
 
   const allocation = portfolio.data.holdings.map((item) => ({
     name: item.name,
@@ -32,31 +26,13 @@ export function PortfolioScreen() {
     color: item.market === 'KRX' ? '#0F766E' : '#2563EB',
   }));
 
-  async function handleSync() {
-    setSyncing(true);
-    setSyncError(null);
-
-    try {
-      const result = await foloApi.syncPortfolio();
-      setSyncResult(result);
-      portfolio.refresh();
-    } catch (error) {
-      setSyncError(error instanceof Error ? error.message : '동기화에 실패했습니다.');
-    } finally {
-      setSyncing(false);
-    }
-  }
-
   return (
     <Page
       eyebrow="Portfolio"
       title="수익률과 자산배분"
       subtitle="실제 포트폴리오 합산 결과와 보유 종목 정보를 백엔드 계산값 그대로 보여줍니다."
     >
-      <DataStatusCard
-        error={portfolio.error ?? syncError}
-        loading={portfolio.loading || syncing}
-      />
+      <DataStatusCard error={portfolio.error} loading={portfolio.loading} />
 
       <SurfaceCard tone="hero">
         <Text style={styles.summaryLabel}>총 평가금액</Text>
@@ -99,21 +75,15 @@ export function PortfolioScreen() {
         </View>
         <View style={styles.actionStack}>
           <PrimaryButton
-            label={syncing ? '동기화 중...' : '동기화 실행'}
-            onPress={handleSync}
-            disabled={syncing}
+            label="CSV/OCR로 시작"
+            onPress={() => navigation.navigate('ImportOnboarding')}
           />
           <PrimaryButton
-            label="KIS 키 등록"
+            label="KIS 연결 준비 상태"
             onPress={() => navigation.navigate('KisConnect')}
             variant="secondary"
           />
         </View>
-        {syncResult ? (
-          <Text style={styles.syncMeta}>
-            최근 sync: 보유 종목 {syncResult.syncedHoldings}개, 거래 {syncResult.syncedTrades}건
-          </Text>
-        ) : null}
       </SurfaceCard>
 
       {portfolio.data.holdings.length === 0 ? (
@@ -123,11 +93,11 @@ export function PortfolioScreen() {
             description="거래를 추가하면 실제 보유 종목이 여기에 집계됩니다."
           />
           <Text style={styles.emptyText}>
-            아직 보유 종목이 없습니다. 첫 거래를 등록하면 포트폴리오 배분과 수익률이 계산됩니다.
+            아직 보유 종목이 없습니다. 초기 포트폴리오는 CSV/OCR 가져오기로 채우고, 수동 입력은 누락 거래를 보정하는 용도로 사용하는 흐름을 권장합니다.
           </Text>
           <PrimaryButton
-            label="거래 기록 추가"
-            onPress={() => navigation.navigate('MainTabs', { screen: 'AddTrade' })}
+            label="포트폴리오 시작하기"
+            onPress={() => navigation.navigate('ImportOnboarding')}
           />
         </SurfaceCard>
       ) : (
@@ -233,11 +203,6 @@ const styles = StyleSheet.create({
     color: tokens.colors.navy,
     fontFamily: tokens.typography.heading,
     fontWeight: '700',
-  },
-  syncMeta: {
-    fontSize: 13,
-    color: tokens.colors.brandStrong,
-    fontFamily: tokens.typography.body,
   },
   allocationRow: {
     gap: 8,

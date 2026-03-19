@@ -14,6 +14,7 @@ import { EmailVerificationScreen } from '../screens/EmailVerificationScreen';
 import { FeedScreen } from '../screens/FeedScreen';
 import { HoldingDetailScreen } from '../screens/HoldingDetailScreen';
 import { HomeScreen } from '../screens/HomeScreen';
+import { ImportOnboardingScreen } from '../screens/ImportOnboardingScreen';
 import { LoginScreen } from '../screens/LoginScreen';
 import { NotificationsScreen } from '../screens/NotificationsScreen';
 import { PortfolioScreen } from '../screens/PortfolioScreen';
@@ -103,6 +104,10 @@ function RootNavigator() {
           <Stack.Screen component={PeopleScreen} name="People" />
           <Stack.Screen component={UserProfileScreen} name="UserProfile" />
           <Stack.Screen component={KisConnectScreen} name="KisConnect" />
+          <Stack.Screen
+            component={ImportOnboardingScreen}
+            name="ImportOnboarding"
+          />
         </>
       ) : (
         <>
