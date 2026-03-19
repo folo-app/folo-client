@@ -1,4 +1,12 @@
 import type { NavigatorScreenParams } from '@react-navigation/native';
+import type { MarketType } from '../api/contracts';
+
+export type PortfolioSetupSelection = {
+  ticker: string;
+  name: string;
+  market: MarketType;
+  currentPrice: number;
+};
 
 export type MainTabParamList = {
   Home: undefined;
@@ -17,6 +25,11 @@ export type RootStackParamList = {
         nickname?: string;
       }
     | undefined;
+  PortfolioSetupGate: undefined;
+  PortfolioSetup: undefined;
+  PortfolioSetupReview: {
+    selections: PortfolioSetupSelection[];
+  };
   MainTabs: NavigatorScreenParams<MainTabParamList> | undefined;
   TradeDetail: { tradeId: number };
   HoldingDetail: { holdingId: number };

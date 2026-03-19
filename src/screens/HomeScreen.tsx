@@ -82,16 +82,16 @@ export function HomeScreen() {
       <SurfaceCard>
         <SectionHeading
           title="바로 실행"
-          description="초기 세팅은 CSV/OCR 가져오기를 먼저, 수동 기록은 보정용으로 안내합니다."
+          description="초기 세팅은 직접 포트폴리오 추가가 메인이고, CSV/OCR는 빠른 보조 수단으로 둡니다."
         />
         <View style={styles.actionStack}>
           <PrimaryButton
-            label="포트폴리오 시작하기"
-            onPress={() => navigation.navigate('ImportOnboarding')}
+            label="포트폴리오 직접 추가"
+            onPress={() => navigation.navigate('PortfolioSetup')}
           />
           <PrimaryButton
-            label="수동 거래 입력"
-            onPress={() => navigation.navigate('MainTabs', { screen: 'AddTrade' })}
+            label="CSV / OCR 가져오기"
+            onPress={() => navigation.navigate('ImportOnboarding')}
             variant="secondary"
           />
         </View>
@@ -130,7 +130,7 @@ export function HomeScreen() {
         />
         {myTrades.data.trades.length === 0 ? (
           <Text style={styles.emptyText}>
-            아직 기록된 거래가 없습니다. 초기 세팅은 CSV/OCR 가져오기를 먼저 쓰고, 수동 입력은 누락 거래 보정에 쓰는 흐름으로 바꿨습니다.
+            아직 기록된 거래가 없습니다. 첫 포트폴리오는 직접 추가 흐름에서 빠르게 만들고, 이 탭의 수동 입력은 이후 개별 거래를 보정할 때 쓰는 구성이 맞습니다.
           </Text>
         ) : (
           myTrades.data.trades.slice(0, 3).map((item, index) => (

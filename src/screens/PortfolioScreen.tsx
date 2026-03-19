@@ -75,12 +75,12 @@ export function PortfolioScreen() {
         </View>
         <View style={styles.actionStack}>
           <PrimaryButton
-            label="CSV/OCR로 시작"
-            onPress={() => navigation.navigate('ImportOnboarding')}
+            label="포트폴리오 직접 추가"
+            onPress={() => navigation.navigate('PortfolioSetup')}
           />
           <PrimaryButton
-            label="KIS 연결 준비 상태"
-            onPress={() => navigation.navigate('KisConnect')}
+            label="CSV / OCR 가져오기"
+            onPress={() => navigation.navigate('ImportOnboarding')}
             variant="secondary"
           />
         </View>
@@ -93,11 +93,11 @@ export function PortfolioScreen() {
             description="거래를 추가하면 실제 보유 종목이 여기에 집계됩니다."
           />
           <Text style={styles.emptyText}>
-            아직 보유 종목이 없습니다. 초기 포트폴리오는 CSV/OCR 가져오기로 채우고, 수동 입력은 누락 거래를 보정하는 용도로 사용하는 흐름을 권장합니다.
+            아직 보유 종목이 없습니다. 처음에는 직접 종목을 고르고 수량과 평균 매수가를 넣는 흐름이 가장 빠르고, CSV/OCR는 거래가 많을 때만 보조로 쓰는 편이 자연스럽습니다.
           </Text>
           <PrimaryButton
-            label="포트폴리오 시작하기"
-            onPress={() => navigation.navigate('ImportOnboarding')}
+            label="포트폴리오 직접 추가"
+            onPress={() => navigation.navigate('PortfolioSetup')}
           />
         </SurfaceCard>
       ) : (

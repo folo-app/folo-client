@@ -100,11 +100,16 @@ export function AddTradeScreen() {
       <SurfaceCard tone="muted">
         <SectionHeading
           title="처음 시작하는 경우"
-          description="초기 포트폴리오 복원은 CSV/OCR 가져오기를 먼저 쓰고, 이 화면은 개별 거래 보정에 쓰는 흐름으로 재정리했습니다."
+          description="초기 포트폴리오는 전용 직접 추가 화면에서 만드는 편이 빠릅니다. 이 화면은 개별 거래를 나중에 보정하거나 추가 기록할 때 더 적합합니다."
         />
         <View style={styles.importActionStack}>
           <PrimaryButton
-            label="CSV/OCR 시작 가이드"
+            label="포트폴리오 직접 추가"
+            onPress={() => navigation.navigate('PortfolioSetup')}
+            variant="secondary"
+          />
+          <PrimaryButton
+            label="CSV / OCR 가져오기"
             onPress={() => navigation.navigate('ImportOnboarding')}
             variant="secondary"
           />
@@ -114,7 +119,7 @@ export function AddTradeScreen() {
       <SurfaceCard tone="hero">
         <SectionHeading
           title="빠른 입력 패널"
-          description="국장은 종목번호, 미국장은 티커로 검색할 수 있습니다. 개별 거래를 직접 보정할 때 사용합니다."
+          description="국장은 종목번호, 미국장은 티커로 검색할 수 있습니다. 포트폴리오를 만든 뒤 세부 거래를 추가로 기록할 때 사용합니다."
         />
         <View style={styles.toggleRow}>
           {tradeTypeOptions.map((option) => (

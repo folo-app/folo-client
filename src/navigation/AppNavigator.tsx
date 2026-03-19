@@ -18,6 +18,9 @@ import { ImportOnboardingScreen } from '../screens/ImportOnboardingScreen';
 import { LoginScreen } from '../screens/LoginScreen';
 import { NotificationsScreen } from '../screens/NotificationsScreen';
 import { PortfolioScreen } from '../screens/PortfolioScreen';
+import { PortfolioSetupGateScreen } from '../screens/PortfolioSetupGateScreen';
+import { PortfolioSetupReviewScreen } from '../screens/PortfolioSetupReviewScreen';
+import { PortfolioSetupScreen } from '../screens/PortfolioSetupScreen';
 import { ProfileEditScreen } from '../screens/ProfileEditScreen';
 import { ProfileScreen } from '../screens/ProfileScreen';
 import { RemindersScreen } from '../screens/RemindersScreen';
@@ -87,7 +90,7 @@ function RootNavigator() {
 
   return (
     <Stack.Navigator
-      initialRouteName={status === 'authenticated' ? 'MainTabs' : 'Login'}
+      initialRouteName={status === 'authenticated' ? 'PortfolioSetupGate' : 'Login'}
       screenOptions={{
         headerShown: false,
         contentStyle: { backgroundColor: tokens.colors.canvas },
@@ -95,6 +98,12 @@ function RootNavigator() {
     >
       {status === 'authenticated' ? (
         <>
+          <Stack.Screen component={PortfolioSetupGateScreen} name="PortfolioSetupGate" />
+          <Stack.Screen component={PortfolioSetupScreen} name="PortfolioSetup" />
+          <Stack.Screen
+            component={PortfolioSetupReviewScreen}
+            name="PortfolioSetupReview"
+          />
           <Stack.Screen component={MainTabsNavigator} name="MainTabs" />
           <Stack.Screen component={TradeDetailScreen} name="TradeDetail" />
           <Stack.Screen component={HoldingDetailScreen} name="HoldingDetail" />
