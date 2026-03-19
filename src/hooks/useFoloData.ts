@@ -8,6 +8,7 @@ import type {
   NotificationListResponse,
   PortfolioResponse,
   ReminderListResponse,
+  StockDiscoverResponse,
   StockPriceResponse,
   StockSearchResponse,
   TradeDetailResponse,
@@ -178,6 +179,10 @@ export function useMyTradesData(): Loadable<TradeListResponse> {
 }
 
 const emptySearchResponse: StockSearchResponse = { stocks: [] };
+const emptyDiscoverResponse: StockDiscoverResponse = {
+  krxStocks: [],
+  usStocks: [],
+};
 const emptyPriceResponse: StockPriceResponse = {
   ticker: '',
   name: '',
@@ -194,6 +199,7 @@ const emptyPriceResponse: StockPriceResponse = {
 export function useStockSearchData(
   query: string,
   minimumLength = 2,
+  market?: string,
 ): Loadable<StockSearchResponse> {
   const trimmed = query.trim();
 
@@ -202,10 +208,18 @@ export function useStockSearchData(
       if (trimmed.length < minimumLength) {
         return Promise.resolve(emptySearchResponse);
       }
-      return foloApi.searchStocks(trimmed);
+      return foloApi.searchStocks(trimmed, market);
     },
     emptySearchResponse,
-    [trimmed, minimumLength],
+    [trimmed, minimumLength, market ?? null],
+  );
+}
+
+export function useStockDiscoverData(limit = 12): Loadable<StockDiscoverResponse> {
+  return useLoadable(
+    () => foloApi.discoverStocks(limit),
+    emptyDiscoverResponse,
+    [limit],
   );
 }
 

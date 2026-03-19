@@ -69,7 +69,7 @@ export function AuthScreenLayout({
                 <Text style={styles.signalLabel}>친구와 함께 남기는 투자 기록</Text>
               </View>
               <View style={styles.signalPill}>
-                <Text style={styles.signalLabel}>인증 후 바로 메인 앱 진입</Text>
+                <Text style={styles.signalLabel}>인증 후 포트폴리오부터 시작</Text>
               </View>
             </View>
           </View>

@@ -12,8 +12,11 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { foloApiConfig } from '../api/config';
+import { StockIdentityBadge } from '../components/StockIdentityBadge';
 import { Chip } from '../components/ui';
-import { useStockSearchData } from '../hooks/useFoloData';
+import type { StockSearchItem } from '../api/contracts';
+import { useStockDiscoverData, useStockSearchData } from '../hooks/useFoloData';
 import { formatCurrency } from '../lib/format';
 import type {
   PortfolioSetupSelection,
@@ -29,36 +32,41 @@ const marketFilterOptions: Array<{ label: string; value: MarketFilter }> = [
   { label: '미국', value: 'US' },
 ];
 
-const accentPalette = ['#1D4ED8', '#0F766E', '#EA580C', '#BE123C', '#7C3AED', '#0F172A'];
-
 function selectionKey(item: Pick<PortfolioSetupSelection, 'market' | 'ticker'>) {
   return `${item.market}:${item.ticker}`;
 }
 
-function accentForSymbol(symbol: string) {
-  const seed = symbol.split('').reduce((sum, character) => sum + character.charCodeAt(0), 0);
-  return accentPalette[seed % accentPalette.length];
-}
-
-function initialsFor(item: Pick<PortfolioSetupSelection, 'ticker' | 'name'>) {
-  const normalizedName = item.name.trim();
-
-  if (normalizedName.length > 0) {
-    const characters = normalizedName.replace(/[^A-Za-z0-9가-힣]/g, '');
-    if (characters.length >= 2) {
-      return characters.slice(0, 2).toUpperCase();
-    }
+function resolveLogoUrl(logoUrl?: string | null) {
+  if (!logoUrl) {
+    return null;
   }
 
-  return item.ticker.slice(0, 2).toUpperCase();
+  if (logoUrl.startsWith('http://') || logoUrl.startsWith('https://')) {
+    return logoUrl;
+  }
+
+  return `${foloApiConfig.baseUrl}${logoUrl.startsWith('/') ? '' : '/'}${logoUrl}`;
 }
+
+type StockSection = {
+  key: string;
+  title: string;
+  items: StockSearchItem[];
+};
+
+type StockTileItem = PortfolioSetupSelection & {
+  logoUrl?: string | null;
+};
 
 export function PortfolioSetupScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [query, setQuery] = useState('');
   const [marketFilter, setMarketFilter] = useState<MarketFilter>('ALL');
   const [selectedItems, setSelectedItems] = useState<PortfolioSetupSelection[]>([]);
-  const search = useStockSearchData(query, 1);
+  const trimmedQuery = query.trim();
+  const searchMarket = marketFilter === 'ALL' ? undefined : marketFilter;
+  const search = useStockSearchData(query, 2, searchMarket);
+  const discover = useStockDiscoverData(12);
 
   const filteredResults = useMemo(() => {
     const stocks = search.data.stocks;
@@ -73,6 +81,56 @@ export function PortfolioSetupScreen() {
 
     return stocks;
   }, [marketFilter, search.data.stocks]);
+
+  const featuredSections = useMemo<StockSection[]>(() => {
+    if (marketFilter === 'KRX') {
+      return [{ key: 'krx', title: '국내 인기 종목', items: discover.data.krxStocks }];
+    }
+
+    if (marketFilter === 'US') {
+      return [{ key: 'us', title: '미국 인기 종목', items: discover.data.usStocks }];
+    }
+
+    return [
+      { key: 'krx', title: '국내 인기 종목', items: discover.data.krxStocks },
+      { key: 'us', title: '미국 인기 종목', items: discover.data.usStocks },
+    ];
+  }, [discover.data.krxStocks, discover.data.usStocks, marketFilter]);
+
+  function renderTile(item: StockTileItem) {
+    const key = selectionKey(item);
+    const isSelected = selectedItems.some((entry) => selectionKey(entry) === key);
+    const logoUrl = resolveLogoUrl(item.logoUrl);
+
+    return (
+      <Pressable
+        key={key}
+        onPress={() => toggleSelection(item)}
+        style={[styles.tile, isSelected && styles.tileSelected]}
+      >
+        <StockIdentityBadge
+          logoUrl={logoUrl}
+          market={item.market}
+          name={item.name}
+          ticker={item.ticker}
+        />
+        <Text numberOfLines={1} style={styles.tileTitle}>
+          {item.name}
+        </Text>
+        <Text numberOfLines={1} style={styles.tileMeta}>
+          {item.ticker} · {item.market}
+        </Text>
+        <Text numberOfLines={1} style={styles.tilePrice}>
+          {formatCurrency(item.currentPrice, item.market)}
+        </Text>
+        {isSelected ? (
+          <View style={styles.selectedMark}>
+            <Ionicons color={tokens.colors.surface} name="checkmark" size={14} />
+          </View>
+        ) : null}
+      </Pressable>
+    );
+  }
 
   function toggleSelection(item: PortfolioSetupSelection) {
     const nextItem: PortfolioSetupSelection = {
@@ -153,57 +211,52 @@ export function PortfolioSetupScreen() {
             </View>
           ) : null}
 
-          {query.trim().length === 0 ? (
+          {trimmedQuery.length === 0 ? (
             <View style={styles.guideCard}>
-              <Text style={styles.guideTitle}>티커, 종목명, 종목번호로 검색하세요</Text>
+              <Text style={styles.guideTitle}>직접 추가로 바로 시작하세요</Text>
               <Text style={styles.guideDescription}>
-                예: `AAPL`, `TSLA`, `005930`, `삼성전자`. 검색 결과에서 여러 종목을
-                한 번에 선택할 수 있습니다.
+                아래 인기 종목은 현재 서비스 데이터와 KIS 종목 마스터 기준으로
+                불러옵니다. 검색창에서는 `AAPL`, `TSLA`, `005930`, `삼성전자`처럼
+                티커, 종목명, 종목번호로 바로 찾을 수 있습니다.
               </Text>
             </View>
           ) : null}
 
-          {query.trim().length > 0 ? (
-            <View style={styles.resultGrid}>
-              {filteredResults.slice(0, 24).map((item) => {
-                const key = selectionKey(item);
-                const isSelected = selectedItems.some((entry) => selectionKey(entry) === key);
-
-                return (
-                  <Pressable
-                    key={key}
-                    onPress={() => toggleSelection(item)}
-                    style={[styles.tile, isSelected && styles.tileSelected]}
-                  >
-                    <View
-                      style={[
-                        styles.badge,
-                        { backgroundColor: accentForSymbol(key) },
-                      ]}
-                    >
-                      <Text style={styles.badgeText}>{initialsFor(item)}</Text>
+          {trimmedQuery.length === 0 ? (
+            <>
+              {featuredSections.map((section) =>
+                section.items.length > 0 ? (
+                  <View key={section.key} style={styles.sectionBlock}>
+                    <Text style={styles.sectionTitle}>{section.title}</Text>
+                    <View style={styles.resultGrid}>
+                      {section.items.map((item) => renderTile(item))}
                     </View>
-                    <Text numberOfLines={1} style={styles.tileTitle}>
-                      {item.name}
-                    </Text>
-                    <Text numberOfLines={1} style={styles.tileMeta}>
-                      {item.ticker} · {item.market}
-                    </Text>
-                    <Text numberOfLines={1} style={styles.tilePrice}>
-                      {formatCurrency(item.currentPrice, item.market)}
-                    </Text>
-                    {isSelected ? (
-                      <View style={styles.selectedMark}>
-                        <Ionicons color={tokens.colors.surface} name="checkmark" size={14} />
-                      </View>
-                    ) : null}
-                  </Pressable>
-                );
-              })}
+                  </View>
+                ) : null,
+              )}
+            </>
+          ) : null}
+
+          {trimmedQuery.length > 0 ? (
+            <View style={styles.resultGrid}>
+              {filteredResults.slice(0, 24).map((item) => renderTile(item))}
             </View>
           ) : null}
 
-          {query.trim().length > 0 && !search.loading && filteredResults.length === 0 ? (
+          {trimmedQuery.length === 1 ? (
+            <Text style={styles.helperText}>검색어를 2자 이상 입력해 주세요.</Text>
+          ) : null}
+
+          {trimmedQuery.length === 0 && !discover.loading && featuredSections.every((section) => section.items.length === 0) ? (
+            <View style={styles.guideCard}>
+              <Text style={styles.guideTitle}>추천 종목을 불러오지 못했습니다</Text>
+              <Text style={styles.guideDescription}>
+                검색창에서 티커나 종목명을 직접 입력해 종목을 추가해 주세요.
+              </Text>
+            </View>
+          ) : null}
+
+          {trimmedQuery.length > 1 && !search.loading && filteredResults.length === 0 ? (
             <View style={styles.guideCard}>
               <Text style={styles.guideTitle}>검색 결과가 없습니다</Text>
               <Text style={styles.guideDescription}>
@@ -212,10 +265,18 @@ export function PortfolioSetupScreen() {
             </View>
           ) : null}
 
-          {search.loading ? (
+          {trimmedQuery.length === 0 && discover.loading ? (
+            <Text style={styles.helperText}>인기 종목 불러오는 중...</Text>
+          ) : null}
+          {trimmedQuery.length > 1 && search.loading ? (
             <Text style={styles.helperText}>종목 검색 중...</Text>
           ) : null}
-          {search.error ? <Text style={styles.errorText}>{search.error}</Text> : null}
+          {trimmedQuery.length === 0 && discover.error ? (
+            <Text style={styles.errorText}>{discover.error}</Text>
+          ) : null}
+          {trimmedQuery.length > 1 && search.error ? (
+            <Text style={styles.errorText}>{search.error}</Text>
+          ) : null}
         </ScrollView>
 
         <View style={styles.footer}>
@@ -316,6 +377,9 @@ const styles = StyleSheet.create({
   selectedSection: {
     gap: 12,
   },
+  sectionBlock: {
+    gap: 12,
+  },
   sectionTitle: {
     fontSize: 16,
     color: tokens.colors.navy,
@@ -385,19 +449,6 @@ const styles = StyleSheet.create({
   tileSelected: {
     borderColor: tokens.colors.navy,
     backgroundColor: '#F8FBFF',
-  },
-  badge: {
-    width: 74,
-    height: 74,
-    borderRadius: 37,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  badgeText: {
-    fontSize: 22,
-    color: tokens.colors.surface,
-    fontFamily: tokens.typography.heading,
-    fontWeight: '800',
   },
   tileTitle: {
     fontSize: 14,
