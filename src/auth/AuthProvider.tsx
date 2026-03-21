@@ -38,6 +38,7 @@ type AuthContextValue = {
 };
 
 const SESSION_STORAGE_KEY = '@folo/auth-session';
+const MIN_SPLASH_DURATION_MS = 1750;
 const inMemoryStorage = new Map<string, string>();
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -155,7 +156,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         await clearSessionStorage();
       }
 
-      await new Promise((resolve) => setTimeout(resolve, 950));
+      await new Promise((resolve) =>
+        setTimeout(resolve, MIN_SPLASH_DURATION_MS),
+      );
 
       if (!alive) {
         return;

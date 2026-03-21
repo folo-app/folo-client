@@ -69,8 +69,9 @@ export function LoginScreen() {
   return (
     <AuthScreenLayout
       badge="Sign In"
-      title="기록해 둔 포트폴리오와 친구 피드를 바로 이어서 확인하세요"
-      subtitle="FOLO 계정으로 로그인하면 내 포트폴리오, 친구 거래 피드, 리마인더와 알림이 마지막 상태 그대로 복원됩니다."
+      heroVariant="compact"
+      title="포트폴리오와 친구 피드, 한 번에 이어 보기"
+      subtitle="로그인하면 마지막 기록과 투자 루틴이 바로 이어집니다."
       footer={
         <>
           <Text style={styles.footerText}>처음이라면</Text>
@@ -78,12 +79,6 @@ export function LoginScreen() {
         </>
       }
     >
-      <AuthNotice>
-        <AuthNoticeText>
-          이메일 인증이 끝나지 않은 계정은 로그인 시 바로 인증 코드 입력 단계로 이어집니다.
-        </AuthNoticeText>
-      </AuthNotice>
-
       <AuthField
         autoCapitalize="none"
         autoComplete="email"
@@ -133,14 +128,6 @@ export function LoginScreen() {
             }
           />
         </View>
-      </View>
-
-      <View style={styles.inlineRow}>
-        <Text style={styles.inlineText}>인증 코드를 다시 받아야 하나요?</Text>
-        <AuthTextLink
-          label="이메일 인증"
-          onPress={() => navigation.navigate('EmailVerification', { email: email.trim() })}
-        />
       </View>
     </AuthScreenLayout>
   );
