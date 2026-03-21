@@ -177,17 +177,19 @@ export function PeopleScreen() {
         {isSelf ? (
           <Chip label="나" active tone="brand" />
         ) : (
-          <Chip
-            label={
-              pendingUserId === user.userId
-                ? '처리 중'
-                : user.isFollowing
-                  ? '언팔로우'
-                  : '팔로우'
-            }
-            tone={user.isFollowing ? 'default' : 'brand'}
-            onPress={() => handleToggleFollow(user.userId, user.isFollowing)}
-          />
+          <View style={styles.userAction}>
+            <Chip
+              label={
+                pendingUserId === user.userId
+                  ? '처리 중'
+                  : user.isFollowing
+                    ? '언팔로우'
+                    : '팔로우'
+              }
+              tone={user.isFollowing ? 'default' : 'brand'}
+              onPress={() => handleToggleFollow(user.userId, user.isFollowing)}
+            />
+          </View>
         )}
       </Pressable>
     );
@@ -320,8 +322,9 @@ const styles = StyleSheet.create({
   userRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     gap: 12,
+    flexWrap: 'wrap',
   },
   userIdentity: {
     flexDirection: 'row',
@@ -332,6 +335,9 @@ const styles = StyleSheet.create({
   userText: {
     gap: 4,
     flex: 1,
+  },
+  userAction: {
+    maxWidth: '100%',
   },
   userName: {
     fontSize: 15,

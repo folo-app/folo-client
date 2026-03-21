@@ -4,7 +4,14 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { DataStatusCard } from '../components/DataStatusCard';
-import { Page, PrimaryButton, SectionHeading, SurfaceCard } from '../components/ui';
+import {
+  DetailRow,
+  MetricGrid,
+  Page,
+  PrimaryButton,
+  SectionHeading,
+  SurfaceCard,
+} from '../components/ui';
 import { usePortfolioData } from '../hooks/useFoloData';
 import { formatCurrency, formatPercent, formatWeight } from '../lib/format';
 import type { RootStackParamList } from '../navigation/types';
@@ -39,7 +46,7 @@ export function HoldingDetailScreen() {
           <SurfaceCard tone="hero">
             <Text style={styles.ticker}>{holding.ticker}</Text>
             <Text style={styles.name}>{holding.name}</Text>
-            <View style={styles.metricRow}>
+            <MetricGrid>
               <View style={styles.metric}>
                 <Text style={styles.metricLabel}>평가금액</Text>
                 <Text style={styles.metricValue}>
@@ -54,7 +61,7 @@ export function HoldingDetailScreen() {
                 <Text style={styles.metricLabel}>비중</Text>
                 <Text style={styles.metricValue}>{formatWeight(holding.weight)}</Text>
               </View>
-            </View>
+            </MetricGrid>
           </SurfaceCard>
 
           <SurfaceCard>
@@ -62,34 +69,17 @@ export function HoldingDetailScreen() {
               title="보유 정보"
               description="PortfolioHoldingItem에 포함된 숫자를 그대로 노출합니다."
             />
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>수량</Text>
-              <Text style={styles.detailValue}>{holding.quantity}</Text>
-            </View>
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>평균단가</Text>
-              <Text style={styles.detailValue}>
-                {formatCurrency(holding.avgPrice, holding.market)}
-              </Text>
-            </View>
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>현재가</Text>
-              <Text style={styles.detailValue}>
-                {formatCurrency(holding.currentPrice, holding.market)}
-              </Text>
-            </View>
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>투자원금</Text>
-              <Text style={styles.detailValue}>
-                {formatCurrency(holding.totalInvested, holding.market)}
-              </Text>
-            </View>
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>평가손익</Text>
-              <Text style={styles.detailValue}>
-                {formatCurrency(holding.returnAmount, holding.market)}
-              </Text>
-            </View>
+            <DetailRow label="수량" value={String(holding.quantity)} />
+            <DetailRow label="평균단가" value={formatCurrency(holding.avgPrice, holding.market)} />
+            <DetailRow label="현재가" value={formatCurrency(holding.currentPrice, holding.market)} />
+            <DetailRow
+              label="투자원금"
+              value={formatCurrency(holding.totalInvested, holding.market)}
+            />
+            <DetailRow
+              label="평가손익"
+              value={formatCurrency(holding.returnAmount, holding.market)}
+            />
           </SurfaceCard>
         </>
       ) : null}
@@ -109,10 +99,6 @@ const styles = StyleSheet.create({
     color: tokens.colors.inkSoft,
     fontFamily: tokens.typography.body,
   },
-  metricRow: {
-    flexDirection: 'row',
-    gap: 12,
-  },
   metric: {
     flex: 1,
     backgroundColor: 'rgba(255,255,255,0.78)',
@@ -127,22 +113,6 @@ const styles = StyleSheet.create({
   },
   metricValue: {
     fontSize: 15,
-    color: tokens.colors.navy,
-    fontFamily: tokens.typography.heading,
-    fontWeight: '700',
-  },
-  detailRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: 12,
-  },
-  detailLabel: {
-    fontSize: 14,
-    color: tokens.colors.inkSoft,
-    fontFamily: tokens.typography.body,
-  },
-  detailValue: {
-    fontSize: 14,
     color: tokens.colors.navy,
     fontFamily: tokens.typography.heading,
     fontWeight: '700',

@@ -10,12 +10,14 @@ import {
   SectionHeading,
   SurfaceCard,
 } from '../components/ui';
+import { useResponsiveLayout } from '../hooks/useResponsiveLayout';
 import { useNotificationsData } from '../hooks/useFoloData';
 import { formatDateLabel, notificationLabel } from '../lib/format';
 import { tokens } from '../theme/tokens';
 
 export function NotificationsScreen() {
   const notifications = useNotificationsData();
+  const { isCompact } = useResponsiveLayout();
   const [actionError, setActionError] = useState<string | null>(null);
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
   const [pendingId, setPendingId] = useState<number | null>(null);
@@ -103,11 +105,12 @@ export function NotificationsScreen() {
               }}
               style={[
                 styles.item,
+                isCompact && styles.itemCompact,
                 !item.isRead && styles.itemUnread,
                 index < notifications.data.notifications.length - 1 && styles.divider,
               ]}
             >
-              <View style={styles.row}>
+              <View style={[styles.row, isCompact && styles.rowCompact]}>
                 <Text style={styles.type}>{notificationLabel(item.type)}</Text>
                 <Chip
                   label={
@@ -148,6 +151,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 2,
     paddingVertical: 2,
   },
+  itemCompact: {
+    gap: 10,
+  },
   itemUnread: {
     backgroundColor: 'rgba(233, 240, 255, 0.52)',
   },
@@ -162,6 +168,10 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     gap: 12,
     alignItems: 'center',
+  },
+  rowCompact: {
+    alignItems: 'flex-start',
+    flexDirection: 'column',
   },
   type: {
     fontSize: 14,

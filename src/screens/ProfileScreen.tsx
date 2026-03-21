@@ -6,13 +6,14 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useAuth } from '../auth/AuthProvider';
 import { Avatar } from '../components/Avatar';
 import { DataStatusCard } from '../components/DataStatusCard';
-import { Chip, Page, PrimaryButton, SectionHeading, SurfaceCard } from '../components/ui';
+import { Chip, DetailRow, Page, PrimaryButton, SectionHeading, SurfaceCard } from '../components/ui';
 import {
   useMyProfileData,
   useMyTradesData,
   useNotificationsData,
   useRemindersData,
 } from '../hooks/useFoloData';
+import { useResponsiveLayout } from '../hooks/useResponsiveLayout';
 import {
   formatCurrency,
   formatNumber,
@@ -27,6 +28,7 @@ import { tokens } from '../theme/tokens';
 export function ProfileScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { session, signOut } = useAuth();
+  const { isCompact } = useResponsiveLayout();
   const profile = useMyProfileData();
   const notifications = useNotificationsData();
   const reminders = useRemindersData();
@@ -56,7 +58,7 @@ export function ProfileScreen() {
       <DataStatusCard error={combinedError} loading={combinedLoading} />
 
       <SurfaceCard tone="hero">
-        <View style={styles.profileHeader}>
+        <View style={[styles.profileHeader, isCompact && styles.profileHeaderCompact]}>
           <Avatar
             backgroundColor={tokens.colors.navy}
             imageUrl={profile.data.profileImage}
@@ -95,18 +97,15 @@ export function ProfileScreen() {
           title="계정 상태"
           description="로그인 계정과 공개 범위를 함께 확인합니다."
         />
-        <View style={styles.listRow}>
-          <Text style={styles.listTitle}>포트폴리오 공개 범위</Text>
-          <Text style={styles.listMeta}>{visibilityLabel(profile.data.portfolioVisibility)}</Text>
-        </View>
-        <View style={styles.listRow}>
-          <Text style={styles.listTitle}>수익 공개 범위</Text>
-          <Text style={styles.listMeta}>{visibilityLabel(profile.data.returnVisibility)}</Text>
-        </View>
-        <View style={styles.listRow}>
-          <Text style={styles.listTitle}>알림 미확인 수</Text>
-          <Text style={styles.listMeta}>{notifications.data.unreadCount}개</Text>
-        </View>
+        <DetailRow
+          label="포트폴리오 공개 범위"
+          value={visibilityLabel(profile.data.portfolioVisibility)}
+        />
+        <DetailRow
+          label="수익 공개 범위"
+          value={visibilityLabel(profile.data.returnVisibility)}
+        />
+        <DetailRow label="알림 미확인 수" value={`${notifications.data.unreadCount}개`} />
         <View style={styles.actionStack}>
           <PrimaryButton
             label="사람 찾기"
@@ -225,6 +224,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 16,
     alignItems: 'center',
+  },
+  profileHeaderCompact: {
+    alignItems: 'flex-start',
+    flexWrap: 'wrap',
   },
   profileText: {
     flex: 1,

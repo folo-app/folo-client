@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 
 import { foloApi } from '../api/services';
+import { useResponsiveLayout } from '../hooks/useResponsiveLayout';
 import { tokens } from '../theme/tokens';
 import { Avatar } from './Avatar';
 
@@ -27,6 +28,7 @@ export function ProfileImageField({
   fallbackName,
   onChange,
 }: ProfileImageFieldProps) {
+  const { isCompact } = useResponsiveLayout();
   const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
@@ -78,7 +80,7 @@ export function ProfileImageField({
   return (
     <View style={styles.fieldGroup}>
       <Text style={styles.fieldLabel}>{label}</Text>
-      <View style={styles.previewRow}>
+      <View style={[styles.previewRow, isCompact && styles.previewRowCompact]}>
         <Avatar
           backgroundColor={tokens.colors.brandSoft}
           imageUrl={value}
@@ -132,6 +134,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 16,
+  },
+  previewRowCompact: {
+    alignItems: 'flex-start',
+    flexDirection: 'column',
   },
   previewActions: {
     flex: 1,

@@ -8,6 +8,7 @@ import { foloApi } from '../api/services';
 import { DataStatusCard } from '../components/DataStatusCard';
 import { Chip, Page, PrimaryButton, SectionHeading, SurfaceCard } from '../components/ui';
 import { useStockPriceData, useStockSearchData } from '../hooks/useFoloData';
+import { useResponsiveLayout } from '../hooks/useResponsiveLayout';
 import { formatCurrency, formatPercent } from '../lib/format';
 import type { RootStackParamList } from '../navigation/types';
 import { tokens } from '../theme/tokens';
@@ -25,6 +26,7 @@ const tradeTypeOptions: Array<{ label: string; value: TradeType }> = [
 
 export function AddTradeScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const { isCompact } = useResponsiveLayout();
   const [query, setQuery] = useState<string>('');
   const search = useStockSearchData(query);
   const [selectedTicker, setSelectedTicker] = useState<string>('');
@@ -160,6 +162,7 @@ export function AddTradeScreen() {
                 }}
                 style={[
                   styles.searchItem,
+                  isCompact && styles.searchItemCompact,
                   selectedTicker === item.ticker && styles.searchItemActive,
                 ]}
               >
@@ -182,7 +185,7 @@ export function AddTradeScreen() {
           <Text style={styles.emptyText}>종목명 또는 티커를 2자 이상 입력해 주세요.</Text>
         )}
 
-        <View style={styles.formGrid}>
+        <View style={[styles.formGrid, isCompact && styles.formGridCompact]}>
           <View style={styles.inputGroup}>
             <Text style={styles.fieldLabel}>수량</Text>
             <TextInput
@@ -290,6 +293,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 12,
   },
+  formGridCompact: {
+    flexDirection: 'column',
+  },
   inputGroup: {
     flex: 1,
     gap: 8,
@@ -339,6 +345,10 @@ const styles = StyleSheet.create({
     gap: 12,
     alignItems: 'center',
   },
+  searchItemCompact: {
+    alignItems: 'flex-start',
+    flexDirection: 'column',
+  },
   searchItemActive: {
     borderColor: tokens.colors.navy,
     backgroundColor: '#F7FAFF',
@@ -363,6 +373,7 @@ const styles = StyleSheet.create({
     color: tokens.colors.navy,
     fontFamily: tokens.typography.heading,
     fontWeight: '700',
+    alignSelf: 'flex-start',
   },
   visibilityRow: {
     flexDirection: 'row',
@@ -376,9 +387,7 @@ const styles = StyleSheet.create({
     fontFamily: tokens.typography.body,
   },
   snapshotRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: 12,
+    gap: 4,
   },
   snapshotLabel: {
     fontSize: 14,

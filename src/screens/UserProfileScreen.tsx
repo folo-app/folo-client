@@ -7,13 +7,14 @@ import { StyleSheet, Text, View } from 'react-native';
 import { useAuth } from '../auth/AuthProvider';
 import { Avatar } from '../components/Avatar';
 import { DataStatusCard } from '../components/DataStatusCard';
-import { Chip, Page, PrimaryButton, SectionHeading, SurfaceCard } from '../components/ui';
+import { Chip, DetailRow, Page, PrimaryButton, SectionHeading, SurfaceCard } from '../components/ui';
 import {
   useUserFeedData,
   useUserPortfolioData,
   useUserProfileData,
 } from '../hooks/useFoloData';
 import { useMutation } from '../hooks/query';
+import { useResponsiveLayout } from '../hooks/useResponsiveLayout';
 import {
   formatCurrency,
   formatPercent,
@@ -29,6 +30,7 @@ export function UserProfileScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const route = useRoute<RouteProp<RootStackParamList, 'UserProfile'>>();
   const { session } = useAuth();
+  const { isCompact } = useResponsiveLayout();
   const profile = useUserProfileData(route.params.userId);
   const portfolio = useUserPortfolioData(route.params.userId, profile.data.isAccessible);
   const feed = useUserFeedData(route.params.userId);
@@ -75,7 +77,7 @@ export function UserProfileScreen() {
       {profile.data.userId > 0 ? (
         <>
           <SurfaceCard tone="hero">
-            <View style={styles.header}>
+            <View style={[styles.header, isCompact && styles.headerCompact]}>
               <Avatar
                 backgroundColor={tokens.colors.navy}
                 imageUrl={profile.data.profileImage}
@@ -119,12 +121,10 @@ export function UserProfileScreen() {
               title="포트폴리오 접근"
               description="상대 공개 범위에 따라 열람 가능 여부가 달라집니다."
             />
-            <View style={styles.statusRow}>
-              <Text style={styles.statusLabel}>현재 상태</Text>
-              <Text style={styles.statusValue}>
-                {profile.data.isAccessible ? '열람 가능' : '열람 제한'}
-              </Text>
-            </View>
+            <DetailRow
+              label="현재 상태"
+              value={profile.data.isAccessible ? '열람 가능' : '열람 제한'}
+            />
             <Text style={styles.statusText}>
               {profile.data.isAccessible
                 ? '공개 가능한 자산 요약과 보유 종목 미리보기를 아래에서 확인할 수 있습니다.'
@@ -235,6 +235,10 @@ const styles = StyleSheet.create({
     gap: 16,
     alignItems: 'center',
   },
+  headerCompact: {
+    alignItems: 'flex-start',
+    flexWrap: 'wrap',
+  },
   headerText: {
     gap: 6,
     flex: 1,
@@ -255,22 +259,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 10,
-  },
-  statusRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: 12,
-  },
-  statusLabel: {
-    fontSize: 14,
-    color: tokens.colors.inkSoft,
-    fontFamily: tokens.typography.body,
-  },
-  statusValue: {
-    fontSize: 14,
-    color: tokens.colors.navy,
-    fontFamily: tokens.typography.heading,
-    fontWeight: '700',
   },
   statusText: {
     fontSize: 14,

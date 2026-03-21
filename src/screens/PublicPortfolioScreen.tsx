@@ -3,8 +3,9 @@ import type { RouteProp } from '@react-navigation/native';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { DataStatusCard } from '../components/DataStatusCard';
-import { MetricBadge, Page, SectionHeading, SurfaceCard } from '../components/ui';
+import { DetailRow, MetricBadge, MetricGrid, Page, SectionHeading, SurfaceCard } from '../components/ui';
 import { useUserPortfolioData } from '../hooks/useFoloData';
+import { useResponsiveLayout } from '../hooks/useResponsiveLayout';
 import {
   formatCurrency,
   formatDateLabel,
@@ -17,6 +18,7 @@ import { tokens } from '../theme/tokens';
 
 export function PublicPortfolioScreen() {
   const route = useRoute<RouteProp<RootStackParamList, 'PublicPortfolio'>>();
+  const { isCompact } = useResponsiveLayout();
   const portfolio = useUserPortfolioData(route.params.userId);
   const title = route.params.nickname
     ? `${route.params.nickname}님의 포트폴리오`
@@ -42,7 +44,7 @@ export function PublicPortfolioScreen() {
             <Text style={styles.summaryDelta}>
               {formatPercent(portfolio.data.totalReturnRate)}
             </Text>
-            <View style={styles.metricRow}>
+            <MetricGrid>
               <MetricBadge
                 label="평가손익"
                 value={formatSignedCurrency(portfolio.data.totalReturn)}
@@ -53,7 +55,7 @@ export function PublicPortfolioScreen() {
                 value={formatSignedCurrency(portfolio.data.dayReturn)}
                 tone="brand"
               />
-            </View>
+            </MetricGrid>
           </SurfaceCard>
 
           <SurfaceCard>
@@ -61,22 +63,15 @@ export function PublicPortfolioScreen() {
               title="포트폴리오 상태"
               description="공개 범위에 따라 숫자 일부가 숨겨질 수 있습니다."
             />
-            <View style={styles.statusRow}>
-              <Text style={styles.statusLabel}>보유 종목 수</Text>
-              <Text style={styles.statusValue}>{portfolio.data.holdings.length}개</Text>
-            </View>
-            <View style={styles.statusRow}>
-              <Text style={styles.statusLabel}>최근 반영 시각</Text>
-              <Text style={styles.statusValue}>
-                {portfolio.data.syncedAt ? formatDateLabel(portfolio.data.syncedAt) : '반영 기록 없음'}
-              </Text>
-            </View>
-            <View style={styles.statusRow}>
-              <Text style={styles.statusLabel}>상세 금액 공개</Text>
-              <Text style={styles.statusValue}>
-                {portfolio.data.isFullyVisible ? '표시됨' : '일부 숨김'}
-              </Text>
-            </View>
+            <DetailRow label="보유 종목 수" value={`${portfolio.data.holdings.length}개`} />
+            <DetailRow
+              label="최근 반영 시각"
+              value={portfolio.data.syncedAt ? formatDateLabel(portfolio.data.syncedAt) : '반영 기록 없음'}
+            />
+            <DetailRow
+              label="상세 금액 공개"
+              value={portfolio.data.isFullyVisible ? '표시됨' : '일부 숨김'}
+            />
           </SurfaceCard>
 
           <SurfaceCard>
@@ -92,6 +87,7 @@ export function PublicPortfolioScreen() {
                   key={holding.holdingId}
                   style={[
                     styles.holdingRow,
+                    isCompact && styles.holdingRowCompact,
                     index < portfolio.data.holdings.length - 1 && styles.divider,
                   ]}
                 >
@@ -135,30 +131,14 @@ const styles = StyleSheet.create({
     fontFamily: tokens.typography.heading,
     fontWeight: '700',
   },
-  metricRow: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  statusRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: 12,
-  },
-  statusLabel: {
-    fontSize: 14,
-    color: tokens.colors.inkSoft,
-    fontFamily: tokens.typography.body,
-  },
-  statusValue: {
-    fontSize: 14,
-    color: tokens.colors.navy,
-    fontFamily: tokens.typography.heading,
-    fontWeight: '700',
-  },
   holdingRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     gap: 16,
+  },
+  holdingRowCompact: {
+    alignItems: 'flex-start',
+    flexDirection: 'column',
   },
   divider: {
     borderBottomWidth: 1,
@@ -168,6 +148,7 @@ const styles = StyleSheet.create({
   },
   holdingText: {
     gap: 6,
+    flex: 1,
   },
   holdingTicker: {
     fontSize: 17,

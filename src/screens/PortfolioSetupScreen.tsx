@@ -13,9 +13,10 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { foloApiConfig } from '../api/config';
-import { StockIdentityBadge } from '../components/StockIdentityBadge';
-import { Chip } from '../components/ui';
 import type { StockSearchItem } from '../api/contracts';
+import { StockIdentityBadge } from '../components/StockIdentityBadge';
+import { BottomActionBar, Chip } from '../components/ui';
+import { useResponsiveLayout } from '../hooks/useResponsiveLayout';
 import { useStockDiscoverData, useStockSearchData } from '../hooks/useFoloData';
 import { formatCurrency } from '../lib/format';
 import type {
@@ -60,6 +61,7 @@ type StockTileItem = PortfolioSetupSelection & {
 
 export function PortfolioSetupScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const { isCompact, tileColumns, width } = useResponsiveLayout();
   const [query, setQuery] = useState('');
   const [marketFilter, setMarketFilter] = useState<MarketFilter>('ALL');
   const [selectedItems, setSelectedItems] = useState<PortfolioSetupSelection[]>([]);
@@ -97,6 +99,16 @@ export function PortfolioSetupScreen() {
     ];
   }, [discover.data.krxStocks, discover.data.usStocks, marketFilter]);
 
+  const tileGap = 12;
+  const horizontalPadding = isCompact ? 16 : 20;
+  const tileWidth = Math.max(
+    104,
+    Math.floor(
+      (Math.min(width, tokens.layout.maxWidth) - horizontalPadding * 2 - tileGap * (tileColumns - 1)) /
+        tileColumns,
+    ),
+  );
+
   function renderTile(item: StockTileItem) {
     const key = selectionKey(item);
     const isSelected = selectedItems.some((entry) => selectionKey(entry) === key);
@@ -106,7 +118,11 @@ export function PortfolioSetupScreen() {
       <Pressable
         key={key}
         onPress={() => toggleSelection(item)}
-        style={[styles.tile, isSelected && styles.tileSelected]}
+        style={[
+          styles.tile,
+          { width: tileWidth },
+          isSelected && styles.tileSelected,
+        ]}
       >
         <StockIdentityBadge
           logoUrl={logoUrl}
@@ -155,7 +171,10 @@ export function PortfolioSetupScreen() {
     <SafeAreaView edges={['top', 'bottom']} style={styles.safeArea}>
       <View style={styles.container}>
         <ScrollView
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={[
+            styles.scrollContent,
+            isCompact && styles.scrollContentCompact,
+          ]}
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.header}>
@@ -279,7 +298,7 @@ export function PortfolioSetupScreen() {
           ) : null}
         </ScrollView>
 
-        <View style={styles.footer}>
+        <BottomActionBar>
           <View style={styles.secondaryActions}>
             <Pressable onPress={() => navigation.navigate('ImportOnboarding')}>
               <Text style={styles.secondaryActionText}>CSV 가져오기</Text>
@@ -313,7 +332,7 @@ export function PortfolioSetupScreen() {
               {selectedItems.length}개 선택
             </Text>
           </Pressable>
-        </View>
+        </BottomActionBar>
       </View>
     </SafeAreaView>
   );
@@ -335,6 +354,9 @@ const styles = StyleSheet.create({
     paddingTop: 18,
     paddingBottom: 180,
     gap: 18,
+  },
+  scrollContentCompact: {
+    paddingHorizontal: 16,
   },
   header: {
     gap: 10,
@@ -435,8 +457,7 @@ const styles = StyleSheet.create({
   },
   tile: {
     position: 'relative',
-    width: '31%',
-    minWidth: 100,
+    minWidth: 0,
     borderRadius: 26,
     backgroundColor: tokens.colors.surface,
     borderWidth: 1,
@@ -489,17 +510,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: tokens.colors.danger,
     fontFamily: tokens.typography.body,
-  },
-  footer: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    paddingHorizontal: 20,
-    paddingTop: 12,
-    paddingBottom: 16,
-    backgroundColor: 'rgba(244, 247, 251, 0.96)',
-    gap: 14,
   },
   secondaryActions: {
     flexDirection: 'row',

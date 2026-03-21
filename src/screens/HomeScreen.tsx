@@ -6,11 +6,13 @@ import { Avatar } from '../components/Avatar';
 import { DataStatusCard } from '../components/DataStatusCard';
 import {
   MetricBadge,
+  MetricGrid,
   Page,
   PrimaryButton,
   SectionHeading,
   SurfaceCard,
 } from '../components/ui';
+import { useResponsiveLayout } from '../hooks/useResponsiveLayout';
 import {
   useFeedData,
   useMyTradesData,
@@ -30,6 +32,7 @@ import { tokens } from '../theme/tokens';
 
 export function HomeScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const { isCompact } = useResponsiveLayout();
   const portfolio = usePortfolioData();
   const feed = useFeedData();
   const reminders = useRemindersData();
@@ -65,7 +68,7 @@ export function HomeScreen() {
               : '등록된 리마인더가 없습니다.'}
           </Text>
         </View>
-        <View style={styles.metricRow}>
+        <MetricGrid>
           <MetricBadge
             label="총 수익률"
             value={formatPercent(portfolio.data.totalReturnRate)}
@@ -77,7 +80,7 @@ export function HomeScreen() {
             tone="brand"
           />
           <MetricBadge label="보유 종목" value={`${portfolio.data.holdings.length}개`} />
-        </View>
+        </MetricGrid>
       </SurfaceCard>
 
       <SurfaceCard>
@@ -164,7 +167,11 @@ export function HomeScreen() {
           feed.data.trades.slice(0, 3).map((item, index) => (
             <View
               key={item.tradeId}
-              style={[styles.friendRow, index < Math.min(2, feed.data.trades.length - 1) && styles.divider]}
+              style={[
+                styles.friendRow,
+                isCompact && styles.friendRowCompact,
+                index < Math.min(2, feed.data.trades.length - 1) && styles.divider,
+              ]}
             >
               <Pressable
                 onPress={() =>
@@ -226,10 +233,6 @@ const styles = StyleSheet.create({
     color: tokens.colors.brandStrong,
     fontFamily: tokens.typography.body,
   },
-  metricRow: {
-    flexDirection: 'row',
-    gap: 12,
-  },
   actionStack: {
     gap: 10,
   },
@@ -263,6 +266,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 14,
+  },
+  friendRowCompact: {
+    alignItems: 'flex-start',
+    flexDirection: 'column',
   },
   friendIdentity: {
     flex: 1,

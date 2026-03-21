@@ -37,10 +37,20 @@ type MetricBadgeProps = {
   tone?: 'default' | 'brand' | 'positive' | 'danger';
 };
 
+type DetailRowProps = {
+  label: string;
+  value: ReactNode;
+};
+
+type BottomActionBarProps = {
+  children: ReactNode;
+};
+
 export function Page({ eyebrow, title, subtitle, action, children }: PageProps) {
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const compact = width < 430;
+  const narrow = width < 380;
 
   return (
     <ScrollView
@@ -68,8 +78,10 @@ export function Page({ eyebrow, title, subtitle, action, children }: PageProps) 
           <Text style={styles.eyebrow}>{eyebrow}</Text>
           <View style={styles.headerRow}>
             <View style={styles.titleBlock}>
-              <Text style={styles.title}>{title}</Text>
-              <Text style={styles.subtitle}>{subtitle}</Text>
+              <Text style={[styles.title, compact && styles.titleCompact, narrow && styles.titleNarrow]}>
+                {title}
+              </Text>
+              <Text style={[styles.subtitle, compact && styles.subtitleCompact]}>{subtitle}</Text>
             </View>
             {action}
           </View>
@@ -81,7 +93,10 @@ export function Page({ eyebrow, title, subtitle, action, children }: PageProps) 
 }
 
 export function SurfaceCard({ children, tone = 'default' }: SurfaceCardProps) {
-  return <View style={[styles.card, cardToneStyles[tone]]}>{children}</View>;
+  const { width } = useWindowDimensions();
+  const compact = width < 430;
+
+  return <View style={[styles.card, compact && styles.cardCompact, cardToneStyles[tone]]}>{children}</View>;
 }
 
 export function PrimaryButton({
@@ -145,6 +160,31 @@ export function MetricBadge({
   );
 }
 
+export function MetricGrid({ children }: { children: ReactNode }) {
+  const { width } = useWindowDimensions();
+  const compact = width < 430;
+
+  return <View style={[styles.metricGrid, compact && styles.metricGridCompact]}>{children}</View>;
+}
+
+export function DetailRow({ label, value }: DetailRowProps) {
+  const { width } = useWindowDimensions();
+  const compact = width < 430;
+
+  return (
+    <View style={[styles.detailRow, compact && styles.detailRowCompact]}>
+      <Text style={[styles.detailRowLabel, compact && styles.detailRowLabelCompact]}>{label}</Text>
+      <View style={styles.detailRowValueWrap}>
+        {typeof value === 'string' ? (
+          <Text style={[styles.detailRowValue, compact && styles.detailRowValueCompact]}>{value}</Text>
+        ) : (
+          value
+        )}
+      </View>
+    </View>
+  );
+}
+
 export function SectionHeading({
   title,
   description,
@@ -156,6 +196,26 @@ export function SectionHeading({
     <View style={styles.sectionHeading}>
       <Text style={styles.sectionTitle}>{title}</Text>
       <Text style={styles.sectionDescription}>{description}</Text>
+    </View>
+  );
+}
+
+export function BottomActionBar({ children }: BottomActionBarProps) {
+  const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
+  const compact = width < 430;
+
+  return (
+    <View
+      style={[
+        styles.bottomActionBar,
+        {
+          paddingHorizontal: compact ? 16 : 20,
+          paddingBottom: Math.max(insets.bottom, 12) + 4,
+        },
+      ]}
+    >
+      <View style={styles.bottomActionInner}>{children}</View>
     </View>
   );
 }
@@ -260,11 +320,23 @@ const styles = StyleSheet.create({
     fontFamily: tokens.typography.heading,
     fontWeight: '800',
   },
+  titleCompact: {
+    fontSize: 29,
+    lineHeight: 35,
+  },
+  titleNarrow: {
+    fontSize: 26,
+    lineHeight: 32,
+  },
   subtitle: {
     fontSize: 15,
     lineHeight: 24,
     color: tokens.colors.inkSoft,
     fontFamily: tokens.typography.body,
+  },
+  subtitleCompact: {
+    fontSize: 14,
+    lineHeight: 22,
   },
   card: {
     borderRadius: tokens.radius.md,
@@ -274,8 +346,13 @@ const styles = StyleSheet.create({
     gap: 16,
     ...tokens.shadow,
   },
+  cardCompact: {
+    padding: 18,
+    gap: 14,
+  },
   button: {
     borderRadius: tokens.radius.pill,
+    minHeight: 54,
     paddingHorizontal: 18,
     paddingVertical: 14,
     alignItems: 'center',
@@ -297,6 +374,7 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     fontSize: 15,
+    textAlign: 'center',
     fontFamily: tokens.typography.heading,
     fontWeight: '700',
   },
@@ -321,14 +399,24 @@ const styles = StyleSheet.create({
   chipLabel: {
     fontSize: 13,
     color: tokens.colors.inkSoft,
+    flexShrink: 1,
     fontFamily: tokens.typography.heading,
     fontWeight: '600',
   },
   chipLabelActive: {
     color: tokens.colors.surface,
   },
+  metricGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  metricGridCompact: {
+    flexDirection: 'column',
+  },
   metricBadge: {
     flex: 1,
+    minWidth: 136,
     borderRadius: 18,
     padding: 14,
     gap: 6,
@@ -358,5 +446,55 @@ const styles = StyleSheet.create({
     color: tokens.colors.inkSoft,
     lineHeight: 22,
     fontFamily: tokens.typography.body,
+  },
+  detailRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  detailRowCompact: {
+    alignItems: 'flex-start',
+    flexDirection: 'column',
+    gap: 4,
+  },
+  detailRowLabel: {
+    flex: 1,
+    fontSize: 14,
+    color: tokens.colors.inkSoft,
+    fontFamily: tokens.typography.body,
+  },
+  detailRowLabelCompact: {
+    flex: 0,
+  },
+  detailRowValueWrap: {
+    flexShrink: 1,
+    alignItems: 'flex-end',
+  },
+  detailRowValue: {
+    fontSize: 14,
+    color: tokens.colors.navy,
+    textAlign: 'right',
+    fontFamily: tokens.typography.heading,
+    fontWeight: '700',
+  },
+  detailRowValueCompact: {
+    textAlign: 'left',
+  },
+  bottomActionBar: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    paddingTop: 12,
+    backgroundColor: 'rgba(244, 247, 251, 0.96)',
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(214, 224, 234, 0.54)',
+  },
+  bottomActionInner: {
+    width: '100%',
+    maxWidth: tokens.layout.maxWidth,
+    alignSelf: 'center',
+    gap: 14,
   },
 });

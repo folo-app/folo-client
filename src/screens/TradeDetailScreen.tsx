@@ -13,12 +13,14 @@ import { useAuth } from '../auth/AuthProvider';
 import { DataStatusCard } from '../components/DataStatusCard';
 import {
   Chip,
+  MetricGrid,
   Page,
   PrimaryButton,
   SectionHeading,
   SurfaceCard,
 } from '../components/ui';
 import { useTradeCommentsData, useTradeDetailData } from '../hooks/useFoloData';
+import { useResponsiveLayout } from '../hooks/useResponsiveLayout';
 import { useMutation } from '../hooks/query';
 import {
   formatCurrency,
@@ -36,6 +38,7 @@ const VISIBILITY_OPTIONS: TradeVisibility[] = ['PUBLIC', 'FRIENDS_ONLY', 'PRIVAT
 export function TradeDetailScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const route = useRoute<RouteProp<RootStackParamList, 'TradeDetail'>>();
+  const { isCompact } = useResponsiveLayout();
   const { session } = useAuth();
   const trade = useTradeDetailData(route.params.tradeId);
   const comments = useTradeCommentsData(route.params.tradeId);
@@ -190,13 +193,15 @@ export function TradeDetailScreen() {
                   </Text>
                 </Pressable>
               </View>
-              <Chip
-                active
-                label={`${tradeTypeLabel(trade.data.tradeType)} · ${visibilityLabel(trade.data.visibility)}`}
-                tone={trade.data.tradeType === 'BUY' ? 'brand' : 'danger'}
-              />
+              <View style={styles.headerChipWrap}>
+                <Chip
+                  active
+                  label={`${tradeTypeLabel(trade.data.tradeType)} · ${visibilityLabel(trade.data.visibility)}`}
+                  tone={trade.data.tradeType === 'BUY' ? 'brand' : 'danger'}
+                />
+              </View>
             </View>
-            <View style={styles.metrics}>
+            <MetricGrid>
               <View style={styles.metric}>
                 <Text style={styles.metricLabel}>수량</Text>
                 <Text style={styles.metricValue}>{trade.data.quantity}</Text>
@@ -213,7 +218,7 @@ export function TradeDetailScreen() {
                   {formatCurrency(trade.data.totalAmount, trade.data.market)}
                 </Text>
               </View>
-            </View>
+            </MetricGrid>
             <Text style={styles.comment}>
               {trade.data.comment ?? '작성된 코멘트가 없습니다.'}
             </Text>
@@ -326,7 +331,7 @@ export function TradeDetailScreen() {
                     index < comments.data.comments.length - 1 && styles.divider,
                   ]}
                 >
-                  <View style={styles.commentHeader}>
+                  <View style={[styles.commentHeader, isCompact && styles.commentHeaderCompact]}>
                     <Text style={styles.commentAuthor}>{comment.user.nickname}</Text>
                     {comment.isMyComment ? (
                       <Chip
@@ -366,6 +371,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     gap: 12,
     alignItems: 'center',
+    flexWrap: 'wrap',
   },
   titleBlock: {
     gap: 6,
@@ -382,12 +388,9 @@ const styles = StyleSheet.create({
     color: tokens.colors.inkSoft,
     fontFamily: tokens.typography.body,
   },
-  metrics: {
-    flexDirection: 'row',
-    gap: 12,
-  },
   metric: {
     flex: 1,
+    minWidth: 120,
     backgroundColor: 'rgba(255,255,255,0.78)',
     borderRadius: 18,
     padding: 14,
@@ -420,6 +423,9 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: 10,
   },
+  headerChipWrap: {
+    maxWidth: '100%',
+  },
   commentRow: {
     gap: 6,
   },
@@ -428,6 +434,10 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     gap: 12,
+  },
+  commentHeaderCompact: {
+    alignItems: 'flex-start',
+    flexDirection: 'column',
   },
   divider: {
     borderBottomWidth: 1,

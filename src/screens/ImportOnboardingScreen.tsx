@@ -12,6 +12,7 @@ import type {
 } from '../api/contracts';
 import { foloApi } from '../api/services';
 import { Page, PrimaryButton, SectionHeading, SurfaceCard } from '../components/ui';
+import { useResponsiveLayout } from '../hooks/useResponsiveLayout';
 import { formatCurrency, tradeTypeLabel } from '../lib/format';
 import type { RootStackParamList } from '../navigation/types';
 import { tokens } from '../theme/tokens';
@@ -22,6 +23,7 @@ function toValidPreviewIds(items: ImportPreviewItem[]) {
 
 export function ImportOnboardingScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const { isCompact } = useResponsiveLayout();
   const [broker, setBroker] = useState('');
   const [csvPreview, setCsvPreview] = useState<CsvImportResponse | null>(null);
   const [selectedCsvIds, setSelectedCsvIds] = useState<number[]>([]);
@@ -193,6 +195,7 @@ export function ImportOnboardingScreen() {
                   onPress={() => toggleCsvSelection(item.importResultId)}
                   style={[
                     styles.previewRow,
+                    isCompact && styles.previewRowCompact,
                     item.valid && isSelected && styles.previewRowSelected,
                     !item.valid && styles.previewRowInvalid,
                   ]}
@@ -311,6 +314,10 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(214, 224, 234, 0.92)',
     paddingHorizontal: 14,
     paddingVertical: 14,
+  },
+  previewRowCompact: {
+    alignItems: 'flex-start',
+    flexDirection: 'column',
   },
   previewRowSelected: {
     backgroundColor: tokens.colors.brandSoft,

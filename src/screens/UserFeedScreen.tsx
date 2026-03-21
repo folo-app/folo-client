@@ -7,6 +7,7 @@ import { Avatar } from '../components/Avatar';
 import { DataStatusCard } from '../components/DataStatusCard';
 import { Chip, Page, SectionHeading, SurfaceCard } from '../components/ui';
 import { useUserFeedData } from '../hooks/useFoloData';
+import { useResponsiveLayout } from '../hooks/useResponsiveLayout';
 import {
   formatCurrency,
   formatRelativeDate,
@@ -19,6 +20,7 @@ import { tokens } from '../theme/tokens';
 export function UserFeedScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const route = useRoute<RouteProp<RootStackParamList, 'UserFeed'>>();
+  const { isCompact } = useResponsiveLayout();
   const feed = useUserFeedData(route.params.userId);
   const title = route.params.nickname
     ? `${route.params.nickname}님의 거래 기록`
@@ -60,13 +62,15 @@ export function UserFeedScreen() {
                     </Text>
                   </View>
                 </View>
-                <Chip
-                  label={`${tradeTypeLabel(item.tradeType)} · ${item.market}`}
-                  tone={item.tradeType === 'BUY' ? 'brand' : 'danger'}
-                />
+                <View style={styles.chipWrap}>
+                  <Chip
+                    label={`${tradeTypeLabel(item.tradeType)} · ${item.market}`}
+                    tone={item.tradeType === 'BUY' ? 'brand' : 'danger'}
+                  />
+                </View>
               </View>
 
-              <View style={styles.tradeRow}>
+              <View style={[styles.tradeRow, isCompact && styles.tradeRowCompact]}>
                 <View style={styles.tradeHero}>
                   <Text style={styles.ticker}>{item.ticker}</Text>
                   <Text style={styles.company}>{item.name}</Text>
@@ -109,9 +113,10 @@ const styles = StyleSheet.create({
   },
   cardHeader: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     justifyContent: 'space-between',
     gap: 12,
+    flexWrap: 'wrap',
   },
   identity: {
     flexDirection: 'row',
@@ -139,6 +144,9 @@ const styles = StyleSheet.create({
     alignItems: 'stretch',
     gap: 10,
   },
+  tradeRowCompact: {
+    flexDirection: 'column',
+  },
   tradeHero: {
     flex: 1.2,
     backgroundColor: tokens.colors.surfaceMuted,
@@ -159,6 +167,7 @@ const styles = StyleSheet.create({
   },
   tradeMeta: {
     flex: 1,
+    minWidth: 120,
     backgroundColor: '#F8FAFC',
     borderRadius: 18,
     padding: 16,
@@ -186,5 +195,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 10,
+  },
+  chipWrap: {
+    maxWidth: '100%',
   },
 });

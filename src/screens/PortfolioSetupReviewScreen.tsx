@@ -15,7 +15,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { foloApi } from '../api/services';
-import { PrimaryButton } from '../components/ui';
+import { BottomActionBar, PrimaryButton } from '../components/ui';
+import { useResponsiveLayout } from '../hooks/useResponsiveLayout';
 import { formatCurrency } from '../lib/format';
 import type { PortfolioSetupSelection, RootStackParamList } from '../navigation/types';
 import { tokens } from '../theme/tokens';
@@ -33,6 +34,7 @@ export function PortfolioSetupReviewScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const route =
     useRoute<RouteProp<RootStackParamList, 'PortfolioSetupReview'>>();
+  const { isCompact } = useResponsiveLayout();
   const [items, setItems] = useState<DraftItem[]>(() =>
     route.params.selections.map((item) => ({
       ...item,
@@ -115,7 +117,10 @@ export function PortfolioSetupReviewScreen() {
       >
         <View style={styles.container}>
           <ScrollView
-            contentContainerStyle={styles.scrollContent}
+            contentContainerStyle={[
+              styles.scrollContent,
+              isCompact && styles.scrollContentCompact,
+            ]}
             showsVerticalScrollIndicator={false}
           >
             <View style={styles.header}>
@@ -131,7 +136,7 @@ export function PortfolioSetupReviewScreen() {
 
               return (
                 <View key={key} style={styles.card}>
-                  <View style={styles.cardHeader}>
+                  <View style={[styles.cardHeader, isCompact && styles.cardHeaderCompact]}>
                     <View style={styles.cardText}>
                       <Text style={styles.cardTitle}>
                         {item.name} · {item.ticker}
@@ -145,7 +150,7 @@ export function PortfolioSetupReviewScreen() {
                     </Pressable>
                   </View>
 
-                  <View style={styles.formRow}>
+                  <View style={[styles.formRow, isCompact && styles.formRowCompact]}>
                     <View style={styles.inputGroup}>
                       <Text style={styles.label}>수량</Text>
                       <TextInput
@@ -182,13 +187,13 @@ export function PortfolioSetupReviewScreen() {
             {message ? <Text style={styles.errorText}>{message}</Text> : null}
           </ScrollView>
 
-          <View style={styles.footer}>
+          <BottomActionBar>
             <PrimaryButton
               disabled={disabled || submitting}
               label={submitting ? '저장 중...' : '포트폴리오 만들기'}
               onPress={handleSubmit}
             />
-          </View>
+          </BottomActionBar>
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -214,6 +219,9 @@ const styles = StyleSheet.create({
     paddingTop: 18,
     paddingBottom: 130,
     gap: 16,
+  },
+  scrollContentCompact: {
+    paddingHorizontal: 16,
   },
   header: {
     gap: 10,
@@ -243,6 +251,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     gap: 12,
+  },
+  cardHeaderCompact: {
+    alignItems: 'flex-start',
+    flexDirection: 'column',
   },
   cardText: {
     flex: 1,
@@ -275,6 +287,9 @@ const styles = StyleSheet.create({
   formRow: {
     flexDirection: 'row',
     gap: 12,
+  },
+  formRowCompact: {
+    flexDirection: 'column',
   },
   inputGroup: {
     flex: 1,
@@ -309,15 +324,5 @@ const styles = StyleSheet.create({
     color: tokens.colors.danger,
     fontFamily: tokens.typography.body,
     textAlign: 'center',
-  },
-  footer: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    paddingHorizontal: 20,
-    paddingTop: 12,
-    paddingBottom: 16,
-    backgroundColor: 'rgba(244, 247, 251, 0.96)',
   },
 });
