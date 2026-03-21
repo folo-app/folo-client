@@ -41,6 +41,14 @@ export type RootStackParamList = {
     userId: number;
     nickname?: string;
   };
+  UserFeed: {
+    userId: number;
+    nickname?: string;
+  };
+  PublicPortfolio: {
+    userId: number;
+    nickname?: string;
+  };
   KisConnect: undefined;
   ImportOnboarding: undefined;
 };

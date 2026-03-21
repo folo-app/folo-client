@@ -162,21 +162,34 @@ export function HomeScreen() {
           </Text>
         ) : (
           feed.data.trades.slice(0, 3).map((item, index) => (
-            <Pressable
+            <View
               key={item.tradeId}
-              onPress={() => navigation.navigate('TradeDetail', { tradeId: item.tradeId })}
               style={[styles.friendRow, index < Math.min(2, feed.data.trades.length - 1) && styles.divider]}
             >
-              <Avatar imageUrl={item.user.profileImage} name={item.user.nickname} size={42} />
-              <View style={styles.friendText}>
-                <Text style={styles.friendName}>{item.user.nickname}</Text>
-                <Text style={styles.friendSummary}>
-                  {item.ticker} {tradeTypeLabel(item.tradeType)} ·{' '}
-                  {formatSignedCurrency(item.quantity * item.price, item.market)}
-                </Text>
-              </View>
-              <Text style={styles.friendTime}>{formatRelativeDate(item.tradedAt)}</Text>
-            </Pressable>
+              <Pressable
+                onPress={() =>
+                  navigation.navigate('UserProfile', {
+                    userId: item.user.userId,
+                    nickname: item.user.nickname,
+                  })
+                }
+                style={styles.friendIdentity}
+              >
+                <Avatar imageUrl={item.user.profileImage} name={item.user.nickname} size={42} />
+                <View style={styles.friendText}>
+                  <Text style={styles.friendName}>{item.user.nickname}</Text>
+                  <Text style={styles.friendSummary}>
+                    {item.ticker} {tradeTypeLabel(item.tradeType)} ·{' '}
+                    {formatSignedCurrency(item.quantity * item.price, item.market)}
+                  </Text>
+                </View>
+              </Pressable>
+              <Pressable
+                onPress={() => navigation.navigate('TradeDetail', { tradeId: item.tradeId })}
+              >
+                <Text style={styles.friendTime}>{formatRelativeDate(item.tradedAt)}</Text>
+              </Pressable>
+            </View>
           ))
         )}
       </SurfaceCard>
@@ -247,6 +260,12 @@ const styles = StyleSheet.create({
     fontFamily: tokens.typography.body,
   },
   friendRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+  },
+  friendIdentity: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 14,

@@ -1,11 +1,12 @@
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import type { RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Avatar } from '../components/Avatar';
 import { DataStatusCard } from '../components/DataStatusCard';
-import { Chip, Page, PrimaryButton, SectionHeading, SurfaceCard } from '../components/ui';
-import { useFeedData } from '../hooks/useFoloData';
+import { Chip, Page, SectionHeading, SurfaceCard } from '../components/ui';
+import { useUserFeedData } from '../hooks/useFoloData';
 import {
   formatCurrency,
   formatRelativeDate,
@@ -15,75 +16,56 @@ import {
 import type { RootStackParamList } from '../navigation/types';
 import { tokens } from '../theme/tokens';
 
-export function FeedScreen() {
+export function UserFeedScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const feed = useFeedData();
+  const route = useRoute<RouteProp<RootStackParamList, 'UserFeed'>>();
+  const feed = useUserFeedData(route.params.userId);
+  const title = route.params.nickname
+    ? `${route.params.nickname}님의 거래 기록`
+    : '개인 피드';
 
   return (
     <Page
-      eyebrow="Feed"
-      title="친구 거래 타임라인"
-      subtitle="친구가 남긴 실제 거래 기록을 시간순으로 확인하고 상세 화면으로 바로 이동할 수 있습니다."
+      eyebrow="Public Feed"
+      title={title}
+      subtitle="공개 범위에 따라 노출 가능한 거래만 시간순으로 표시합니다."
     >
       <DataStatusCard error={feed.error} loading={feed.loading} />
 
-      <SurfaceCard tone="muted">
+      <SurfaceCard tone="hero">
         <SectionHeading
-          title="피드 상태"
-          description={`현재 화면에 ${feed.data.trades.length}건의 거래가 표시됩니다.`}
+          title="피드 요약"
+          description={`현재 ${feed.data.trades.length}건이 보입니다.`}
         />
-        <View style={styles.actionStack}>
-          <PrimaryButton label="피드 새로고침" onPress={feed.refresh} variant="secondary" />
-          <PrimaryButton
-            label="사람 찾기"
-            onPress={() => navigation.navigate('People')}
-            variant="secondary"
-          />
-          <PrimaryButton
-            label="거래 추가로 이동"
-            onPress={() => navigation.navigate('MainTabs', { screen: 'AddTrade' })}
-            variant="secondary"
-          />
-        </View>
       </SurfaceCard>
 
       {feed.data.trades.length === 0 ? (
         <SurfaceCard>
-          <Text style={styles.emptyText}>
-            팔로우한 사용자의 거래가 아직 없습니다. 친구를 팔로우하면 피드가 채워집니다.
-          </Text>
+          <Text style={styles.emptyText}>표시할 공개 거래가 없습니다.</Text>
         </SurfaceCard>
       ) : (
         feed.data.trades.map((item) => (
-          <SurfaceCard key={item.tradeId}>
-            <View style={styles.cardHeader}>
-              <Pressable
-                onPress={() =>
-                  navigation.navigate('UserProfile', {
-                    userId: item.user.userId,
-                    nickname: item.user.nickname,
-                  })
-                }
-                style={styles.identity}
-              >
-                <Avatar imageUrl={item.user.profileImage} name={item.user.nickname} size={44} />
-                <View style={styles.identityText}>
-                  <Text style={styles.user}>{item.user.nickname}</Text>
-                  <Text style={styles.handle}>
-                    {item.market} · {formatRelativeDate(item.tradedAt)}
-                  </Text>
+          <Pressable
+            key={item.tradeId}
+            onPress={() => navigation.navigate('TradeDetail', { tradeId: item.tradeId })}
+          >
+            <SurfaceCard>
+              <View style={styles.cardHeader}>
+                <View style={styles.identity}>
+                  <Avatar imageUrl={item.user.profileImage} name={item.user.nickname} size={44} />
+                  <View style={styles.identityText}>
+                    <Text style={styles.user}>{item.user.nickname}</Text>
+                    <Text style={styles.handle}>
+                      {item.market} · {formatRelativeDate(item.tradedAt)}
+                    </Text>
+                  </View>
                 </View>
-              </Pressable>
-              <Chip
-                label={`${tradeTypeLabel(item.tradeType)} · ${item.market}`}
-                tone={item.tradeType === 'BUY' ? 'brand' : 'danger'}
-              />
-            </View>
+                <Chip
+                  label={`${tradeTypeLabel(item.tradeType)} · ${item.market}`}
+                  tone={item.tradeType === 'BUY' ? 'brand' : 'danger'}
+                />
+              </View>
 
-            <Pressable
-              onPress={() => navigation.navigate('TradeDetail', { tradeId: item.tradeId })}
-              style={styles.tradeCardAction}
-            >
               <View style={styles.tradeRow}>
                 <View style={styles.tradeHero}>
                   <Text style={styles.ticker}>{item.ticker}</Text>
@@ -91,11 +73,7 @@ export function FeedScreen() {
                 </View>
                 <View style={styles.tradeMeta}>
                   <Text style={styles.metaLabel}>수량</Text>
-                  <Text style={styles.metaValue}>
-                    {item.quantity > 1000
-                      ? formatCurrency(item.quantity, item.market)
-                      : `${item.quantity}주`}
-                  </Text>
+                  <Text style={styles.metaValue}>{item.quantity}주</Text>
                 </View>
                 <View style={styles.tradeMeta}>
                   <Text style={styles.metaLabel}>가격</Text>
@@ -114,8 +92,8 @@ export function FeedScreen() {
                 ))}
                 <Chip label={`댓글 ${item.commentCount}`} tone="brand" />
               </View>
-            </Pressable>
-          </SurfaceCard>
+            </SurfaceCard>
+          </Pressable>
         ))
       )}
     </Page>
@@ -123,17 +101,11 @@ export function FeedScreen() {
 }
 
 const styles = StyleSheet.create({
-  actionStack: {
-    gap: 10,
-  },
   emptyText: {
     fontSize: 14,
     lineHeight: 22,
     color: tokens.colors.inkSoft,
     fontFamily: tokens.typography.body,
-  },
-  tradeCardAction: {
-    gap: 16,
   },
   cardHeader: {
     flexDirection: 'row',

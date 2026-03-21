@@ -21,6 +21,7 @@ import { PortfolioScreen } from '../screens/PortfolioScreen';
 import { PortfolioSetupGateScreen } from '../screens/PortfolioSetupGateScreen';
 import { PortfolioSetupReviewScreen } from '../screens/PortfolioSetupReviewScreen';
 import { PortfolioSetupScreen } from '../screens/PortfolioSetupScreen';
+import { PublicPortfolioScreen } from '../screens/PublicPortfolioScreen';
 import { ProfileEditScreen } from '../screens/ProfileEditScreen';
 import { ProfileScreen } from '../screens/ProfileScreen';
 import { RemindersScreen } from '../screens/RemindersScreen';
@@ -28,6 +29,7 @@ import { PeopleScreen } from '../screens/PeopleScreen';
 import { SignupScreen } from '../screens/SignupScreen';
 import { SplashScreen } from '../screens/SplashScreen';
 import { TradeDetailScreen } from '../screens/TradeDetailScreen';
+import { UserFeedScreen } from '../screens/UserFeedScreen';
 import { UserProfileScreen } from '../screens/UserProfileScreen';
 import { KisConnectScreen } from '../screens/KisConnectScreen';
 import { tokens } from '../theme/tokens';
@@ -112,6 +114,8 @@ function RootNavigator() {
           <Stack.Screen component={ProfileEditScreen} name="ProfileEdit" />
           <Stack.Screen component={PeopleScreen} name="People" />
           <Stack.Screen component={UserProfileScreen} name="UserProfile" />
+          <Stack.Screen component={UserFeedScreen} name="UserFeed" />
+          <Stack.Screen component={PublicPortfolioScreen} name="PublicPortfolio" />
           <Stack.Screen component={KisConnectScreen} name="KisConnect" />
           <Stack.Screen
             component={ImportOnboardingScreen}

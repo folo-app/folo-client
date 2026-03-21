@@ -20,22 +20,40 @@ export function currencyForMarket(market: string | MarketType) {
   return market === 'KRX' ? 'KRW' : 'USD';
 }
 
-export function formatCurrency(value: number, market: string | MarketType = 'KRX') {
+export function formatCurrency(
+  value: number | null | undefined,
+  market: string | MarketType = 'KRX',
+) {
+  if (value === null || value === undefined) {
+    return '-';
+  }
   return numberFormatter(currencyForMarket(market)).format(value);
 }
 
-export function formatNumber(value: number) {
+export function formatNumber(value: number | null | undefined) {
+  if (value === null || value === undefined) {
+    return '-';
+  }
   return new Intl.NumberFormat('ko-KR', {
     maximumFractionDigits: 2,
   }).format(value);
 }
 
-export function formatPercent(value: number) {
+export function formatPercent(value: number | null | undefined) {
+  if (value === null || value === undefined) {
+    return '-';
+  }
   const sign = value > 0 ? '+' : value < 0 ? '' : '';
   return `${sign}${value.toFixed(2)}%`;
 }
 
-export function formatSignedCurrency(value: number, market: string | MarketType = 'KRX') {
+export function formatSignedCurrency(
+  value: number | null | undefined,
+  market: string | MarketType = 'KRX',
+) {
+  if (value === null || value === undefined) {
+    return '-';
+  }
   const formatted = formatCurrency(Math.abs(value), market);
   if (value > 0) {
     return `+${formatted}`;

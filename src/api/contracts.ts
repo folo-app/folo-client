@@ -102,23 +102,23 @@ export type PortfolioHoldingItem = {
   ticker: string;
   name: string;
   market: string;
-  quantity: number;
-  avgPrice: number;
+  quantity: number | null;
+  avgPrice: number | null;
   currentPrice: number;
-  totalInvested: number;
-  totalValue: number;
-  returnAmount: number;
+  totalInvested: number | null;
+  totalValue: number | null;
+  returnAmount: number | null;
   returnRate: number;
   weight: number;
 };
 
 export type PortfolioResponse = {
   portfolioId: number;
-  totalInvested: number;
-  totalValue: number;
-  totalReturn: number;
+  totalInvested: number | null;
+  totalValue: number | null;
+  totalReturn: number | null;
   totalReturnRate: number;
-  dayReturn: number;
+  dayReturn: number | null;
   dayReturnRate: number;
   holdings: PortfolioHoldingItem[];
   syncedAt: string | null;
@@ -329,20 +329,34 @@ export type UpdateKisKeyRequest = {
   kisAppSecret: string;
 };
 
+export type KisConnectionPhase =
+  | 'CONNECTED'
+  | 'READY'
+  | 'CONFIG_MISSING'
+  | 'PREPARING';
+
+export type KisConnectionStartRequest = {
+  customerName: string;
+  phoneNumber: string;
+};
+
 export type KisConnectionStatusResponse = {
   connected: boolean;
-  phase: 'READY' | 'CONFIG_MISSING' | 'PREPARING';
+  phase: KisConnectionPhase;
   oauthEnabled: boolean;
   clientConfigured: boolean;
   connectionAvailable: boolean;
   lastSyncedAt: string | null;
+  connectedAt: string | null;
+  connectedAccount: string | null;
   nextStep: string;
 };
 
 export type KisConnectionStartResponse = {
   started: boolean;
-  phase: 'READY' | 'CONFIG_MISSING' | 'PREPARING';
+  phase: KisConnectionPhase;
   authorizationUrl: string | null;
+  launchUrl: string | null;
   authorizationMethod: 'POST' | 'GET' | null;
   requestFields: Record<string, string> | null;
   state: string | null;
@@ -377,6 +391,16 @@ export type CreateTradeRequest = {
 export type UpdateTradeRequest = {
   comment: string | null;
   visibility: TradeVisibility;
+};
+
+export type UpdateReactionRequest = {
+  emoji: ReactionEmoji;
+};
+
+export type ReactionMutationResponse = {
+  tradeId: number;
+  emoji: ReactionEmoji | null;
+  reactions: ReactionSummary[];
 };
 
 export type CreateReminderRequest = {

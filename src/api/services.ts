@@ -13,6 +13,7 @@ import type {
   FeedResponse,
   FollowActionResponse,
   FollowListResponse,
+  KisConnectionStartRequest,
   KisConnectionStartResponse,
   KisConnectionStatusResponse,
   LoginRequest,
@@ -25,6 +26,7 @@ import type {
   PortfolioSyncResponse,
   ProfileImageUploadResponse,
   PublicProfileResponse,
+  ReactionMutationResponse,
   RefreshRequest,
   ReminderItem,
   ReminderListResponse,
@@ -36,9 +38,11 @@ import type {
   TradeDetailResponse,
   TradeListResponse,
   TradeSummaryItem,
+  UpdateReactionRequest,
   UpdateKisKeyRequest,
   UpdateMyProfileRequest,
   UpdateReminderRequest,
+  UpdateTradeRequest,
   UserSearchResponse,
   VerifyEmailRequest,
 } from './contracts';
@@ -131,8 +135,14 @@ export const foloApi = {
   getFeed(cursor?: number, size = 20) {
     return apiRequest<FeedResponse>(withQuery('/feed', { cursor, size }));
   },
+  getUserFeed(userId: number, cursor?: number, size = 20) {
+    return apiRequest<FeedResponse>(withQuery(`/feed/${userId}`, { cursor, size }));
+  },
   getPortfolio() {
     return apiRequest<PortfolioResponse>('/portfolio');
+  },
+  getUserPortfolio(userId: number) {
+    return apiRequest<PortfolioResponse>(`/portfolio/${userId}`);
   },
   syncPortfolio() {
     return apiRequest<PortfolioSyncResponse>('/portfolio/sync', {
@@ -167,10 +177,28 @@ export const foloApi = {
   getTradeDetail(tradeId: number) {
     return apiRequest<TradeDetailResponse>(`/trades/${tradeId}`);
   },
+  updateTrade(tradeId: number, body: UpdateTradeRequest) {
+    return apiRequest<TradeSummaryItem>(`/trades/${tradeId}`, {
+      method: 'PATCH',
+      body,
+    });
+  },
+  deleteTrade(tradeId: number) {
+    return apiRequest<void>(`/trades/${tradeId}`, {
+      method: 'DELETE',
+      allowEmptyData: true,
+    });
+  },
   getTradeComments(tradeId: number, page = 0, size = 20) {
     return apiRequest<CommentListResponse>(
       withQuery(`/trades/${tradeId}/comments`, { page, size }),
     );
+  },
+  deleteComment(tradeId: number, commentId: number) {
+    return apiRequest<void>(`/trades/${tradeId}/comments/${commentId}`, {
+      method: 'DELETE',
+      allowEmptyData: true,
+    });
   },
   getMyProfile() {
     return apiRequest<MyProfileResponse>('/users/me');
@@ -199,9 +227,16 @@ export const foloApi = {
   getKisConnectionStatus() {
     return apiRequest<KisConnectionStatusResponse>('/integrations/kis/connect/status');
   },
-  startKisConnection() {
+  startKisConnection(body: KisConnectionStartRequest) {
     return apiRequest<KisConnectionStartResponse>('/integrations/kis/connect/start', {
       method: 'POST',
+      body,
+    });
+  },
+  disconnectKisConnection() {
+    return apiRequest<void>('/integrations/kis/connect', {
+      method: 'DELETE',
+      allowEmptyData: true,
     });
   },
   followUser(userId: number) {
@@ -300,6 +335,17 @@ export const foloApi = {
     return apiRequest<TradeSummaryItem>('/trades', {
       method: 'POST',
       body,
+    });
+  },
+  reactToTrade(tradeId: number, body: UpdateReactionRequest) {
+    return apiRequest<ReactionMutationResponse>(`/trades/${tradeId}/reactions`, {
+      method: 'POST',
+      body,
+    });
+  },
+  removeTradeReaction(tradeId: number) {
+    return apiRequest<ReactionMutationResponse>(`/trades/${tradeId}/reactions`, {
+      method: 'DELETE',
     });
   },
   createComment(tradeId: number, body: CreateCommentRequest) {

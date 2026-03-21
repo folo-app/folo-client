@@ -1,5 +1,3 @@
-import { useEffect, useState } from 'react';
-
 import { foloApi } from '../api/services';
 import type {
   CommentListResponse,
@@ -7,6 +5,7 @@ import type {
   MyProfileResponse,
   NotificationListResponse,
   PortfolioResponse,
+  PublicProfileResponse,
   ReminderListResponse,
   StockDiscoverResponse,
   StockPriceResponse,
@@ -14,63 +13,9 @@ import type {
   TradeDetailResponse,
   TradeListResponse,
 } from '../api/contracts';
+import { useQuery, type QueryResult } from './query';
 
-export type Loadable<T> = {
-  data: T;
-  loading: boolean;
-  error: string | null;
-  refresh: () => void;
-};
-
-function useLoadable<T>(
-  loader: () => Promise<T>,
-  initialData: T,
-  deps: ReadonlyArray<unknown>,
-): Loadable<T> {
-  const [data, setData] = useState<T>(initialData);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [refreshKey, setRefreshKey] = useState(0);
-
-  useEffect(() => {
-    let alive = true;
-
-    setLoading(true);
-    setError(null);
-
-    loader()
-      .then((result) => {
-        if (!alive) {
-          return;
-        }
-        setData(result);
-        setError(null);
-      })
-      .catch((reason) => {
-        if (!alive) {
-          return;
-        }
-        setData(initialData);
-        setError(reason instanceof Error ? reason.message : '데이터를 불러오지 못했습니다.');
-      })
-      .finally(() => {
-        if (alive) {
-          setLoading(false);
-        }
-      });
-
-    return () => {
-      alive = false;
-    };
-  }, [...deps, refreshKey]);
-
-  return {
-    data,
-    loading,
-    error,
-    refresh: () => setRefreshKey((value) => value + 1),
-  };
-}
+export type Loadable<T> = QueryResult<T>;
 
 const emptyFeedResponse: FeedResponse = {
   trades: [],
@@ -130,6 +75,18 @@ const emptyMyProfile: MyProfileResponse = {
   createdAt: '',
 };
 
+const emptyPublicProfile: PublicProfileResponse = {
+  userId: 0,
+  nickname: '',
+  profileImage: null,
+  bio: null,
+  followerCount: 0,
+  followingCount: 0,
+  isFollowing: false,
+  portfolioVisibility: 'FRIENDS_ONLY',
+  isAccessible: false,
+};
+
 const emptyNotifications: NotificationListResponse = {
   notifications: [],
   unreadCount: 0,
@@ -146,43 +103,13 @@ const emptyTradeList: TradeListResponse = {
   hasNext: false,
 };
 
-export function useFeedData(): Loadable<FeedResponse> {
-  return useLoadable(() => foloApi.getFeed(), emptyFeedResponse, []);
-}
-
-export function usePortfolioData(): Loadable<PortfolioResponse> {
-  return useLoadable(() => foloApi.getPortfolio(), emptyPortfolioResponse, []);
-}
-
-export function useTradeDetailData(tradeId: number): Loadable<TradeDetailResponse> {
-  return useLoadable(() => foloApi.getTradeDetail(tradeId), emptyTradeDetail, [tradeId]);
-}
-
-export function useTradeCommentsData(tradeId: number): Loadable<CommentListResponse> {
-  return useLoadable(() => foloApi.getTradeComments(tradeId), emptyCommentList, [tradeId]);
-}
-
-export function useMyProfileData(): Loadable<MyProfileResponse> {
-  return useLoadable(() => foloApi.getMyProfile(), emptyMyProfile, []);
-}
-
-export function useNotificationsData(): Loadable<NotificationListResponse> {
-  return useLoadable(() => foloApi.getNotifications(), emptyNotifications, []);
-}
-
-export function useRemindersData(): Loadable<ReminderListResponse> {
-  return useLoadable(() => foloApi.getReminders(), emptyReminders, []);
-}
-
-export function useMyTradesData(): Loadable<TradeListResponse> {
-  return useLoadable(() => foloApi.getMyTrades(), emptyTradeList, []);
-}
-
 const emptySearchResponse: StockSearchResponse = { stocks: [] };
+
 const emptyDiscoverResponse: StockDiscoverResponse = {
   krxStocks: [],
   usStocks: [],
 };
+
 const emptyPriceResponse: StockPriceResponse = {
   ticker: '',
   name: '',
@@ -196,6 +123,92 @@ const emptyPriceResponse: StockPriceResponse = {
   updatedAt: '',
 };
 
+export function useFeedData(): Loadable<FeedResponse> {
+  return useQuery({
+    queryFn: () => foloApi.getFeed(),
+    initialData: emptyFeedResponse,
+  });
+}
+
+export function useUserFeedData(userId: number): Loadable<FeedResponse> {
+  return useQuery({
+    queryFn: () => foloApi.getUserFeed(userId),
+    initialData: emptyFeedResponse,
+    deps: [userId],
+  });
+}
+
+export function usePortfolioData(): Loadable<PortfolioResponse> {
+  return useQuery({
+    queryFn: () => foloApi.getPortfolio(),
+    initialData: emptyPortfolioResponse,
+  });
+}
+
+export function useUserPortfolioData(
+  userId: number,
+  enabled = true,
+): Loadable<PortfolioResponse> {
+  return useQuery({
+    queryFn: () => foloApi.getUserPortfolio(userId),
+    initialData: emptyPortfolioResponse,
+    deps: [userId],
+    enabled,
+  });
+}
+
+export function useTradeDetailData(tradeId: number): Loadable<TradeDetailResponse> {
+  return useQuery({
+    queryFn: () => foloApi.getTradeDetail(tradeId),
+    initialData: emptyTradeDetail,
+    deps: [tradeId],
+  });
+}
+
+export function useTradeCommentsData(tradeId: number): Loadable<CommentListResponse> {
+  return useQuery({
+    queryFn: () => foloApi.getTradeComments(tradeId),
+    initialData: emptyCommentList,
+    deps: [tradeId],
+  });
+}
+
+export function useMyProfileData(): Loadable<MyProfileResponse> {
+  return useQuery({
+    queryFn: () => foloApi.getMyProfile(),
+    initialData: emptyMyProfile,
+  });
+}
+
+export function useUserProfileData(userId: number): Loadable<PublicProfileResponse> {
+  return useQuery({
+    queryFn: () => foloApi.getUserProfile(userId),
+    initialData: emptyPublicProfile,
+    deps: [userId],
+  });
+}
+
+export function useNotificationsData(): Loadable<NotificationListResponse> {
+  return useQuery({
+    queryFn: () => foloApi.getNotifications(),
+    initialData: emptyNotifications,
+  });
+}
+
+export function useRemindersData(): Loadable<ReminderListResponse> {
+  return useQuery({
+    queryFn: () => foloApi.getReminders(),
+    initialData: emptyReminders,
+  });
+}
+
+export function useMyTradesData(): Loadable<TradeListResponse> {
+  return useQuery({
+    queryFn: () => foloApi.getMyTrades(),
+    initialData: emptyTradeList,
+  });
+}
+
 export function useStockSearchData(
   query: string,
   minimumLength = 2,
@@ -203,24 +216,25 @@ export function useStockSearchData(
 ): Loadable<StockSearchResponse> {
   const trimmed = query.trim();
 
-  return useLoadable(
-    () => {
+  return useQuery({
+    queryFn: () => {
       if (trimmed.length < minimumLength) {
         return Promise.resolve(emptySearchResponse);
       }
+
       return foloApi.searchStocks(trimmed, market);
     },
-    emptySearchResponse,
-    [trimmed, minimumLength, market ?? null],
-  );
+    initialData: emptySearchResponse,
+    deps: [trimmed, minimumLength, market ?? null],
+  });
 }
 
 export function useStockDiscoverData(limit = 12): Loadable<StockDiscoverResponse> {
-  return useLoadable(
-    () => foloApi.discoverStocks(limit),
-    emptyDiscoverResponse,
-    [limit],
-  );
+  return useQuery({
+    queryFn: () => foloApi.discoverStocks(limit),
+    initialData: emptyDiscoverResponse,
+    deps: [limit],
+  });
 }
 
 export function useStockPriceData(
@@ -229,14 +243,15 @@ export function useStockPriceData(
 ): Loadable<StockPriceResponse> {
   const normalizedTicker = ticker.trim().toUpperCase();
 
-  return useLoadable(
-    () => {
+  return useQuery({
+    queryFn: () => {
       if (!normalizedTicker) {
         return Promise.resolve(emptyPriceResponse);
       }
+
       return foloApi.getStockPrice(normalizedTicker, market);
     },
-    emptyPriceResponse,
-    [normalizedTicker, market ?? null],
-  );
+    initialData: emptyPriceResponse,
+    deps: [normalizedTicker, market ?? null],
+  });
 }

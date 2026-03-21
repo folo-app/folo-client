@@ -1,115 +1,109 @@
-import { useEffect, useState } from 'react';
-import { useNavigation, useRoute } from '@react-navigation/native';
+import { useRoute } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useNavigation } from '@react-navigation/native';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { useAuth } from '../auth/AuthProvider';
-import type { PublicProfileResponse } from '../api/contracts';
-import { foloApi } from '../api/services';
 import { Avatar } from '../components/Avatar';
 import { DataStatusCard } from '../components/DataStatusCard';
 import { Chip, Page, PrimaryButton, SectionHeading, SurfaceCard } from '../components/ui';
-import { visibilityLabel } from '../lib/format';
+import {
+  useUserFeedData,
+  useUserPortfolioData,
+  useUserProfileData,
+} from '../hooks/useFoloData';
+import { useMutation } from '../hooks/query';
+import {
+  formatCurrency,
+  formatPercent,
+  formatRelativeDate,
+  tradeTypeLabel,
+  visibilityLabel,
+} from '../lib/format';
 import type { RootStackParamList } from '../navigation/types';
+import { foloApi } from '../api/services';
 import { tokens } from '../theme/tokens';
 
 export function UserProfileScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const route = useRoute<RouteProp<RootStackParamList, 'UserProfile'>>();
   const { session } = useAuth();
-  const [profile, setProfile] = useState<PublicProfileResponse | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [pending, setPending] = useState(false);
-
-  async function loadProfile() {
-    setLoading(true);
-    setError(null);
-
-    try {
-      const response = await foloApi.getUserProfile(route.params.userId);
-      setProfile(response);
-    } catch (nextError) {
-      setError(
-        nextError instanceof Error ? nextError.message : '프로필을 불러오지 못했습니다.',
-      );
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  useEffect(() => {
-    loadProfile();
-  }, [route.params.userId]);
+  const profile = useUserProfileData(route.params.userId);
+  const portfolio = useUserPortfolioData(route.params.userId, profile.data.isAccessible);
+  const feed = useUserFeedData(route.params.userId);
+  const followMutation = useMutation({
+    mutationFn: async (variables: { userId: number; isFollowing: boolean }) => {
+      if (variables.isFollowing) {
+        await foloApi.unfollowUser(variables.userId);
+      } else {
+        await foloApi.followUser(variables.userId);
+      }
+    },
+  });
 
   async function handleToggleFollow() {
-    if (!profile || profile.userId === session?.userId) {
+    if (profile.data.userId === 0 || profile.data.userId === session?.userId) {
       return;
     }
 
-    setPending(true);
-    setError(null);
-
     try {
-      if (profile.isFollowing) {
-        await foloApi.unfollowUser(profile.userId);
-      } else {
-        await foloApi.followUser(profile.userId);
-      }
-
-      await loadProfile();
-    } catch (nextError) {
-      setError(
-        nextError instanceof Error ? nextError.message : '팔로우 상태를 바꾸지 못했습니다.',
-      );
-    } finally {
-      setPending(false);
-    }
+      await followMutation.mutate({
+        userId: profile.data.userId,
+        isFollowing: profile.data.isFollowing,
+      });
+      profile.refresh();
+      portfolio.refresh();
+      feed.refresh();
+    } catch {}
   }
 
-  const isSelf = profile?.userId === session?.userId;
+  const isSelf = profile.data.userId === session?.userId;
+  const combinedError =
+    profile.error ?? portfolio.error ?? feed.error ?? followMutation.error;
+  const combinedLoading =
+    profile.loading || portfolio.loading || feed.loading || followMutation.pending;
 
   return (
     <Page
       eyebrow="Profile"
-      title={profile?.nickname ? `${profile.nickname} 프로필` : '사용자 프로필'}
-      subtitle="공개 프로필, 팔로우 상태, 포트폴리오 접근 가능 여부를 확인합니다."
+      title={profile.data.nickname ? `${profile.data.nickname} 프로필` : '사용자 프로필'}
+      subtitle="공개 프로필, 공개 포트폴리오, 개인 피드 미리보기를 한 화면에서 확인합니다."
     >
-      <DataStatusCard error={error} loading={loading || pending} />
+      <DataStatusCard error={combinedError} loading={combinedLoading} />
 
-      {profile ? (
+      {profile.data.userId > 0 ? (
         <>
           <SurfaceCard tone="hero">
             <View style={styles.header}>
               <Avatar
                 backgroundColor={tokens.colors.navy}
-                imageUrl={profile.profileImage}
-                name={profile.nickname}
+                imageUrl={profile.data.profileImage}
+                name={profile.data.nickname}
                 size={72}
               />
               <View style={styles.headerText}>
-                <Text style={styles.name}>{profile.nickname}</Text>
-                <Text style={styles.bio}>{profile.bio ?? '등록된 소개가 없습니다.'}</Text>
+                <Text style={styles.name}>{profile.data.nickname}</Text>
+                <Text style={styles.bio}>{profile.data.bio ?? '등록된 소개가 없습니다.'}</Text>
               </View>
             </View>
             <View style={styles.metaRow}>
-              <Chip active label={`팔로워 ${profile.followerCount}`} tone="brand" />
-              <Chip label={`팔로잉 ${profile.followingCount}`} />
-              <Chip label={visibilityLabel(profile.portfolioVisibility)} />
+              <Chip active label={`팔로워 ${profile.data.followerCount}`} tone="brand" />
+              <Chip label={`팔로잉 ${profile.data.followingCount}`} />
+              <Chip label={visibilityLabel(profile.data.portfolioVisibility)} />
             </View>
             {!isSelf ? (
               <PrimaryButton
                 label={
-                  pending
+                  followMutation.pending
                     ? '처리 중...'
-                    : profile.isFollowing
+                    : profile.data.isFollowing
                       ? '언팔로우'
                       : '팔로우'
                 }
                 onPress={handleToggleFollow}
-                variant={profile.isFollowing ? 'secondary' : 'primary'}
-                disabled={pending}
+                variant={profile.data.isFollowing ? 'secondary' : 'primary'}
+                disabled={followMutation.pending}
               />
             ) : (
               <PrimaryButton
@@ -123,22 +117,110 @@ export function UserProfileScreen() {
           <SurfaceCard>
             <SectionHeading
               title="포트폴리오 접근"
-              description="상대가 설정한 공개 범위 기준으로 현재 접근 가능 여부를 표시합니다."
+              description="상대 공개 범위에 따라 열람 가능 여부가 달라집니다."
             />
             <View style={styles.statusRow}>
               <Text style={styles.statusLabel}>현재 상태</Text>
               <Text style={styles.statusValue}>
-                {profile.isAccessible ? '열람 가능' : '열람 제한'}
+                {profile.data.isAccessible ? '열람 가능' : '열람 제한'}
               </Text>
             </View>
             <Text style={styles.statusText}>
-              {profile.isAccessible
-                ? '상세 포트폴리오/개인 피드 화면을 이어서 붙이면 이 계정의 공개 범위를 기준으로 진입시킬 수 있습니다.'
+              {profile.data.isAccessible
+                ? '공개 가능한 자산 요약과 보유 종목 미리보기를 아래에서 확인할 수 있습니다.'
                 : '지금은 공개 범위 때문에 포트폴리오를 열 수 없습니다. 친구 공개 계정은 상호 팔로우가 되어야 접근 가능합니다.'}
             </Text>
           </SurfaceCard>
+
+          {profile.data.isAccessible ? (
+            <SurfaceCard>
+              <SectionHeading
+                title="공개 포트폴리오 미리보기"
+                description={`보유 ${portfolio.data.holdings.length}개 종목`}
+              />
+              <View style={styles.metricPreviewRow}>
+                <Chip
+                  active
+                  label={`총 수익률 ${formatPercent(portfolio.data.totalReturnRate)}`}
+                  tone="positive"
+                />
+                <Chip
+                  label={`평가금액 ${formatCurrency(portfolio.data.totalValue)}`}
+                  tone="brand"
+                />
+              </View>
+              {portfolio.data.holdings.length === 0 ? (
+                <Text style={styles.emptyText}>공개 가능한 보유 종목이 없습니다.</Text>
+              ) : (
+                portfolio.data.holdings.slice(0, 3).map((holding, index) => (
+                  <View
+                    key={holding.holdingId}
+                    style={[
+                      styles.row,
+                      index < Math.min(2, portfolio.data.holdings.length - 1) && styles.divider,
+                    ]}
+                  >
+                    <Text style={styles.rowTitle}>
+                      {holding.ticker} · {holding.name}
+                    </Text>
+                    <Text style={styles.rowMeta}>
+                      {formatPercent(holding.returnRate)} · {formatCurrency(holding.totalValue, holding.market)}
+                    </Text>
+                  </View>
+                ))
+              )}
+              <PrimaryButton
+                label="공개 포트폴리오 전체 보기"
+                onPress={() =>
+                  navigation.navigate('PublicPortfolio', {
+                    userId: route.params.userId,
+                    nickname: profile.data.nickname,
+                  })
+                }
+                variant="secondary"
+              />
+            </SurfaceCard>
+          ) : null}
+
+          <SurfaceCard>
+            <SectionHeading
+              title="최근 거래 미리보기"
+              description={`현재 ${feed.data.trades.length}건`}
+            />
+            {feed.data.trades.length === 0 ? (
+              <Text style={styles.emptyText}>표시할 공개 거래가 없습니다.</Text>
+            ) : (
+              feed.data.trades.slice(0, 3).map((trade, index) => (
+                <View
+                  key={trade.tradeId}
+                  style={[
+                    styles.row,
+                    index < Math.min(2, feed.data.trades.length - 1) && styles.divider,
+                  ]}
+                >
+                  <Text style={styles.rowTitle}>
+                    {trade.ticker} · {tradeTypeLabel(trade.tradeType)}
+                  </Text>
+                  <Text style={styles.rowMeta}>
+                    {formatCurrency(trade.quantity * trade.price, trade.market)} ·{' '}
+                    {formatRelativeDate(trade.tradedAt)}
+                  </Text>
+                </View>
+              ))
+            )}
+            <PrimaryButton
+              label="개인 피드 전체 보기"
+              onPress={() =>
+                navigation.navigate('UserFeed', {
+                  userId: route.params.userId,
+                  nickname: profile.data.nickname,
+                })
+              }
+              variant="secondary"
+            />
+          </SurfaceCard>
         </>
-      ) : !loading ? (
+      ) : !profile.loading ? (
         <SurfaceCard>
           <Text style={styles.emptyText}>사용자 정보를 찾을 수 없습니다.</Text>
         </SurfaceCard>
@@ -193,6 +275,31 @@ const styles = StyleSheet.create({
   statusText: {
     fontSize: 14,
     lineHeight: 22,
+    color: tokens.colors.inkSoft,
+    fontFamily: tokens.typography.body,
+  },
+  metricPreviewRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  row: {
+    gap: 6,
+  },
+  divider: {
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(214, 224, 234, 0.8)',
+    paddingBottom: 16,
+    marginBottom: 16,
+  },
+  rowTitle: {
+    fontSize: 15,
+    color: tokens.colors.navy,
+    fontFamily: tokens.typography.heading,
+    fontWeight: '700',
+  },
+  rowMeta: {
+    fontSize: 13,
     color: tokens.colors.inkSoft,
     fontFamily: tokens.typography.body,
   },
