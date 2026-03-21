@@ -1,9 +1,15 @@
-import { useState } from 'react';
-import { useRoute } from '@react-navigation/native';
+import { useEffect, useState } from 'react';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
-import { StyleSheet, Text, TextInput, View } from 'react-native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
+import type {
+  ReactionEmoji,
+  TradeVisibility,
+} from '../api/contracts';
 import { foloApi } from '../api/services';
+import { useAuth } from '../auth/AuthProvider';
 import { DataStatusCard } from '../components/DataStatusCard';
 import {
   Chip,
@@ -13,6 +19,7 @@ import {
   SurfaceCard,
 } from '../components/ui';
 import { useTradeCommentsData, useTradeDetailData } from '../hooks/useFoloData';
+import { useMutation } from '../hooks/query';
 import {
   formatCurrency,
   formatDateLabel,
@@ -23,52 +30,145 @@ import {
 import type { RootStackParamList } from '../navigation/types';
 import { tokens } from '../theme/tokens';
 
+const REACTION_OPTIONS: ReactionEmoji[] = ['FIRE', 'EYES', 'DIAMOND', 'CLAP', 'ROCKET'];
+const VISIBILITY_OPTIONS: TradeVisibility[] = ['PUBLIC', 'FRIENDS_ONLY', 'PRIVATE'];
+
 export function TradeDetailScreen() {
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const route = useRoute<RouteProp<RootStackParamList, 'TradeDetail'>>();
+  const { session } = useAuth();
   const trade = useTradeDetailData(route.params.tradeId);
   const comments = useTradeCommentsData(route.params.tradeId);
   const [commentDraft, setCommentDraft] = useState('');
-  const [actionError, setActionError] = useState<string | null>(null);
+  const [editComment, setEditComment] = useState('');
+  const [editVisibility, setEditVisibility] = useState<TradeVisibility>('PRIVATE');
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
-  const [submittingComment, setSubmittingComment] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+
+  const createCommentMutation = useMutation({
+    mutationFn: async (content: string) =>
+      foloApi.createComment(route.params.tradeId, { content }),
+  });
+  const updateTradeMutation = useMutation({
+    mutationFn: async (variables: { comment: string | null; visibility: TradeVisibility }) =>
+      foloApi.updateTrade(route.params.tradeId, variables),
+  });
+  const deleteTradeMutation = useMutation({
+    mutationFn: async () => foloApi.deleteTrade(route.params.tradeId),
+  });
+  const reactionMutation = useMutation({
+    mutationFn: async (emoji: ReactionEmoji) => {
+      const currentReaction = trade.data.reactions.find((item) => item.isMyReaction);
+      if (currentReaction?.emoji === emoji) {
+        return foloApi.removeTradeReaction(route.params.tradeId);
+      }
+      return foloApi.reactToTrade(route.params.tradeId, { emoji });
+    },
+  });
+  const deleteCommentMutation = useMutation({
+    mutationFn: async (commentId: number) =>
+      foloApi.deleteComment(route.params.tradeId, commentId),
+  });
+
+  const isOwner = trade.data.user.userId === session?.userId;
+  const mutationError =
+    createCommentMutation.error ??
+    updateTradeMutation.error ??
+    deleteTradeMutation.error ??
+    reactionMutation.error ??
+    deleteCommentMutation.error;
+  const mutationPending =
+    createCommentMutation.pending ||
+    updateTradeMutation.pending ||
+    deleteTradeMutation.pending ||
+    reactionMutation.pending ||
+    deleteCommentMutation.pending;
+
+  useEffect(() => {
+    setEditComment(trade.data.comment ?? '');
+    setEditVisibility(trade.data.visibility);
+  }, [trade.data.comment, trade.data.tradeId, trade.data.visibility]);
+
+  async function refreshAll() {
+    trade.refresh();
+    comments.refresh();
+  }
 
   async function handleCreateComment() {
     const content = commentDraft.trim();
 
     if (!content) {
-      setActionError('댓글 내용을 입력해 주세요.');
-      setActionSuccess(null);
       return;
     }
 
-    setSubmittingComment(true);
-    setActionError(null);
-    setActionSuccess(null);
-
     try {
-      await foloApi.createComment(route.params.tradeId, { content });
+      await createCommentMutation.mutate(content);
       setCommentDraft('');
       setActionSuccess('댓글을 등록했습니다.');
-      comments.refresh();
-      trade.refresh();
-    } catch (error) {
-      setActionError(
-        error instanceof Error ? error.message : '댓글 등록에 실패했습니다.',
-      );
-    } finally {
-      setSubmittingComment(false);
+      refreshAll();
+    } catch {}
+  }
+
+  async function handleSaveTrade() {
+    try {
+      await updateTradeMutation.mutate({
+        comment: editComment.trim() ? editComment.trim() : null,
+        visibility: editVisibility,
+      });
+      setActionSuccess('거래 공개 범위와 코멘트를 저장했습니다.');
+      refreshAll();
+    } catch {}
+  }
+
+  async function handleDeleteTrade() {
+    if (!confirmDelete) {
+      setConfirmDelete(true);
+      return;
     }
+
+    try {
+      await deleteTradeMutation.mutate(undefined);
+      navigation.goBack();
+    } catch {}
+  }
+
+  async function handleDeleteComment(commentId: number) {
+    try {
+      await deleteCommentMutation.mutate(commentId);
+      setActionSuccess('댓글을 삭제했습니다.');
+      refreshAll();
+    } catch {}
+  }
+
+  async function handleToggleReaction(emoji: ReactionEmoji) {
+    try {
+      await reactionMutation.mutate(emoji);
+      setActionSuccess('리액션을 업데이트했습니다.');
+      refreshAll();
+    } catch {}
+  }
+
+  function handleOpenAuthorProfile() {
+    if (!trade.data.user.userId || trade.data.user.userId === session?.userId) {
+      navigation.navigate('MainTabs', { screen: 'Profile' });
+      return;
+    }
+
+    navigation.navigate('UserProfile', {
+      userId: trade.data.user.userId,
+      nickname: trade.data.user.nickname,
+    });
   }
 
   return (
     <Page
       eyebrow="Trade Detail"
       title={trade.data.ticker ? `${trade.data.ticker} 거래 상세` : '거래 상세'}
-      subtitle="거래 카드에서 빠져 있던 수량, 총액, 공개 범위, 댓글 목록을 별도 화면으로 확인합니다."
+      subtitle="거래 요약뿐 아니라 작성자 프로필, 리액션, 댓글, 수정/삭제 액션까지 한 화면에서 처리합니다."
     >
       <DataStatusCard
-        error={trade.error ?? comments.error ?? actionError}
-        loading={trade.loading || comments.loading || submittingComment}
+        error={trade.error ?? comments.error ?? mutationError}
+        loading={trade.loading || comments.loading || mutationPending}
       />
 
       {actionSuccess ? <Text style={styles.feedback}>{actionSuccess}</Text> : null}
@@ -84,6 +184,11 @@ export function TradeDetailScreen() {
               <View style={styles.titleBlock}>
                 <Text style={styles.ticker}>{trade.data.ticker}</Text>
                 <Text style={styles.name}>{trade.data.name}</Text>
+                <Pressable onPress={handleOpenAuthorProfile} style={styles.authorLink}>
+                  <Text style={styles.authorText}>
+                    {trade.data.user.nickname} 프로필 보기
+                  </Text>
+                </Pressable>
               </View>
               <Chip
                 active
@@ -115,24 +220,73 @@ export function TradeDetailScreen() {
             <Text style={styles.timestamp}>{formatDateLabel(trade.data.tradedAt)}</Text>
           </SurfaceCard>
 
-          <SurfaceCard>
-            <SectionHeading
-              title="리액션"
-              description="백엔드 ReactionSummary 구조를 그대로 반영했습니다."
-            />
-            {trade.data.reactions.length === 0 ? (
-              <Text style={styles.emptyText}>아직 등록된 리액션이 없습니다.</Text>
-            ) : (
+          {isOwner ? (
+            <SurfaceCard>
+              <SectionHeading
+                title="거래 수정"
+                description="현재 백엔드가 지원하는 comment / visibility mutation을 바로 적용합니다."
+              />
+              <TextInput
+                multiline
+                onChangeText={setEditComment}
+                placeholder="거래 코멘트를 입력하세요."
+                placeholderTextColor={tokens.colors.inkMute}
+                style={styles.input}
+                textAlignVertical="top"
+                value={editComment}
+              />
               <View style={styles.reactionRow}>
-                {trade.data.reactions.map((reaction) => (
+                {VISIBILITY_OPTIONS.map((value) => (
                   <Chip
-                    key={`${reaction.emoji}-${reaction.count}`}
-                    label={`${reactionEmojiLabel(reaction.emoji)} ${reaction.count}`}
-                    tone={reaction.isMyReaction ? 'brand' : 'default'}
+                    key={value}
+                    active={editVisibility === value}
+                    label={visibilityLabel(value)}
+                    onPress={() => setEditVisibility(value)}
+                    tone={editVisibility === value ? 'brand' : 'default'}
                   />
                 ))}
               </View>
-            )}
+              <View style={styles.actionColumn}>
+                <PrimaryButton
+                  label={updateTradeMutation.pending ? '저장 중...' : '거래 수정 저장'}
+                  onPress={handleSaveTrade}
+                  disabled={updateTradeMutation.pending}
+                />
+                <PrimaryButton
+                  label={
+                    deleteTradeMutation.pending
+                      ? '삭제 중...'
+                      : confirmDelete
+                        ? '한 번 더 누르면 삭제'
+                        : '거래 삭제'
+                  }
+                  onPress={handleDeleteTrade}
+                  disabled={deleteTradeMutation.pending}
+                  variant="secondary"
+                />
+              </View>
+            </SurfaceCard>
+          ) : null}
+
+          <SurfaceCard>
+            <SectionHeading
+              title="리액션"
+              description="같은 사용자는 한 번에 한 가지 리액션만 유지하고, 다시 누르면 해제됩니다."
+            />
+            <View style={styles.reactionRow}>
+              {REACTION_OPTIONS.map((emoji) => {
+                const summary = trade.data.reactions.find((reaction) => reaction.emoji === emoji);
+                return (
+                  <Chip
+                    key={emoji}
+                    active={summary?.isMyReaction}
+                    label={`${reactionEmojiLabel(emoji)} ${summary?.count ?? 0}`}
+                    onPress={() => handleToggleReaction(emoji)}
+                    tone={summary?.isMyReaction ? 'brand' : 'default'}
+                  />
+                );
+              })}
+            </View>
           </SurfaceCard>
 
           <SurfaceCard>
@@ -150,9 +304,9 @@ export function TradeDetailScreen() {
               value={commentDraft}
             />
             <PrimaryButton
-              label={submittingComment ? '등록 중...' : '댓글 등록'}
+              label={createCommentMutation.pending ? '등록 중...' : '댓글 등록'}
               onPress={handleCreateComment}
-              disabled={submittingComment}
+              disabled={createCommentMutation.pending}
             />
           </SurfaceCard>
 
@@ -172,7 +326,16 @@ export function TradeDetailScreen() {
                     index < comments.data.comments.length - 1 && styles.divider,
                   ]}
                 >
-                  <Text style={styles.commentAuthor}>{comment.user.nickname}</Text>
+                  <View style={styles.commentHeader}>
+                    <Text style={styles.commentAuthor}>{comment.user.nickname}</Text>
+                    {comment.isMyComment ? (
+                      <Chip
+                        label="삭제"
+                        onPress={() => handleDeleteComment(comment.commentId)}
+                        tone="danger"
+                      />
+                    ) : null}
+                  </View>
                   <Text style={styles.commentContent}>{comment.content}</Text>
                   <Text style={styles.commentTime}>{formatDateLabel(comment.createdAt)}</Text>
                 </View>
@@ -186,6 +349,18 @@ export function TradeDetailScreen() {
 }
 
 const styles = StyleSheet.create({
+  actionColumn: {
+    gap: 10,
+  },
+  authorLink: {
+    alignSelf: 'flex-start',
+  },
+  authorText: {
+    fontSize: 13,
+    color: tokens.colors.brandStrong,
+    fontFamily: tokens.typography.body,
+    fontWeight: '600',
+  },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -247,6 +422,12 @@ const styles = StyleSheet.create({
   },
   commentRow: {
     gap: 6,
+  },
+  commentHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: 12,
   },
   divider: {
     borderBottomWidth: 1,
