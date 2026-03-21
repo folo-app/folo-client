@@ -70,7 +70,7 @@ export function LoginScreen() {
     <AuthScreenLayout
       badge="Sign In"
       heroVariant="compact"
-      title="포트폴리오와 친구 피드, 한 번에 이어 보기"
+      title={`포트폴리오와 친구 피드,\n한 번에 이어 보기`}
       subtitle="로그인하면 마지막 기록과 투자 루틴이 바로 이어집니다."
       footer={
         <>
