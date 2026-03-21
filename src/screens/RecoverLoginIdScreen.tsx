@@ -51,8 +51,8 @@ export function RecoverLoginIdScreen() {
   return (
     <AuthScreenLayout
       badge="Find ID"
-      title="가입할 때 쓴 이메일이 기억나지 않는다면"
-      subtitle="닉네임을 입력하면 가입된 계정의 로그인 이메일을 일부 마스킹해서 안내합니다."
+      title="가입한 이메일이 기억나지 않는다면"
+      subtitle="닉네임을 입력하면 가입 이메일을 일부 마스킹해서 안내합니다."
       footer={
         <>
           <Text style={styles.footerText}>로그인 화면으로 돌아갈까요?</Text>

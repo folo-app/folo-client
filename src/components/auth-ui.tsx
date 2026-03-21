@@ -49,6 +49,7 @@ export function AuthScreenLayout({
   const compact = width < 430;
   const narrow = width < 380;
   const stackedCompactHero = heroVariant === 'compact' && width < 520;
+  const stackedDefaultHero = heroVariant === 'default';
 
   return (
     <KeyboardAvoidingView
@@ -88,14 +89,18 @@ export function AuthScreenLayout({
           >
             <View
               style={[
-                heroVariant === 'compact' ? styles.compactHeroLayout : styles.brandBar,
+                heroVariant === 'compact'
+                  ? styles.compactHeroLayout
+                  : styles.defaultHeroLayout,
                 stackedCompactHero && styles.compactHeroLayoutStacked,
                 narrow && heroVariant === 'compact' && styles.compactHeroLayoutNarrow,
               ]}
             >
               <View
                 style={[
-                  heroVariant === 'compact' ? styles.compactCopyArea : styles.brandBar,
+                  heroVariant === 'compact'
+                    ? styles.compactCopyArea
+                    : styles.defaultCopyArea,
                 ]}
               >
                 <View style={styles.brandBar}>
@@ -119,6 +124,7 @@ export function AuthScreenLayout({
                       compact && styles.heroTitleCompact,
                       heroVariant === 'compact' && styles.heroTitleTight,
                       stackedCompactHero && styles.heroTitleStackedCompact,
+                      stackedDefaultHero && compact && styles.heroTitleDefaultCompact,
                     ]}
                   >
                     {title}
@@ -128,6 +134,7 @@ export function AuthScreenLayout({
                       styles.heroSubtitle,
                       heroVariant === 'compact' && styles.heroSubtitleTight,
                       stackedCompactHero && styles.heroSubtitleStackedCompact,
+                      stackedDefaultHero && compact && styles.heroSubtitleDefaultCompact,
                     ]}
                   >
                     {subtitle}
@@ -505,6 +512,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 16,
   },
+  defaultHeroLayout: {
+    flexDirection: 'column',
+    alignItems: 'stretch',
+    gap: 14,
+  },
   compactHeroLayoutStacked: {
     flexDirection: 'column',
     alignItems: 'stretch',
@@ -517,6 +529,9 @@ const styles = StyleSheet.create({
   compactCopyArea: {
     flex: 1,
     gap: 10,
+  },
+  defaultCopyArea: {
+    gap: 14,
   },
   compactGraphicArea: {
     width: 132,
@@ -575,6 +590,7 @@ const styles = StyleSheet.create({
   },
   copyBlock: {
     gap: 10,
+    flexShrink: 1,
   },
   heroTitle: {
     fontSize: 30,
@@ -595,6 +611,10 @@ const styles = StyleSheet.create({
     fontSize: 22,
     lineHeight: 28,
   },
+  heroTitleDefaultCompact: {
+    fontSize: 24,
+    lineHeight: 31,
+  },
   heroSubtitle: {
     fontSize: 15,
     lineHeight: 23,
@@ -609,6 +629,10 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 20,
   },
+  heroSubtitleDefaultCompact: {
+    fontSize: 14,
+    lineHeight: 21,
+  },
   signalRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -619,12 +643,14 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: tokens.radius.pill,
     backgroundColor: tokens.colors.brandSoft,
+    maxWidth: '100%',
   },
   signalLabel: {
     color: tokens.colors.brandStrong,
     fontSize: 12,
     fontFamily: tokens.typography.heading,
     fontWeight: '700',
+    flexShrink: 1,
   },
   showcase: {
     width: 208,

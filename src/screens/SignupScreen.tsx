@@ -62,8 +62,8 @@ export function SignupScreen() {
   return (
     <AuthScreenLayout
       badge="Create Account"
-      title="FOLO에서 쓸 계정을 만들고 바로 포트폴리오를 시작하세요"
-      subtitle="가입 후 이메일 인증만 마치면 바로 세션이 열리고, 첫 포트폴리오 구성 화면으로 이어집니다."
+      title="FOLO 계정을 만들고 바로 시작하세요"
+      subtitle="이메일 인증을 마치면 첫 포트폴리오 설정 화면으로 이어집니다."
       footer={
         <>
           <Text style={styles.footerText}>이미 계정이 있다면</Text>
