@@ -33,8 +33,12 @@ export function RecoverLoginIdScreen() {
     setMessage(null);
 
     try {
-      await foloApi.recoverLoginId({ nickname: normalizedNickname });
-      setMessage('가입 정보가 있으면 등록된 이메일로 로그인 아이디 안내를 보냈습니다.');
+      const response = await foloApi.recoverLoginId({ nickname: normalizedNickname });
+      if (response.found && response.maskedLoginId) {
+        setMessage(`가입 이메일은 ${response.maskedLoginId} 입니다.`);
+      } else {
+        setMessage('일치하는 가입 계정을 찾지 못했습니다.');
+      }
     } catch (error) {
       setMessage(
         error instanceof Error ? error.message : '아이디 찾기 요청에 실패했습니다.',
@@ -48,7 +52,7 @@ export function RecoverLoginIdScreen() {
     <AuthScreenLayout
       badge="Find ID"
       title="가입할 때 쓴 이메일이 기억나지 않는다면"
-      subtitle="닉네임을 입력하면 가입 정보가 있는 계정에 한해 등록된 이메일 주소로 로그인 아이디 안내 메일을 보냅니다."
+      subtitle="닉네임을 입력하면 가입된 계정의 로그인 이메일을 일부 마스킹해서 안내합니다."
       footer={
         <>
           <Text style={styles.footerText}>로그인 화면으로 돌아갈까요?</Text>
@@ -66,14 +70,18 @@ export function RecoverLoginIdScreen() {
       />
 
       {message ? (
-        <AuthNotice tone={message.includes('보냈습니다') ? 'positive' : 'danger'}>
+        <AuthNotice
+          tone={
+            message.includes('가입 이메일은') ? 'positive' : 'danger'
+          }
+        >
           <AuthNoticeText>{message}</AuthNoticeText>
         </AuthNotice>
       ) : null}
 
       <PrimaryButton
         disabled={submitting}
-        label={submitting ? '확인 중...' : '아이디 안내 메일 받기'}
+        label={submitting ? '조회 중...' : '가입 이메일 확인'}
         onPress={handleRecover}
       />
     </AuthScreenLayout>

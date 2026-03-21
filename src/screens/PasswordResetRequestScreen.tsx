@@ -36,7 +36,10 @@ export function PasswordResetRequestScreen() {
 
     try {
       await foloApi.requestPasswordReset({ email: normalizedEmail });
-      navigation.navigate('PasswordResetConfirm', { email: normalizedEmail });
+      navigation.navigate('Login', {
+        email: normalizedEmail,
+        notice: '입력한 이메일로 계정이 존재하면 임시 비밀번호를 전송했습니다. 메일함을 확인해 주세요.',
+      });
     } catch (error) {
       setMessage(
         error instanceof Error ? error.message : '비밀번호 재설정 요청에 실패했습니다.',
@@ -49,8 +52,8 @@ export function PasswordResetRequestScreen() {
   return (
     <AuthScreenLayout
       badge="Reset Password"
-      title="비밀번호를 다시 설정할 수 있도록 코드를 보내드릴게요"
-      subtitle="가입한 이메일 주소를 입력하면 계정이 있는 경우 재설정 코드를 보내고, 다음 화면에서 새 비밀번호를 등록할 수 있습니다."
+      title="임시 비밀번호를 메일로 보내드릴게요"
+      subtitle="가입한 이메일 주소를 입력하면 계정이 있는 경우 임시 비밀번호를 메일로 전송하고, 기존 로그인 세션은 모두 종료됩니다."
       footer={
         <>
           <Text style={styles.footerText}>로그인이 기억났다면</Text>
@@ -76,7 +79,7 @@ export function PasswordResetRequestScreen() {
 
       <PrimaryButton
         disabled={submitting}
-        label={submitting ? '코드 전송 중...' : '재설정 코드 받기'}
+        label={submitting ? '전송 중...' : '임시 비밀번호 받기'}
         onPress={handleRequestReset}
       />
     </AuthScreenLayout>

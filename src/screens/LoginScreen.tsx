@@ -127,7 +127,7 @@ export function LoginScreen() {
         <View style={styles.inlineRow}>
           <Text style={styles.inlineText}>비밀번호를 잊어버렸나요?</Text>
           <AuthTextLink
-            label="비밀번호 재설정"
+            label="임시 비밀번호 받기"
             onPress={() =>
               navigation.navigate('PasswordResetRequest', { email: email.trim() })
             }

@@ -42,14 +42,13 @@ export type RecoverLoginIdRequest = {
   nickname: string;
 };
 
-export type PasswordResetRequest = {
-  email: string;
+export type RecoverLoginIdResponse = {
+  found: boolean;
+  maskedLoginId: string | null;
 };
 
-export type PasswordResetConfirmRequest = {
+export type PasswordResetRequest = {
   email: string;
-  code: string;
-  newPassword: string;
 };
 
 export type RefreshRequest = {

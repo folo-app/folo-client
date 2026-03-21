@@ -36,11 +36,6 @@ export type RootStackParamList = {
         email?: string;
       }
     | undefined;
-  PasswordResetConfirm:
-    | {
-        email?: string;
-      }
-    | undefined;
   PortfolioSetupGate: undefined;
   PortfolioSetup: undefined;
   PortfolioSetupReview: {

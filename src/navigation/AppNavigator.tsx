@@ -17,7 +17,6 @@ import { HomeScreen } from '../screens/HomeScreen';
 import { ImportOnboardingScreen } from '../screens/ImportOnboardingScreen';
 import { LoginScreen } from '../screens/LoginScreen';
 import { NotificationsScreen } from '../screens/NotificationsScreen';
-import { PasswordResetConfirmScreen } from '../screens/PasswordResetConfirmScreen';
 import { PasswordResetRequestScreen } from '../screens/PasswordResetRequestScreen';
 import { PortfolioScreen } from '../screens/PortfolioScreen';
 import { PortfolioSetupGateScreen } from '../screens/PortfolioSetupGateScreen';
@@ -133,10 +132,6 @@ function RootNavigator() {
           <Stack.Screen
             component={PasswordResetRequestScreen}
             name="PasswordResetRequest"
-          />
-          <Stack.Screen
-            component={PasswordResetConfirmScreen}
-            name="PasswordResetConfirm"
           />
           <Stack.Screen
             component={EmailVerificationScreen}
