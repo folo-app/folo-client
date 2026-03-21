@@ -22,11 +22,14 @@ import type {
   NotificationListResponse,
   NotificationReadResponse,
   OcrImportResponse,
+  PasswordResetConfirmRequest,
+  PasswordResetRequest,
   PortfolioResponse,
   PortfolioSyncResponse,
   ProfileImageUploadResponse,
   PublicProfileResponse,
   ReactionMutationResponse,
+  RecoverLoginIdRequest,
   RefreshRequest,
   ReminderItem,
   ReminderListResponse,
@@ -101,6 +104,30 @@ export const foloApi = {
       method: 'POST',
       body,
       requiresAuth: false,
+    });
+  },
+  recoverLoginId(body: RecoverLoginIdRequest) {
+    return apiRequest<void>('/auth/account/recover-id', {
+      method: 'POST',
+      body,
+      requiresAuth: false,
+      allowEmptyData: true,
+    });
+  },
+  requestPasswordReset(body: PasswordResetRequest) {
+    return apiRequest<void>('/auth/password/reset/request', {
+      method: 'POST',
+      body,
+      requiresAuth: false,
+      allowEmptyData: true,
+    });
+  },
+  confirmPasswordReset(body: PasswordResetConfirmRequest) {
+    return apiRequest<void>('/auth/password/reset/confirm', {
+      method: 'POST',
+      body,
+      requiresAuth: false,
+      allowEmptyData: true,
     });
   },
   refresh(body: RefreshRequest) {

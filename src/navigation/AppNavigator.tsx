@@ -17,6 +17,8 @@ import { HomeScreen } from '../screens/HomeScreen';
 import { ImportOnboardingScreen } from '../screens/ImportOnboardingScreen';
 import { LoginScreen } from '../screens/LoginScreen';
 import { NotificationsScreen } from '../screens/NotificationsScreen';
+import { PasswordResetConfirmScreen } from '../screens/PasswordResetConfirmScreen';
+import { PasswordResetRequestScreen } from '../screens/PasswordResetRequestScreen';
 import { PortfolioScreen } from '../screens/PortfolioScreen';
 import { PortfolioSetupGateScreen } from '../screens/PortfolioSetupGateScreen';
 import { PortfolioSetupReviewScreen } from '../screens/PortfolioSetupReviewScreen';
@@ -24,6 +26,7 @@ import { PortfolioSetupScreen } from '../screens/PortfolioSetupScreen';
 import { PublicPortfolioScreen } from '../screens/PublicPortfolioScreen';
 import { ProfileEditScreen } from '../screens/ProfileEditScreen';
 import { ProfileScreen } from '../screens/ProfileScreen';
+import { RecoverLoginIdScreen } from '../screens/RecoverLoginIdScreen';
 import { RemindersScreen } from '../screens/RemindersScreen';
 import { PeopleScreen } from '../screens/PeopleScreen';
 import { SignupScreen } from '../screens/SignupScreen';
@@ -126,6 +129,15 @@ function RootNavigator() {
         <>
           <Stack.Screen component={LoginScreen} name="Login" />
           <Stack.Screen component={SignupScreen} name="Signup" />
+          <Stack.Screen component={RecoverLoginIdScreen} name="RecoverLoginId" />
+          <Stack.Screen
+            component={PasswordResetRequestScreen}
+            name="PasswordResetRequest"
+          />
+          <Stack.Screen
+            component={PasswordResetConfirmScreen}
+            name="PasswordResetConfirm"
+          />
           <Stack.Screen
             component={EmailVerificationScreen}
             name="EmailVerification"

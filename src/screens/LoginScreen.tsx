@@ -1,6 +1,7 @@
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import type { RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { useAuth } from '../auth/AuthProvider';
@@ -17,11 +18,23 @@ import { tokens } from '../theme/tokens';
 
 export function LoginScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const route = useRoute<RouteProp<RootStackParamList, 'Login'>>();
   const { pendingVerification, signIn } = useAuth();
-  const [email, setEmail] = useState(pendingVerification?.email ?? '');
+  const [email, setEmail] = useState(
+    route.params?.email ?? pendingVerification?.email ?? '',
+  );
   const [password, setPassword] = useState('');
-  const [message, setMessage] = useState<string | null>(null);
+  const [message, setMessage] = useState<string | null>(route.params?.notice ?? null);
   const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (route.params?.email) {
+      setEmail(route.params.email);
+    }
+    if (route.params?.notice) {
+      setMessage(route.params.notice);
+    }
+  }, [route.params?.email, route.params?.notice]);
 
   async function handleLogin() {
     const normalizedEmail = email.trim().toLowerCase();
@@ -55,19 +68,19 @@ export function LoginScreen() {
 
   return (
     <AuthScreenLayout
-      badge="Account Access"
-      title="친구와 함께 보는 투자 기록, 계정으로 바로 시작"
-      subtitle="이메일 인증이 완료된 계정으로 로그인하면 홈, 피드, 포트폴리오, 프로필까지 실제 앱 흐름으로 진입합니다."
+      badge="Sign In"
+      title="기록해 둔 포트폴리오와 친구 피드를 바로 이어서 확인하세요"
+      subtitle="FOLO 계정으로 로그인하면 내 포트폴리오, 친구 거래 피드, 리마인더와 알림이 마지막 상태 그대로 복원됩니다."
       footer={
         <>
-          <Text style={styles.footerText}>아직 계정이 없나요?</Text>
+          <Text style={styles.footerText}>처음이라면</Text>
           <AuthTextLink label="회원가입" onPress={() => navigation.navigate('Signup')} />
         </>
       }
     >
       <AuthNotice>
         <AuthNoticeText>
-          이메일 인증이 끝나지 않았다면 로그인 시 인증 코드 입력 화면으로 바로 이어집니다.
+          이메일 인증이 끝나지 않은 계정은 로그인 시 바로 인증 코드 입력 단계로 이어집니다.
         </AuthNoticeText>
       </AuthNotice>
 
@@ -99,12 +112,31 @@ export function LoginScreen() {
 
       <PrimaryButton
         disabled={submitting}
-        label={submitting ? '로그인 중...' : '이메일로 로그인'}
+        label={submitting ? '로그인 중...' : '로그인'}
         onPress={handleLogin}
       />
 
+      <View style={styles.linkGrid}>
+        <View style={styles.inlineRow}>
+          <Text style={styles.inlineText}>가입 이메일이 기억나지 않나요?</Text>
+          <AuthTextLink
+            label="아이디 찾기"
+            onPress={() => navigation.navigate('RecoverLoginId')}
+          />
+        </View>
+        <View style={styles.inlineRow}>
+          <Text style={styles.inlineText}>비밀번호를 잊어버렸나요?</Text>
+          <AuthTextLink
+            label="비밀번호 재설정"
+            onPress={() =>
+              navigation.navigate('PasswordResetRequest', { email: email.trim() })
+            }
+          />
+        </View>
+      </View>
+
       <View style={styles.inlineRow}>
-        <Text style={styles.inlineText}>인증 코드를 다시 입력해야 하나요?</Text>
+        <Text style={styles.inlineText}>인증 코드를 다시 받아야 하나요?</Text>
         <AuthTextLink
           label="이메일 인증"
           onPress={() => navigation.navigate('EmailVerification', { email: email.trim() })}
@@ -119,6 +151,9 @@ const styles = StyleSheet.create({
     color: tokens.colors.inkSoft,
     fontSize: 14,
     fontFamily: tokens.typography.body,
+  },
+  linkGrid: {
+    gap: 6,
   },
   inlineRow: {
     flexDirection: 'row',

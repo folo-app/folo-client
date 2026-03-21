@@ -38,6 +38,20 @@ export type LoginRequest = {
   password: string;
 };
 
+export type RecoverLoginIdRequest = {
+  nickname: string;
+};
+
+export type PasswordResetRequest = {
+  email: string;
+};
+
+export type PasswordResetConfirmRequest = {
+  email: string;
+  code: string;
+  newPassword: string;
+};
+
 export type RefreshRequest = {
   refreshToken: string;
 };

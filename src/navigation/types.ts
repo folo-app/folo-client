@@ -17,12 +17,28 @@ export type MainTabParamList = {
 };
 
 export type RootStackParamList = {
-  Login: undefined;
+  Login:
+    | {
+        email?: string;
+        notice?: string;
+      }
+    | undefined;
   Signup: undefined;
   EmailVerification:
     | {
         email?: string;
         nickname?: string;
+      }
+    | undefined;
+  RecoverLoginId: undefined;
+  PasswordResetRequest:
+    | {
+        email?: string;
+      }
+    | undefined;
+  PasswordResetConfirm:
+    | {
+        email?: string;
       }
     | undefined;
   PortfolioSetupGate: undefined;
