@@ -87,11 +87,11 @@ export function EmailVerificationScreen() {
   return (
     <AuthScreenLayout
       badge="Email Verification"
-      title={targetNickname ? `${targetNickname}님의 계정을 활성화하세요` : '계정 인증을 마무리하세요'}
+      title={targetNickname ? `${targetNickname}님의 계정을 활성화하세요` : '이메일 인증을 마무리하세요'}
       subtitle={subtitle}
       footer={
         <>
-          <Text style={styles.footerText}>다른 계정으로 다시 시작할까요?</Text>
+          <Text style={styles.footerText}>다른 계정으로 다시 시작하려면</Text>
           <AuthTextLink
             label="로그인으로 이동"
             onPress={() => {
@@ -105,7 +105,7 @@ export function EmailVerificationScreen() {
       {hasEmail ? (
         <AuthNotice>
           <AuthNoticeText>
-            인증 메일이 보이지 않으면 스팸함을 확인한 뒤 코드를 다시 요청해 주세요.
+            메일함에 보이지 않으면 스팸함을 확인한 뒤 코드를 다시 요청해 주세요.
           </AuthNoticeText>
         </AuthNotice>
       ) : (

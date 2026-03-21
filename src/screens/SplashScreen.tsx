@@ -1,44 +1,54 @@
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { tokens } from '../theme/tokens';
 
-const bootSteps = [
-  '세션 상태 확인',
-  '리프레시 토큰 검증',
-  '앱 환경 초기화',
-] as const;
+const bootSteps = ['보안 세션 확인', '포트폴리오 복원', '피드 상태 동기화'] as const;
 
 export function SplashScreen() {
+  const insets = useSafeAreaInsets();
+
   return (
     <SafeAreaView style={styles.safeArea}>
-      <View style={styles.shell}>
+      <View
+        style={[
+          styles.shell,
+          {
+            paddingTop: Math.max(insets.top + 24, 40),
+            paddingBottom: Math.max(insets.bottom + 28, 36),
+          },
+        ]}
+      >
         <View style={styles.glowTop} />
         <View style={styles.glowBottom} />
 
-        <View style={styles.heroCard}>
+        <View style={styles.brandBlock}>
           <View style={styles.brandMark}>
             <Text style={styles.brandMarkText}>Fo</Text>
           </View>
-          <Text style={styles.eyebrow}>Folo Secure Boot</Text>
-          <Text style={styles.title}>투자 기록과 관계를 불러오는 중</Text>
-          <Text style={styles.subtitle}>
-            로그인 상태를 확인하고, 마지막 세션이 있으면 안전하게 메인 앱으로 복원합니다.
-          </Text>
+          <Text style={styles.brandName}>FOLO</Text>
+          <Text style={styles.tagline}>투자 기록과 관계를 가장 빠르게 이어주는 앱</Text>
+        </View>
 
-          <View style={styles.stepList}>
-            {bootSteps.map((step) => (
-              <View key={step} style={styles.stepRow}>
-                <View style={styles.stepDot} />
-                <Text style={styles.stepText}>{step}</Text>
-              </View>
-            ))}
-          </View>
+        <View style={styles.centerCopy}>
+          <Text style={styles.title}>마지막 투자 흐름을 불러오는 중</Text>
+          <Text style={styles.subtitle}>
+            보안 세션을 확인하고, 포트폴리오와 친구 피드를 안전하게 이어서 준비합니다.
+          </Text>
+        </View>
+
+        <View style={styles.stepList}>
+          {bootSteps.map((step) => (
+            <View key={step} style={styles.stepRow}>
+              <View style={styles.stepDot} />
+              <Text style={styles.stepText}>{step}</Text>
+            </View>
+          ))}
         </View>
 
         <View style={styles.loadingRow}>
-          <ActivityIndicator color={tokens.colors.brandStrong} size="small" />
-          <Text style={styles.loadingLabel}>Folo 앱 진입 준비 중</Text>
+          <ActivityIndicator color={tokens.colors.surface} size="small" />
+          <Text style={styles.loadingLabel}>앱 진입 준비 중</Text>
         </View>
       </View>
     </SafeAreaView>
@@ -48,51 +58,43 @@ export function SplashScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: tokens.colors.canvas,
+    backgroundColor: tokens.colors.navy,
   },
   shell: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
     paddingHorizontal: 24,
-    gap: 24,
+    justifyContent: 'space-between',
   },
   glowTop: {
     position: 'absolute',
-    top: 70,
-    right: -30,
+    top: 40,
+    right: -20,
     width: 220,
     height: 220,
     borderRadius: 999,
-    backgroundColor: 'rgba(37, 99, 235, 0.13)',
+    backgroundColor: 'rgba(96, 165, 250, 0.20)',
   },
   glowBottom: {
     position: 'absolute',
-    bottom: 90,
-    left: -50,
-    width: 180,
-    height: 180,
+    bottom: 60,
+    left: -40,
+    width: 200,
+    height: 200,
     borderRadius: 999,
-    backgroundColor: 'rgba(15, 118, 110, 0.11)',
+    backgroundColor: 'rgba(45, 212, 191, 0.18)',
   },
-  heroCard: {
-    width: '100%',
-    maxWidth: 420,
-    borderRadius: 34,
-    backgroundColor: tokens.colors.surface,
-    borderWidth: 1,
-    borderColor: 'rgba(214, 224, 234, 0.76)',
-    padding: 28,
-    gap: 18,
-    ...tokens.shadow,
+  brandBlock: {
+    gap: 10,
   },
   brandMark: {
     width: 78,
     height: 78,
-    borderRadius: 26,
-    backgroundColor: tokens.colors.navy,
+    borderRadius: 28,
+    backgroundColor: 'rgba(255,255,255,0.12)',
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.14)',
   },
   brandMarkText: {
     color: tokens.colors.surface,
@@ -100,25 +102,32 @@ const styles = StyleSheet.create({
     fontFamily: tokens.typography.heading,
     fontWeight: '800',
   },
-  eyebrow: {
-    fontSize: 12,
-    letterSpacing: 1.1,
-    textTransform: 'uppercase',
-    color: tokens.colors.brandStrong,
+  brandName: {
+    color: tokens.colors.surface,
+    fontSize: 34,
     fontFamily: tokens.typography.heading,
-    fontWeight: '700',
+    fontWeight: '800',
+  },
+  tagline: {
+    color: 'rgba(255,255,255,0.72)',
+    fontSize: 14,
+    lineHeight: 22,
+    fontFamily: tokens.typography.body,
+  },
+  centerCopy: {
+    gap: 14,
   },
   title: {
-    fontSize: 30,
-    lineHeight: 36,
-    color: tokens.colors.navy,
+    color: tokens.colors.surface,
+    fontSize: 32,
+    lineHeight: 38,
     fontFamily: tokens.typography.heading,
     fontWeight: '800',
   },
   subtitle: {
+    color: 'rgba(255,255,255,0.72)',
     fontSize: 15,
     lineHeight: 24,
-    color: tokens.colors.inkSoft,
     fontFamily: tokens.typography.body,
   },
   stepList: {
@@ -130,13 +139,13 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   stepDot: {
-    width: 10,
-    height: 10,
+    width: 9,
+    height: 9,
     borderRadius: 999,
-    backgroundColor: tokens.colors.brand,
+    backgroundColor: '#7DD3FC',
   },
   stepText: {
-    color: tokens.colors.navy,
+    color: tokens.colors.surface,
     fontSize: 14,
     fontFamily: tokens.typography.heading,
     fontWeight: '700',
@@ -147,7 +156,7 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   loadingLabel: {
-    color: tokens.colors.inkSoft,
+    color: 'rgba(255,255,255,0.84)',
     fontSize: 14,
     fontFamily: tokens.typography.body,
   },

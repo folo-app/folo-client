@@ -1,5 +1,6 @@
 import { Feather, Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { tokens } from '../theme/tokens';
 import type { TabKey } from '../types/navigation';
@@ -19,8 +20,10 @@ export function BottomNav({
   activeTab: TabKey;
   onChange: (tab: TabKey) => void;
 }) {
+  const insets = useSafeAreaInsets();
+
   return (
-    <View style={styles.safeArea}>
+    <View style={[styles.safeArea, { paddingBottom: Math.max(insets.bottom, 12) + 8 }]}>
       <View style={styles.bar}>
         {items.map((item) => {
           const isActive = item.key === activeTab;

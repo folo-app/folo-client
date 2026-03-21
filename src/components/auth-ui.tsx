@@ -7,9 +7,11 @@ import {
   StyleSheet,
   Text,
   TextInput,
+  useWindowDimensions,
   type TextInputProps,
   View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { tokens } from '../theme/tokens';
 
@@ -38,43 +40,66 @@ export function AuthScreenLayout({
   footer,
   children,
 }: AuthScreenLayoutProps) {
+  const insets = useSafeAreaInsets();
+  const { width, height } = useWindowDimensions();
+  const compact = width < 430;
+
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       style={styles.screen}
     >
       <ScrollView
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[
+          styles.scrollContent,
+          {
+            paddingTop: Math.max(insets.top + 12, 28),
+            paddingBottom: Math.max(insets.bottom + 24, 32),
+            minHeight: height,
+          },
+        ]}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.shell}>
+        <View
+          style={[
+            styles.shell,
+            {
+              paddingHorizontal: compact ? 18 : 22,
+              maxWidth: compact ? 480 : 540,
+            },
+          ]}
+        >
           <View style={styles.glowTop} />
           <View style={styles.glowBottom} />
 
-          <View style={styles.heroCard}>
-            <View style={styles.brandRow}>
+          <View style={[styles.heroCard, compact && styles.heroCardCompact]}>
+            <View style={styles.brandBar}>
               <View style={styles.brandMark}>
                 <Text style={styles.brandMarkText}>Fo</Text>
               </View>
-              <View style={styles.brandCopy}>
+              <View style={styles.brandMeta}>
                 <Text style={styles.badge}>{badge}</Text>
-                <Text style={styles.heroTitle}>{title}</Text>
-                <Text style={styles.heroSubtitle}>{subtitle}</Text>
+                <Text style={styles.brandName}>FOLO</Text>
               </View>
+            </View>
+
+            <View style={styles.copyBlock}>
+              <Text style={[styles.heroTitle, compact && styles.heroTitleCompact]}>{title}</Text>
+              <Text style={styles.heroSubtitle}>{subtitle}</Text>
             </View>
 
             <View style={styles.signalRow}>
               <View style={styles.signalPill}>
-                <Text style={styles.signalLabel}>친구와 함께 남기는 투자 기록</Text>
+                <Text style={styles.signalLabel}>친구 피드와 포트폴리오를 한 흐름으로</Text>
               </View>
               <View style={styles.signalPill}>
-                <Text style={styles.signalLabel}>인증 후 포트폴리오부터 시작</Text>
+                <Text style={styles.signalLabel}>인증 후 바로 포트폴리오 구성 시작</Text>
               </View>
             </View>
           </View>
 
-          <View style={styles.formCard}>{children}</View>
+          <View style={[styles.formCard, compact && styles.formCardCompact]}>{children}</View>
 
           {footer ? <View style={styles.footer}>{footer}</View> : null}
         </View>
@@ -97,10 +122,7 @@ export function AuthField({ label, helper, style, ...props }: AuthFieldProps) {
   );
 }
 
-export function AuthNotice({
-  tone = 'default',
-  children,
-}: AuthNoticeProps) {
+export function AuthNotice({ tone = 'default', children }: AuthNoticeProps) {
   return <View style={[styles.notice, noticeToneStyles[tone]]}>{children}</View>;
 }
 
@@ -141,65 +163,63 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
-    justifyContent: 'center',
-    paddingVertical: 24,
   },
   shell: {
     width: '100%',
-    maxWidth: 520,
     alignSelf: 'center',
-    paddingHorizontal: 20,
     gap: 18,
   },
   glowTop: {
     position: 'absolute',
-    top: -70,
+    top: 0,
     right: -20,
     width: 180,
     height: 180,
     borderRadius: 999,
-    backgroundColor: 'rgba(37, 99, 235, 0.13)',
+    backgroundColor: 'rgba(37, 99, 235, 0.12)',
   },
   glowBottom: {
     position: 'absolute',
-    bottom: 70,
-    left: -60,
-    width: 150,
-    height: 150,
+    bottom: 90,
+    left: -70,
+    width: 170,
+    height: 170,
     borderRadius: 999,
     backgroundColor: 'rgba(15, 118, 110, 0.10)',
   },
   heroCard: {
     borderRadius: tokens.radius.lg,
-    backgroundColor: tokens.colors.surface,
+    backgroundColor: 'rgba(255,255,255,0.92)',
     borderWidth: 1,
     borderColor: 'rgba(214, 224, 234, 0.72)',
-    padding: 22,
-    gap: 20,
+    padding: 24,
+    gap: 18,
     ...tokens.shadow,
   },
-  brandRow: {
+  heroCardCompact: {
+    padding: 20,
+  },
+  brandBar: {
     flexDirection: 'row',
-    gap: 16,
     alignItems: 'center',
+    gap: 14,
   },
   brandMark: {
-    width: 72,
-    height: 72,
-    borderRadius: 24,
+    width: 64,
+    height: 64,
+    borderRadius: 22,
     backgroundColor: tokens.colors.navy,
     alignItems: 'center',
     justifyContent: 'center',
   },
   brandMarkText: {
     color: tokens.colors.surface,
-    fontSize: 30,
+    fontSize: 28,
     fontFamily: tokens.typography.heading,
     fontWeight: '800',
   },
-  brandCopy: {
-    flex: 1,
-    gap: 6,
+  brandMeta: {
+    gap: 4,
   },
   badge: {
     fontSize: 12,
@@ -209,12 +229,25 @@ const styles = StyleSheet.create({
     fontFamily: tokens.typography.heading,
     fontWeight: '700',
   },
-  heroTitle: {
-    fontSize: 28,
-    lineHeight: 34,
+  brandName: {
+    fontSize: 22,
     color: tokens.colors.navy,
     fontFamily: tokens.typography.heading,
     fontWeight: '800',
+  },
+  copyBlock: {
+    gap: 10,
+  },
+  heroTitle: {
+    fontSize: 30,
+    lineHeight: 36,
+    color: tokens.colors.navy,
+    fontFamily: tokens.typography.heading,
+    fontWeight: '800',
+  },
+  heroTitleCompact: {
+    fontSize: 27,
+    lineHeight: 33,
   },
   heroSubtitle: {
     fontSize: 15,
@@ -241,12 +274,15 @@ const styles = StyleSheet.create({
   },
   formCard: {
     borderRadius: tokens.radius.md,
-    backgroundColor: 'rgba(255,255,255,0.9)',
+    backgroundColor: 'rgba(255,255,255,0.94)',
     borderWidth: 1,
     borderColor: 'rgba(214, 224, 234, 0.72)',
     padding: 22,
     gap: 16,
     ...tokens.shadow,
+  },
+  formCardCompact: {
+    padding: 18,
   },
   fieldGroup: {
     gap: 8,
@@ -258,36 +294,44 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   input: {
-    minHeight: 54,
+    minHeight: 58,
+    backgroundColor: tokens.colors.surface,
     borderRadius: 18,
     borderWidth: 1,
-    borderColor: 'rgba(214, 224, 234, 0.96)',
-    backgroundColor: tokens.colors.surface,
+    borderColor: 'rgba(214, 224, 234, 0.9)',
     paddingHorizontal: 16,
     paddingVertical: 14,
     fontSize: 16,
+    lineHeight: 22,
     color: tokens.colors.navy,
     fontFamily: tokens.typography.body,
   },
   fieldHelper: {
-    fontSize: 12,
-    lineHeight: 18,
-    color: tokens.colors.inkSoft,
+    fontSize: 13,
+    lineHeight: 20,
+    color: tokens.colors.inkMute,
     fontFamily: tokens.typography.body,
   },
   notice: {
-    borderRadius: 18,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
+    borderRadius: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
   },
   noticeText: {
-    color: tokens.colors.navy,
     fontSize: 13,
     lineHeight: 20,
+    color: tokens.colors.navy,
     fontFamily: tokens.typography.body,
   },
+  footer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 8,
+    paddingBottom: 8,
+  },
   textLink: {
-    alignSelf: 'flex-start',
     paddingVertical: 4,
   },
   textLinkLabel: {
@@ -295,9 +339,5 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: tokens.typography.heading,
     fontWeight: '700',
-  },
-  footer: {
-    alignItems: 'center',
-    gap: 8,
   },
 });

@@ -62,11 +62,11 @@ export function SignupScreen() {
   return (
     <AuthScreenLayout
       badge="Create Account"
-      title="실제 서비스용 계정을 만들고 인증까지 마무리"
-      subtitle="회원가입이 완료되면 인증 코드가 발송되고, 코드 확인 후 즉시 메인 앱 세션이 생성됩니다."
+      title="FOLO에서 쓸 계정을 만들고 바로 포트폴리오를 시작하세요"
+      subtitle="가입 후 이메일 인증만 마치면 바로 세션이 열리고, 첫 포트폴리오 구성 화면으로 이어집니다."
       footer={
         <>
-          <Text style={styles.footerText}>이미 계정이 있나요?</Text>
+          <Text style={styles.footerText}>이미 계정이 있다면</Text>
           <AuthTextLink label="로그인" onPress={() => navigation.navigate('Login')} />
         </>
       }

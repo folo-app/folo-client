@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { tokens } from '../theme/tokens';
 
@@ -37,13 +38,30 @@ type MetricBadgeProps = {
 };
 
 export function Page({ eyebrow, title, subtitle, action, children }: PageProps) {
+  const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
+  const compact = width < 430;
+
   return (
     <ScrollView
       style={styles.scroll}
-      contentContainerStyle={styles.scrollContent}
+      contentContainerStyle={[
+        styles.scrollContent,
+        {
+          paddingTop: Math.max(insets.top + 8, 20),
+          paddingBottom: Math.max(insets.bottom + 112, 128),
+        },
+      ]}
       showsVerticalScrollIndicator={false}
     >
-      <View style={styles.shell}>
+      <View
+        style={[
+          styles.shell,
+          {
+            paddingHorizontal: compact ? 16 : 20,
+          },
+        ]}
+      >
         <View style={styles.glowLarge} />
         <View style={styles.glowSmall} />
         <View style={styles.header}>
@@ -189,7 +207,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingBottom: 128,
+    flexGrow: 1,
   },
   shell: {
     width: '100%',
