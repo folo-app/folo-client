@@ -154,16 +154,6 @@ export function AuthScreenLayout({
               ) : null}
             </View>
 
-            {heroVariant === 'default' ? (
-              <View style={styles.signalRow}>
-                <View style={styles.signalPill}>
-                  <Text style={styles.signalLabel}>친구 피드와 포트폴리오를 한 흐름으로</Text>
-                </View>
-                <View style={styles.signalPill}>
-                  <Text style={styles.signalLabel}>인증 후 바로 포트폴리오 구성 시작</Text>
-                </View>
-              </View>
-            ) : null}
           </View>
 
           <View style={[styles.formCard, compact && styles.formCardCompact]}>{children}</View>
@@ -632,25 +622,6 @@ const styles = StyleSheet.create({
   heroSubtitleDefaultCompact: {
     fontSize: 14,
     lineHeight: 21,
-  },
-  signalRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
-  },
-  signalPill: {
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: tokens.radius.pill,
-    backgroundColor: tokens.colors.brandSoft,
-    maxWidth: '100%',
-  },
-  signalLabel: {
-    color: tokens.colors.brandStrong,
-    fontSize: 12,
-    fontFamily: tokens.typography.heading,
-    fontWeight: '700',
-    flexShrink: 1,
   },
   showcase: {
     width: 208,

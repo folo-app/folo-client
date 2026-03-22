@@ -52,8 +52,8 @@ export function PasswordResetRequestScreen() {
   return (
     <AuthScreenLayout
       badge="Reset Password"
-      title="임시 비밀번호를 메일로 보내드릴게요"
-      subtitle="가입한 이메일을 입력하면 계정이 있는 경우 임시 비밀번호를 메일로 보내드리고, 기존 로그인 세션은 정리됩니다."
+      title="임시 비밀번호 받기"
+      subtitle="가입한 이메일로 임시 비밀번호를 보내드리고, 기존 로그인 세션은 정리됩니다."
       footer={
         <>
           <Text style={styles.footerText}>로그인이 기억났다면</Text>

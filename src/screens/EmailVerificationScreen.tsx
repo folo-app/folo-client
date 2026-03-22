@@ -28,11 +28,9 @@ export function EmailVerificationScreen() {
 
   const targetEmail =
     route.params?.email ?? pendingVerification?.email ?? '';
-  const targetNickname =
-    route.params?.nickname ?? pendingVerification?.nickname ?? '';
   const hasEmail = Boolean(targetEmail);
   const subtitle = hasEmail
-    ? `${targetEmail}로 발송된 6자리 인증 코드를 입력하면 바로 세션이 발급됩니다.`
+    ? `${targetEmail}로 보낸 6자리 코드를 입력하면 바로 시작할 수 있습니다.`
     : '인증할 이메일이 아직 정해지지 않았습니다. 로그인 또는 회원가입 화면으로 돌아가 다시 시작해 주세요.';
 
   async function handleConfirm() {
@@ -87,7 +85,7 @@ export function EmailVerificationScreen() {
   return (
     <AuthScreenLayout
       badge="Email Verification"
-      title={targetNickname ? `${targetNickname}님의 계정을 활성화하세요` : '이메일 인증을 마무리하세요'}
+      title="이메일 인증 완료하기"
       subtitle={subtitle}
       footer={
         <>
