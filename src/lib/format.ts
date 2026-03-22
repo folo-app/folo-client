@@ -30,6 +30,22 @@ export function formatCurrency(
   return numberFormatter(currencyForMarket(market)).format(value);
 }
 
+export function formatCompactCurrency(
+  value: number | null | undefined,
+  market: string | MarketType = 'KRX',
+) {
+  if (value === null || value === undefined) {
+    return '-';
+  }
+
+  return new Intl.NumberFormat('ko-KR', {
+    style: 'currency',
+    currency: currencyForMarket(market),
+    notation: 'compact',
+    maximumFractionDigits: 1,
+  }).format(value);
+}
+
 export function formatNumber(value: number | null | undefined) {
   if (value === null || value === undefined) {
     return '-';

@@ -2,7 +2,12 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { AllocationBar, AllocationLegend } from '../components/portfolio-visuals';
+import {
+  AllocationBar,
+  AllocationDonutChart,
+  AllocationLegendGrid,
+  MonthlyDividendChart,
+} from '../components/portfolio-visuals';
 import { DataStatusCard } from '../components/DataStatusCard';
 import {
   MetricBadge,
@@ -15,6 +20,7 @@ import {
 import { usePortfolioData } from '../hooks/useFoloData';
 import { useResponsiveLayout } from '../hooks/useResponsiveLayout';
 import {
+  formatCompactCurrency,
   formatCurrency,
   formatDateLabel,
   formatPercent,
@@ -24,6 +30,7 @@ import type { RootStackParamList } from '../navigation/types';
 import { tokens } from '../theme/tokens';
 
 const ALLOCATION_PALETTE = ['#2563EB', '#0F766E', '#7C3AED', '#F59E0B', '#E11D48', '#14B8A6'];
+const SECTOR_PALETTE = ['#E11D48', '#F59E0B', '#4F46E5', '#0F766E', '#14B8A6', '#64748B'];
 
 export function PortfolioScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
@@ -42,6 +49,19 @@ export function PortfolioScreen() {
     }));
   const topHoldings = allocationItems.slice(0, 6);
   const remainingHoldingCount = Math.max(portfolio.data.holdings.length - topHoldings.length, 0);
+  const sectorAllocationItems = portfolio.data.sectorAllocations.map((item, index) => ({
+    key: item.key,
+    label: item.label,
+    ratio: item.weight,
+    value: item.value !== null ? formatCurrency(item.value) : undefined,
+    color: SECTOR_PALETTE[index % SECTOR_PALETTE.length],
+  }));
+  const monthlyDividendItems = portfolio.data.monthlyDividendForecasts.map((item) => ({
+    key: `month-${item.month}`,
+    label: item.label,
+    amount: item.amount,
+  }));
+  const hasDividendProjection = monthlyDividendItems.some((item) => item.amount > 0);
 
   return (
     <Page eyebrow="Portfolio" title="내 포트폴리오">
@@ -94,9 +114,40 @@ export function PortfolioScreen() {
       ) : (
         <>
           <SurfaceCard>
-            <SectionHeading title="자산 구성" description="비중이 큰 종목부터 정리했습니다." />
-            <AllocationBar items={allocationItems} height={22} />
-            <AllocationLegend items={topHoldings} />
+            <SectionHeading title="자산 구성" description="보유 종목, 섹터, 예상 배당을 함께 봅니다." />
+            <View style={[styles.allocationBoard, isCompact && styles.allocationBoardCompact]}>
+              <AllocationDonutChart
+                items={allocationItems}
+                centerLabel={
+                  isCompact
+                    ? formatCompactCurrency(portfolio.data.totalValue)
+                    : formatCurrency(portfolio.data.totalValue)
+                }
+                centerSubLabel="총 평가금액"
+                size={isCompact ? 148 : 220}
+                strokeWidth={isCompact ? 20 : 28}
+              />
+              <View style={styles.allocationLegendWrap}>
+                <AllocationLegendGrid items={topHoldings} columns={isCompact ? 1 : 2} />
+              </View>
+            </View>
+            <View style={styles.analyticsSection}>
+              <Text style={styles.analyticsLabel}>예상 배당금</Text>
+              {hasDividendProjection ? (
+                <MonthlyDividendChart items={monthlyDividendItems} />
+              ) : (
+                <Text style={styles.helperText}>
+                  배당 수익률과 지급 월 데이터가 있는 종목부터 표시됩니다.
+                </Text>
+              )}
+            </View>
+            <View style={styles.analyticsSection}>
+              <Text style={styles.analyticsLabel}>섹터 / 현금 구성</Text>
+              <View style={styles.allocationBarSection}>
+                <AllocationBar items={sectorAllocationItems} height={18} />
+                <AllocationLegendGrid items={sectorAllocationItems} columns={isCompact ? 1 : 2} />
+              </View>
+            </View>
             {remainingHoldingCount > 0 ? (
               <Text style={styles.moreText}>외 {remainingHoldingCount}개 종목</Text>
             ) : null}
@@ -203,6 +254,42 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: tokens.colors.inkMute,
     fontFamily: tokens.typography.body,
+  },
+  allocationBoard: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 18,
+  },
+  allocationBoardCompact: {
+    alignItems: 'center',
+    gap: 12,
+  },
+  allocationLegendWrap: {
+    flex: 1,
+    minWidth: 0,
+    width: '100%',
+  },
+  allocationBarSection: {
+    gap: 10,
+  },
+  allocationBarLabel: {
+    fontSize: 12,
+    color: tokens.colors.inkMute,
+    fontFamily: tokens.typography.body,
+  },
+  analyticsSection: {
+    gap: 12,
+  },
+  analyticsLabel: {
+    fontSize: 13,
+    color: tokens.colors.inkMute,
+    fontFamily: tokens.typography.body,
+  },
+  helperText: {
+    color: tokens.colors.inkSoft,
+    fontFamily: tokens.typography.body,
+    fontSize: 13,
+    lineHeight: 20,
   },
   holdingCard: {
     gap: 14,

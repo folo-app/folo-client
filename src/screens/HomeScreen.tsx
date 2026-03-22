@@ -3,7 +3,11 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Avatar } from '../components/Avatar';
-import { AllocationBar, AllocationLegend } from '../components/portfolio-visuals';
+import {
+  AllocationBar,
+  AllocationDonutChart,
+  AllocationLegendGrid,
+} from '../components/portfolio-visuals';
 import { DataStatusCard } from '../components/DataStatusCard';
 import {
   MetricBadge,
@@ -21,6 +25,7 @@ import {
   useRemindersData,
 } from '../hooks/useFoloData';
 import {
+  formatCompactCurrency,
   formatCurrency,
   formatNumber,
   formatPercent,
@@ -40,6 +45,7 @@ export function HomeScreen() {
   const myTrades = useMyTradesData();
   const reminderSummary = reminders.data.reminders[0];
   const allocationPalette = ['#2563EB', '#0F766E', '#7C3AED', '#F59E0B', '#E11D48', '#14B8A6'];
+  const sectorPalette = ['#E11D48', '#F59E0B', '#4F46E5', '#0F766E', '#14B8A6', '#64748B'];
   const topAllocationItems = [...portfolio.data.holdings]
     .sort((left, right) => (right.totalValue ?? 0) - (left.totalValue ?? 0))
     .slice(0, 4)
@@ -51,6 +57,13 @@ export function HomeScreen() {
       meta: `${holding.ticker} · ${holding.market}`,
       color: allocationPalette[index % allocationPalette.length],
     }));
+  const sectorAllocationItems = portfolio.data.sectorAllocations.map((item, index) => ({
+    key: item.key,
+    label: item.label,
+    ratio: item.weight,
+    value: item.value !== null ? formatCurrency(item.value) : undefined,
+    color: sectorPalette[index % sectorPalette.length],
+  }));
   const combinedError =
     portfolio.error ?? reminders.error ?? myTrades.error ?? feed.error;
   const combinedLoading =
@@ -81,23 +94,67 @@ export function HomeScreen() {
           </Text>
         </View>
         <MetricGrid>
-          <MetricBadge
-            label="총 수익률"
-            value={formatPercent(portfolio.data.totalReturnRate)}
-            tone="positive"
-          />
-          <MetricBadge
-            label="오늘 등락"
-            value={formatSignedCurrency(portfolio.data.dayReturn)}
-            tone="brand"
-          />
-          <MetricBadge label="보유 종목" value={`${portfolio.data.holdings.length}개`} />
+          {isCompact ? (
+            <View style={styles.summaryMetricGrid}>
+              <View style={styles.summaryMetricCellHalf}>
+                <MetricBadge
+                  label="총 수익률"
+                  value={formatPercent(portfolio.data.totalReturnRate)}
+                  tone="positive"
+                />
+              </View>
+              <View style={styles.summaryMetricCellHalf}>
+                <MetricBadge
+                  label="오늘 등락"
+                  value={formatSignedCurrency(portfolio.data.dayReturn)}
+                  tone="brand"
+                />
+              </View>
+              <View style={styles.summaryMetricCellFull}>
+                <MetricBadge label="보유 종목" value={`${portfolio.data.holdings.length}개`} />
+              </View>
+            </View>
+          ) : (
+            <>
+              <MetricBadge
+                label="총 수익률"
+                value={formatPercent(portfolio.data.totalReturnRate)}
+                tone="positive"
+              />
+              <MetricBadge
+                label="오늘 등락"
+                value={formatSignedCurrency(portfolio.data.dayReturn)}
+                tone="brand"
+              />
+              <MetricBadge label="보유 종목" value={`${portfolio.data.holdings.length}개`} />
+            </>
+          )}
         </MetricGrid>
         {topAllocationItems.length > 0 ? (
           <View style={styles.allocationPreview}>
             <Text style={styles.summarySectionLabel}>자산 구성</Text>
-            <AllocationBar items={topAllocationItems} />
-            <AllocationLegend items={topAllocationItems} />
+            <View style={[styles.allocationBoard, isCompact && styles.allocationBoardCompact]}>
+              <AllocationDonutChart
+                items={topAllocationItems}
+                centerLabel={
+                  isCompact
+                    ? formatCompactCurrency(portfolio.data.totalValue)
+                    : formatCurrency(portfolio.data.totalValue)
+                }
+                centerSubLabel="총 평가금액"
+                size={isCompact ? 128 : 180}
+                strokeWidth={isCompact ? 18 : 24}
+              />
+              <View style={styles.allocationLegendWrap}>
+                <AllocationLegendGrid items={topAllocationItems} columns={isCompact ? 1 : 2} />
+              </View>
+            </View>
+            {sectorAllocationItems.length > 0 ? (
+              <View style={styles.sectorPreview}>
+                <Text style={styles.summarySectionLabel}>섹터 / 현금 구성</Text>
+                <AllocationBar items={sectorAllocationItems} height={16} />
+              </View>
+            ) : null}
           </View>
         ) : null}
       </SurfaceCard>
@@ -256,6 +313,37 @@ const styles = StyleSheet.create({
   },
   allocationPreview: {
     gap: 12,
+  },
+  allocationBoard: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 16,
+  },
+  allocationBoardCompact: {
+    alignItems: 'center',
+    gap: 12,
+  },
+  allocationLegendWrap: {
+    flex: 1,
+    minWidth: 0,
+    width: '100%',
+  },
+  summaryMetricGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    width: '100%',
+  },
+  summaryMetricCellHalf: {
+    minWidth: 0,
+    width: '48%',
+  },
+  summaryMetricCellFull: {
+    minWidth: 0,
+    width: '100%',
+  },
+  sectorPreview: {
+    gap: 10,
   },
   actionStack: {
     gap: 10,

@@ -32,6 +32,10 @@ const emptyPortfolioResponse: PortfolioResponse = {
   dayReturn: 0,
   dayReturnRate: 0,
   holdings: [],
+  sectorAllocations: [],
+  monthlyDividendForecasts: [],
+  cashValue: 0,
+  cashWeight: 0,
   syncedAt: null,
   isFullyVisible: true,
 };
@@ -123,6 +127,18 @@ const emptyPriceResponse: StockPriceResponse = {
   updatedAt: '',
 };
 
+function normalizePortfolioResponse(data: PortfolioResponse): PortfolioResponse {
+  return {
+    ...emptyPortfolioResponse,
+    ...data,
+    holdings: data.holdings ?? [],
+    sectorAllocations: data.sectorAllocations ?? [],
+    monthlyDividendForecasts: data.monthlyDividendForecasts ?? [],
+    cashValue: data.cashValue ?? 0,
+    cashWeight: data.cashWeight ?? 0,
+  };
+}
+
 export function useFeedData(): Loadable<FeedResponse> {
   return useQuery({
     queryFn: () => foloApi.getFeed(),
@@ -140,7 +156,7 @@ export function useUserFeedData(userId: number): Loadable<FeedResponse> {
 
 export function usePortfolioData(): Loadable<PortfolioResponse> {
   return useQuery({
-    queryFn: () => foloApi.getPortfolio(),
+    queryFn: () => foloApi.getPortfolio().then(normalizePortfolioResponse),
     initialData: emptyPortfolioResponse,
   });
 }
@@ -150,7 +166,7 @@ export function useUserPortfolioData(
   enabled = true,
 ): Loadable<PortfolioResponse> {
   return useQuery({
-    queryFn: () => foloApi.getUserPortfolio(userId),
+    queryFn: () => foloApi.getUserPortfolio(userId).then(normalizePortfolioResponse),
     initialData: emptyPortfolioResponse,
     deps: [userId],
     enabled,

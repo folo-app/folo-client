@@ -123,6 +123,24 @@ export type PortfolioHoldingItem = {
   returnAmount: number | null;
   returnRate: number;
   weight: number;
+  sectorName: string | null;
+  assetType: 'STOCK' | 'ETF';
+  currencyCode: string | null;
+  annualDividendYield: number | null;
+  dividendMonths: number[];
+};
+
+export type PortfolioAllocationItem = {
+  key: string;
+  label: string;
+  weight: number;
+  value: number | null;
+};
+
+export type PortfolioMonthlyDividendItem = {
+  month: number;
+  label: string;
+  amount: number;
 };
 
 export type PortfolioResponse = {
@@ -134,6 +152,10 @@ export type PortfolioResponse = {
   dayReturn: number | null;
   dayReturnRate: number;
   holdings: PortfolioHoldingItem[];
+  sectorAllocations: PortfolioAllocationItem[];
+  monthlyDividendForecasts: PortfolioMonthlyDividendItem[];
+  cashValue: number | null;
+  cashWeight: number;
   syncedAt: string | null;
   isFullyVisible: boolean;
 };

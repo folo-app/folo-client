@@ -2,7 +2,12 @@ import { useRoute } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { AllocationBar, AllocationLegend } from '../components/portfolio-visuals';
+import {
+  AllocationBar,
+  AllocationDonutChart,
+  AllocationLegendGrid,
+  MonthlyDividendChart,
+} from '../components/portfolio-visuals';
 import { DataStatusCard } from '../components/DataStatusCard';
 import {
   MetricBadge,
@@ -15,6 +20,7 @@ import {
 import { useUserPortfolioData } from '../hooks/useFoloData';
 import { useResponsiveLayout } from '../hooks/useResponsiveLayout';
 import {
+  formatCompactCurrency,
   formatCurrency,
   formatDateLabel,
   formatPercent,
@@ -24,6 +30,9 @@ import {
 import type { RootStackParamList } from '../navigation/types';
 import { tokens } from '../theme/tokens';
 
+const HOLDING_PALETTE = ['#2563EB', '#0F766E', '#7C3AED', '#F59E0B', '#E11D48', '#14B8A6'];
+const SECTOR_PALETTE = ['#E11D48', '#F59E0B', '#4F46E5', '#0F766E', '#14B8A6', '#64748B'];
+
 export function PublicPortfolioScreen() {
   const route = useRoute<RouteProp<RootStackParamList, 'PublicPortfolio'>>();
   const { isCompact } = useResponsiveLayout();
@@ -31,7 +40,6 @@ export function PublicPortfolioScreen() {
   const title = route.params.nickname
     ? `${route.params.nickname}님의 포트폴리오`
     : '공개 포트폴리오';
-  const allocationPalette = ['#2563EB', '#0F766E', '#7C3AED', '#F59E0B', '#E11D48', '#14B8A6'];
   const allocationItems = [...portfolio.data.holdings]
     .sort((left, right) => (right.totalValue ?? 0) - (left.totalValue ?? 0))
     .map((holding, index) => ({
@@ -40,8 +48,21 @@ export function PublicPortfolioScreen() {
       ratio: holding.weight,
       value: formatCurrency(holding.totalValue, holding.market),
       meta: `${holding.ticker} · ${holding.market}`,
-      color: allocationPalette[index % allocationPalette.length],
+      color: HOLDING_PALETTE[index % HOLDING_PALETTE.length],
     }));
+  const sectorAllocationItems = portfolio.data.sectorAllocations.map((item, index) => ({
+    key: item.key,
+    label: item.label,
+    ratio: item.weight,
+    value: item.value !== null ? formatCurrency(item.value) : undefined,
+    color: SECTOR_PALETTE[index % SECTOR_PALETTE.length],
+  }));
+  const monthlyDividendItems = portfolio.data.monthlyDividendForecasts.map((item) => ({
+    key: `month-${item.month}`,
+    label: item.label,
+    amount: item.amount,
+  }));
+  const hasDividendProjection = monthlyDividendItems.some((item) => item.amount > 0);
 
   return (
     <Page
@@ -78,9 +99,46 @@ export function PublicPortfolioScreen() {
           </SurfaceCard>
 
           <SurfaceCard>
-            <SectionHeading title="자산 구성" />
-            <AllocationBar items={allocationItems} height={22} />
-            <AllocationLegend items={allocationItems.slice(0, 6)} />
+            <SectionHeading title="자산 구성" description="보유 종목, 섹터, 예상 배당을 함께 봅니다." />
+            <View style={[styles.allocationBoard, isCompact && styles.allocationBoardCompact]}>
+              <AllocationDonutChart
+                items={allocationItems}
+                centerLabel={
+                  isCompact
+                    ? formatCompactCurrency(portfolio.data.totalValue)
+                    : formatCurrency(portfolio.data.totalValue)
+                }
+                centerSubLabel="공개 자산"
+                size={isCompact ? 148 : 220}
+                strokeWidth={isCompact ? 20 : 28}
+              />
+              <View style={styles.allocationLegendWrap}>
+                <AllocationLegendGrid
+                  items={allocationItems.slice(0, 6)}
+                  columns={isCompact ? 1 : 2}
+                />
+              </View>
+            </View>
+            <View style={styles.analyticsSection}>
+              <Text style={styles.analyticsLabel}>예상 배당금</Text>
+              {hasDividendProjection ? (
+                <MonthlyDividendChart items={monthlyDividendItems} />
+              ) : (
+                <Text style={styles.helperText}>
+                  배당 수익률과 지급 월 데이터가 있는 종목부터 표시됩니다.
+                </Text>
+              )}
+            </View>
+            <View style={styles.analyticsSection}>
+              <Text style={styles.analyticsLabel}>섹터 / 현금 구성</Text>
+              <View style={styles.allocationBarSection}>
+                <AllocationBar items={sectorAllocationItems} height={18} />
+                <AllocationLegendGrid
+                  items={sectorAllocationItems}
+                  columns={isCompact ? 1 : 2}
+                />
+              </View>
+            </View>
           </SurfaceCard>
 
           <SurfaceCard>
@@ -136,6 +194,42 @@ const styles = StyleSheet.create({
     color: tokens.colors.positive,
     fontFamily: tokens.typography.heading,
     fontWeight: '700',
+  },
+  allocationBoard: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 18,
+  },
+  allocationBoardCompact: {
+    alignItems: 'center',
+    gap: 12,
+  },
+  allocationLegendWrap: {
+    flex: 1,
+    minWidth: 0,
+    width: '100%',
+  },
+  allocationBarSection: {
+    gap: 10,
+  },
+  allocationBarLabel: {
+    fontSize: 12,
+    color: tokens.colors.inkMute,
+    fontFamily: tokens.typography.body,
+  },
+  analyticsSection: {
+    gap: 12,
+  },
+  analyticsLabel: {
+    fontSize: 13,
+    color: tokens.colors.inkMute,
+    fontFamily: tokens.typography.body,
+  },
+  helperText: {
+    color: tokens.colors.inkSoft,
+    fontFamily: tokens.typography.body,
+    fontSize: 13,
+    lineHeight: 20,
   },
   holdingRow: {
     flexDirection: 'row',
