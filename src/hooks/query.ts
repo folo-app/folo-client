@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 type QueryOptions<T> = {
   queryFn: () => Promise<T>;
@@ -36,6 +36,9 @@ export function useQuery<T>({
   const [loading, setLoading] = useState(enabled);
   const [error, setError] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
+  const queryFnRef = useRef(queryFn);
+
+  queryFnRef.current = queryFn;
 
   useEffect(() => {
     let alive = true;
@@ -52,7 +55,7 @@ export function useQuery<T>({
     setLoading(true);
     setError(null);
 
-    queryFn()
+    queryFnRef.current()
       .then((result) => {
         if (!alive) {
           return;
@@ -78,7 +81,7 @@ export function useQuery<T>({
     return () => {
       alive = false;
     };
-  }, [enabled, initialData, queryFn, refreshKey, ...deps]);
+  }, [enabled, initialData, refreshKey, ...deps]);
 
   return {
     data,
