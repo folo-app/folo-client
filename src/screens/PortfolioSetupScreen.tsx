@@ -229,18 +229,6 @@ export function PortfolioSetupScreen() {
               </View>
             </View>
           ) : null}
-
-          {trimmedQuery.length === 0 ? (
-            <View style={styles.guideCard}>
-              <Text style={styles.guideTitle}>직접 추가로 바로 시작하세요</Text>
-              <Text style={styles.guideDescription}>
-                아래 인기 종목은 현재 서비스 데이터와 KIS 종목 마스터 기준으로
-                불러옵니다. 검색창에서는 `AAPL`, `TSLA`, `005930`, `삼성전자`처럼
-                티커, 종목명, 종목번호로 바로 찾을 수 있습니다.
-              </Text>
-            </View>
-          ) : null}
-
           {trimmedQuery.length === 0 ? (
             <>
               {featuredSections.map((section) =>
