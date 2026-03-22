@@ -2,9 +2,9 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { AllocationBar, AllocationLegend } from '../components/portfolio-visuals';
 import { DataStatusCard } from '../components/DataStatusCard';
 import {
-  DetailRow,
   MetricBadge,
   MetricGrid,
   Page,
@@ -19,39 +19,45 @@ import {
   formatDateLabel,
   formatPercent,
   formatSignedCurrency,
-  formatWeight,
 } from '../lib/format';
 import type { RootStackParamList } from '../navigation/types';
 import { tokens } from '../theme/tokens';
+
+const ALLOCATION_PALETTE = ['#2563EB', '#0F766E', '#7C3AED', '#F59E0B', '#E11D48', '#14B8A6'];
 
 export function PortfolioScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { isCompact } = useResponsiveLayout();
   const portfolio = usePortfolioData();
 
-  const allocation = portfolio.data.holdings.map((item) => ({
-    name: item.name,
-    ratio: Number(formatWeight(item.weight).replace('%', '')),
-    value: formatCurrency(item.totalValue, item.market),
-    color: item.market === 'KRX' ? '#0F766E' : '#2563EB',
-  }));
+  const allocationItems = [...portfolio.data.holdings]
+    .sort((left, right) => (right.totalValue ?? 0) - (left.totalValue ?? 0))
+    .map((holding, index) => ({
+      key: `${holding.holdingId}`,
+      label: holding.name,
+      ratio: holding.weight,
+      value: formatCurrency(holding.totalValue, holding.market),
+      meta: `${holding.ticker} · ${holding.market}`,
+      color: ALLOCATION_PALETTE[index % ALLOCATION_PALETTE.length],
+    }));
+  const topHoldings = allocationItems.slice(0, 6);
+  const remainingHoldingCount = Math.max(portfolio.data.holdings.length - topHoldings.length, 0);
 
   return (
-    <Page
-      eyebrow="Portfolio"
-      title="수익률과 자산배분"
-      subtitle="실제 포트폴리오 합산 결과와 보유 종목 정보를 백엔드 계산값 그대로 보여줍니다."
-    >
+    <Page eyebrow="Portfolio" title="내 포트폴리오">
       <DataStatusCard error={portfolio.error} loading={portfolio.loading} />
 
       <SurfaceCard tone="hero">
         <Text style={styles.summaryLabel}>총 평가금액</Text>
         <Text style={styles.summaryValue}>{formatCurrency(portfolio.data.totalValue)}</Text>
-        <Text style={styles.summaryDelta}>{formatPercent(portfolio.data.totalReturnRate)}</Text>
+        <Text style={styles.summaryDelta}>
+          {formatSignedCurrency(portfolio.data.totalReturn)} ·{' '}
+          {formatPercent(portfolio.data.totalReturnRate)}
+        </Text>
         <MetricGrid>
           <MetricBadge
-            label="평가손익"
-            value={formatSignedCurrency(portfolio.data.totalReturn)}
+            label="투자원금"
+            value={formatCurrency(portfolio.data.totalInvested)}
             tone="positive"
           />
           <MetricBadge
@@ -59,80 +65,47 @@ export function PortfolioScreen() {
             value={formatSignedCurrency(portfolio.data.dayReturn)}
             tone="brand"
           />
+          <MetricBadge label="보유 종목" value={`${portfolio.data.holdings.length}개`} />
+          <MetricBadge
+            label="최근 반영"
+            value={portfolio.data.syncedAt ? formatDateLabel(portfolio.data.syncedAt) : '기록 없음'}
+          />
         </MetricGrid>
-      </SurfaceCard>
-
-      <SurfaceCard>
-        <SectionHeading
-          title="포트폴리오 상태"
-          description="합산 값과 마지막 반영 시점을 확인할 수 있습니다."
-        />
-        <DetailRow label="보유 종목 수" value={`${portfolio.data.holdings.length}개`} />
-        <DetailRow
-          label="공개 상태"
-          value={portfolio.data.isFullyVisible ? '전체 공개 가능' : '일부 제한'}
-        />
-        <DetailRow
-          label="최근 반영 시각"
-          value={portfolio.data.syncedAt ? formatDateLabel(portfolio.data.syncedAt) : '반영 기록 없음'}
-        />
-        <View style={styles.actionStack}>
-          <PrimaryButton
-            label="포트폴리오 직접 추가"
-            onPress={() => navigation.navigate('PortfolioSetup')}
-          />
-          <PrimaryButton
-            label="CSV / OCR 가져오기"
-            onPress={() => navigation.navigate('ImportOnboarding')}
-            variant="secondary"
-          />
-        </View>
       </SurfaceCard>
 
       {portfolio.data.holdings.length === 0 ? (
         <SurfaceCard>
-          <SectionHeading
-            title="보유 종목"
-            description="거래를 추가하면 실제 보유 종목이 여기에 집계됩니다."
-          />
+          <SectionHeading title="보유 종목이 아직 없습니다" />
           <Text style={styles.emptyText}>
-            아직 보유 종목이 없습니다. 처음에는 직접 종목을 고르고 수량과 평균 매수가를 넣는 흐름이 가장 빠르고, CSV/OCR는 거래가 많을 때만 보조로 쓰는 편이 자연스럽습니다.
+            첫 종목을 추가하면 자산 구성과 수익률이 이 화면에서 바로 정리됩니다.
           </Text>
-          <PrimaryButton
-            label="포트폴리오 직접 추가"
-            onPress={() => navigation.navigate('PortfolioSetup')}
-          />
+          <View style={styles.actionStack}>
+            <PrimaryButton
+              label="포트폴리오 직접 추가"
+              onPress={() => navigation.navigate('PortfolioSetup')}
+            />
+            <PrimaryButton
+              label="CSV / OCR 가져오기"
+              onPress={() => navigation.navigate('ImportOnboarding')}
+              variant="secondary"
+            />
+          </View>
         </SurfaceCard>
       ) : (
         <>
           <SurfaceCard>
-            <SectionHeading
-              title="자산 배분"
-              description="현재 보유 종목 비중을 시각적으로 확인합니다."
-            />
-            {allocation.map((item) => (
-              <View key={item.name} style={styles.allocationRow}>
-                <View style={styles.allocationMeta}>
-                  <Text style={styles.allocationName}>{item.name}</Text>
-                  <Text style={styles.allocationValue}>{item.value}</Text>
-                </View>
-                <View style={styles.allocationBarTrack}>
-                  <View
-                    style={[
-                      styles.allocationBarFill,
-                      { width: `${item.ratio}%`, backgroundColor: item.color },
-                    ]}
-                  />
-                </View>
-                <Text style={styles.allocationRatio}>{item.ratio}%</Text>
-              </View>
-            ))}
+            <SectionHeading title="자산 구성" description="비중이 큰 종목부터 정리했습니다." />
+            <AllocationBar items={allocationItems} height={22} />
+            <AllocationLegend items={topHoldings} />
+            {remainingHoldingCount > 0 ? (
+              <Text style={styles.moreText}>외 {remainingHoldingCount}개 종목</Text>
+            ) : null}
           </SurfaceCard>
 
           <SurfaceCard>
             <SectionHeading
               title="보유 종목"
-              description="항목을 누르면 종목별 상세 지표로 이동합니다."
+              description="평가금액, 손익, 평균단가를 한 번에 확인합니다."
             />
             {portfolio.data.holdings.map((holding, index) => (
               <Pressable
@@ -141,25 +114,63 @@ export function PortfolioScreen() {
                   navigation.navigate('HoldingDetail', { holdingId: holding.holdingId })
                 }
                 style={[
-                  styles.holdingRow,
-                  isCompact && styles.holdingRowCompact,
+                  styles.holdingCard,
                   index < portfolio.data.holdings.length - 1 && styles.divider,
                 ]}
               >
-                <View style={styles.holdingText}>
-                  <Text style={styles.holdingTicker}>{holding.ticker}</Text>
-                  <Text style={styles.holdingName}>
-                    {holding.name} · {formatWeight(holding.weight)}
-                  </Text>
+                <View style={[styles.holdingHeader, isCompact && styles.holdingHeaderCompact]}>
+                  <View style={styles.holdingText}>
+                    <Text style={styles.holdingTicker}>{holding.ticker}</Text>
+                    <Text style={styles.holdingName}>{holding.name}</Text>
+                  </View>
+                  <View style={styles.weightPill}>
+                    <Text style={styles.weightPillText}>
+                      {holding.weight > 1
+                        ? `${holding.weight.toFixed(1)}%`
+                        : `${(holding.weight * 100).toFixed(1)}%`}
+                    </Text>
+                  </View>
                 </View>
-                <View style={styles.holdingMetrics}>
-                  <Text style={styles.holdingReturn}>{formatPercent(holding.returnRate)}</Text>
-                  <Text style={styles.holdingValue}>
-                    {formatCurrency(holding.totalValue, holding.market)}
-                  </Text>
+                <View style={[styles.holdingStatsRow, isCompact && styles.holdingStatsRowCompact]}>
+                  <View style={styles.holdingStat}>
+                    <Text style={styles.holdingStatLabel}>평가금액</Text>
+                    <Text style={styles.holdingStatValue}>
+                      {formatCurrency(holding.totalValue, holding.market)}
+                    </Text>
+                  </View>
+                  <View style={styles.holdingStat}>
+                    <Text style={styles.holdingStatLabel}>손익</Text>
+                    <Text style={styles.holdingStatValue}>
+                      {formatSignedCurrency(holding.returnAmount, holding.market)}
+                    </Text>
+                    <Text style={styles.holdingStatMeta}>
+                      {formatPercent(holding.returnRate)}
+                    </Text>
+                  </View>
+                  <View style={styles.holdingStat}>
+                    <Text style={styles.holdingStatLabel}>평균단가</Text>
+                    <Text style={styles.holdingStatValue}>
+                      {formatCurrency(holding.avgPrice, holding.market)}
+                    </Text>
+                  </View>
                 </View>
               </Pressable>
             ))}
+          </SurfaceCard>
+
+          <SurfaceCard tone="muted">
+            <SectionHeading title="포트폴리오 관리" />
+            <View style={styles.actionStack}>
+              <PrimaryButton
+                label="직접 추가"
+                onPress={() => navigation.navigate('PortfolioSetup')}
+              />
+              <PrimaryButton
+                label="CSV / OCR 가져오기"
+                onPress={() => navigation.navigate('ImportOnboarding')}
+                variant="secondary"
+              />
+            </View>
           </SurfaceCard>
         </>
       )}
@@ -188,47 +199,21 @@ const styles = StyleSheet.create({
   actionStack: {
     gap: 10,
   },
-  allocationRow: {
-    gap: 8,
-  },
-  allocationMeta: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: 12,
-  },
-  allocationName: {
-    fontSize: 15,
-    color: tokens.colors.navy,
-    fontFamily: tokens.typography.heading,
-    fontWeight: '700',
-  },
-  allocationValue: {
-    fontSize: 13,
-    color: tokens.colors.inkSoft,
-    fontFamily: tokens.typography.body,
-  },
-  allocationBarTrack: {
-    width: '100%',
-    height: 10,
-    borderRadius: 999,
-    backgroundColor: tokens.colors.surfaceMuted,
-    overflow: 'hidden',
-  },
-  allocationBarFill: {
-    height: '100%',
-    borderRadius: 999,
-  },
-  allocationRatio: {
+  moreText: {
     fontSize: 12,
     color: tokens.colors.inkMute,
     fontFamily: tokens.typography.body,
   },
-  holdingRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: 16,
+  holdingCard: {
+    gap: 14,
   },
-  holdingRowCompact: {
+  holdingHeader: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 12,
+    justifyContent: 'space-between',
+  },
+  holdingHeaderCompact: {
     alignItems: 'flex-start',
     flexDirection: 'column',
   },
@@ -253,20 +238,48 @@ const styles = StyleSheet.create({
     color: tokens.colors.inkSoft,
     fontFamily: tokens.typography.body,
   },
-  holdingMetrics: {
-    alignItems: 'flex-end',
-    gap: 6,
+  weightPill: {
+    backgroundColor: tokens.colors.brandSoft,
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
   },
-  holdingReturn: {
-    fontSize: 16,
-    color: tokens.colors.positive,
+  weightPillText: {
+    color: tokens.colors.brandStrong,
     fontFamily: tokens.typography.heading,
+    fontSize: 13,
     fontWeight: '700',
   },
-  holdingValue: {
-    fontSize: 13,
-    color: tokens.colors.inkSoft,
+  holdingStatsRow: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  holdingStatsRowCompact: {
+    flexDirection: 'column',
+  },
+  holdingStat: {
+    backgroundColor: tokens.colors.surfaceMuted,
+    borderRadius: 18,
+    flex: 1,
+    gap: 4,
+    minWidth: 0,
+    padding: 14,
+  },
+  holdingStatLabel: {
+    color: tokens.colors.inkMute,
     fontFamily: tokens.typography.body,
+    fontSize: 12,
+  },
+  holdingStatValue: {
+    color: tokens.colors.navy,
+    fontFamily: tokens.typography.heading,
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  holdingStatMeta: {
+    color: tokens.colors.positive,
+    fontFamily: tokens.typography.body,
+    fontSize: 12,
   },
   emptyText: {
     fontSize: 14,

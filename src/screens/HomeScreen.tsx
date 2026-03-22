@@ -3,6 +3,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Avatar } from '../components/Avatar';
+import { AllocationBar, AllocationLegend } from '../components/portfolio-visuals';
 import { DataStatusCard } from '../components/DataStatusCard';
 import {
   MetricBadge,
@@ -38,6 +39,18 @@ export function HomeScreen() {
   const reminders = useRemindersData();
   const myTrades = useMyTradesData();
   const reminderSummary = reminders.data.reminders[0];
+  const allocationPalette = ['#2563EB', '#0F766E', '#7C3AED', '#F59E0B', '#E11D48', '#14B8A6'];
+  const topAllocationItems = [...portfolio.data.holdings]
+    .sort((left, right) => (right.totalValue ?? 0) - (left.totalValue ?? 0))
+    .slice(0, 4)
+    .map((holding, index) => ({
+      key: `${holding.holdingId}`,
+      label: holding.name,
+      ratio: holding.weight,
+      value: formatCurrency(holding.totalValue, holding.market),
+      meta: `${holding.ticker} · ${holding.market}`,
+      color: allocationPalette[index % allocationPalette.length],
+    }));
   const combinedError =
     portfolio.error ?? reminders.error ?? myTrades.error ?? feed.error;
   const combinedLoading =
@@ -47,7 +60,6 @@ export function HomeScreen() {
     <Page
       eyebrow="Today"
       title="오늘의 투자 현황"
-      subtitle="포트폴리오 요약, 리마인더, 내 거래, 친구 피드를 실제 백엔드 응답 기준으로 묶었습니다."
     >
       <DataStatusCard error={combinedError} loading={combinedLoading} />
 
@@ -81,13 +93,17 @@ export function HomeScreen() {
           />
           <MetricBadge label="보유 종목" value={`${portfolio.data.holdings.length}개`} />
         </MetricGrid>
+        {topAllocationItems.length > 0 ? (
+          <View style={styles.allocationPreview}>
+            <Text style={styles.summarySectionLabel}>자산 구성</Text>
+            <AllocationBar items={topAllocationItems} />
+            <AllocationLegend items={topAllocationItems} />
+          </View>
+        ) : null}
       </SurfaceCard>
 
       <SurfaceCard>
-        <SectionHeading
-          title="바로 실행"
-          description="초기 세팅은 직접 포트폴리오 추가가 메인이고, CSV/OCR는 빠른 보조 수단으로 둡니다."
-        />
+        <SectionHeading title="바로 실행" />
         <View style={styles.actionStack}>
           <PrimaryButton
             label="포트폴리오 직접 추가"
@@ -232,6 +248,14 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: tokens.colors.brandStrong,
     fontFamily: tokens.typography.body,
+  },
+  summarySectionLabel: {
+    fontSize: 13,
+    color: tokens.colors.inkMute,
+    fontFamily: tokens.typography.body,
+  },
+  allocationPreview: {
+    gap: 12,
   },
   actionStack: {
     gap: 10,

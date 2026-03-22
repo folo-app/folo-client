@@ -2,8 +2,16 @@ import { useRoute } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { AllocationBar, AllocationLegend } from '../components/portfolio-visuals';
 import { DataStatusCard } from '../components/DataStatusCard';
-import { DetailRow, MetricBadge, MetricGrid, Page, SectionHeading, SurfaceCard } from '../components/ui';
+import {
+  MetricBadge,
+  MetricGrid,
+  Page,
+  PageBackButton,
+  SectionHeading,
+  SurfaceCard,
+} from '../components/ui';
 import { useUserPortfolioData } from '../hooks/useFoloData';
 import { useResponsiveLayout } from '../hooks/useResponsiveLayout';
 import {
@@ -23,12 +31,23 @@ export function PublicPortfolioScreen() {
   const title = route.params.nickname
     ? `${route.params.nickname}님의 포트폴리오`
     : '공개 포트폴리오';
+  const allocationPalette = ['#2563EB', '#0F766E', '#7C3AED', '#F59E0B', '#E11D48', '#14B8A6'];
+  const allocationItems = [...portfolio.data.holdings]
+    .sort((left, right) => (right.totalValue ?? 0) - (left.totalValue ?? 0))
+    .map((holding, index) => ({
+      key: `${holding.holdingId}`,
+      label: holding.name,
+      ratio: holding.weight,
+      value: formatCurrency(holding.totalValue, holding.market),
+      meta: `${holding.ticker} · ${holding.market}`,
+      color: allocationPalette[index % allocationPalette.length],
+    }));
 
   return (
     <Page
       eyebrow="Public Portfolio"
       title={title}
-      subtitle="공개 범위에 따라 노출 가능한 자산 요약과 보유 종목을 보여줍니다."
+      leading={<PageBackButton />}
     >
       <DataStatusCard error={portfolio.error} loading={portfolio.loading} />
 
@@ -59,26 +78,13 @@ export function PublicPortfolioScreen() {
           </SurfaceCard>
 
           <SurfaceCard>
-            <SectionHeading
-              title="포트폴리오 상태"
-              description="공개 범위에 따라 숫자 일부가 숨겨질 수 있습니다."
-            />
-            <DetailRow label="보유 종목 수" value={`${portfolio.data.holdings.length}개`} />
-            <DetailRow
-              label="최근 반영 시각"
-              value={portfolio.data.syncedAt ? formatDateLabel(portfolio.data.syncedAt) : '반영 기록 없음'}
-            />
-            <DetailRow
-              label="상세 금액 공개"
-              value={portfolio.data.isFullyVisible ? '표시됨' : '일부 숨김'}
-            />
+            <SectionHeading title="자산 구성" />
+            <AllocationBar items={allocationItems} height={22} />
+            <AllocationLegend items={allocationItems.slice(0, 6)} />
           </SurfaceCard>
 
           <SurfaceCard>
-            <SectionHeading
-              title="보유 종목"
-              description="보유 비중과 공개 가능한 지표를 확인합니다."
-            />
+            <SectionHeading title="보유 종목" description={`최근 반영 ${portfolio.data.syncedAt ? formatDateLabel(portfolio.data.syncedAt) : '기록 없음'}`} />
             {portfolio.data.holdings.length === 0 ? (
               <Text style={styles.emptyText}>표시할 보유 종목이 없습니다.</Text>
             ) : (

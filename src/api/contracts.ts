@@ -390,6 +390,12 @@ export type UpdateMyProfileRequest = {
   returnVisibility: ReturnVisibility;
 };
 
+export type ChangeMyPasswordRequest = {
+  currentPassword: string;
+  newPassword: string;
+  confirmPassword: string;
+};
+
 export type CreateTradeRequest = {
   ticker: string;
   market: MarketType;

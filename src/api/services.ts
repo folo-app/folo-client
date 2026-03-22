@@ -1,6 +1,7 @@
 import { apiRequest } from './client';
 import type {
   AuthResponse,
+  ChangeMyPasswordRequest,
   CommentListResponse,
   ConfirmEmailRequest,
   ConfirmImportRequest,
@@ -233,6 +234,13 @@ export const foloApi = {
     return apiRequest<MyProfileResponse>('/users/me', {
       method: 'PATCH',
       body,
+    });
+  },
+  changeMyPassword(body: ChangeMyPasswordRequest) {
+    return apiRequest<void>('/users/me/password', {
+      method: 'PATCH',
+      body,
+      allowEmptyData: true,
     });
   },
   updateKisKey(body: UpdateKisKeyRequest) {
