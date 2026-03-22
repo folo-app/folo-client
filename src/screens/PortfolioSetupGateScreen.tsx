@@ -4,17 +4,23 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { ApiClientError } from '../api/client';
 import { foloApi } from '../api/services';
 import { useAuth } from '../auth/AuthProvider';
 import { PrimaryButton, SurfaceCard } from '../components/ui';
 import type { RootStackParamList } from '../navigation/types';
 import { tokens } from '../theme/tokens';
 
+type GateErrorState = {
+  summary: string;
+  details: string[];
+} | null;
+
 export function PortfolioSetupGateScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { signOut } = useAuth();
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<GateErrorState>(null);
   const [loggingOut, setLoggingOut] = useState(false);
 
   useEffect(() => {
@@ -24,38 +30,62 @@ export function PortfolioSetupGateScreen() {
       setLoading(true);
       setError(null);
 
-      try {
-        const [portfolio, tradeList] = await Promise.all([
-          foloApi.getPortfolio(),
-          foloApi.getMyTrades({ page: 0, size: 1 }),
-        ]);
+      const [portfolioResult, tradeListResult] = await Promise.allSettled([
+        foloApi.getPortfolio(),
+        foloApi.getMyTrades({ page: 0, size: 1 }),
+      ]);
 
-        if (!alive) {
-          return;
-        }
-
-        const needsPortfolioSetup =
-          portfolio.holdings.length === 0 && tradeList.totalCount === 0;
-
-        navigation.reset({
-          index: 0,
-          routes: [
-            needsPortfolioSetup
-              ? { name: 'PortfolioSetup' }
-              : { name: 'MainTabs', params: { screen: 'Home' } },
-          ],
-        });
-      } catch (reason) {
-        if (!alive) {
-          return;
-        }
-        setError(
-          reason instanceof Error
-            ? reason.message
-            : '포트폴리오 상태를 확인하지 못했습니다.',
-        );
-        setLoading(false);
+      if (!alive) {
+        return;
       }
+
+      const failures: string[] = [];
+
+      if (portfolioResult.status === 'rejected') {
+        failures.push(
+          `포트폴리오 조회 실패: ${describeGateFailure(portfolioResult.reason)}`,
+        );
+      }
+      if (tradeListResult.status === 'rejected') {
+        failures.push(
+          `내 거래 조회 실패: ${describeGateFailure(tradeListResult.reason)}`,
+        );
+      }
+
+      if (failures.length > 0) {
+        setError({
+          summary: '초기 진입 상태를 확인하지 못했습니다.',
+          details: failures,
+        });
+        setLoading(false);
+        return;
+      }
+
+      if (
+        portfolioResult.status !== 'fulfilled' ||
+        tradeListResult.status !== 'fulfilled'
+      ) {
+        setError({
+          summary: '초기 진입 상태를 확인하지 못했습니다.',
+          details: ['일시적인 응답 불일치가 발생했습니다. 다시 확인해 주세요.'],
+        });
+        setLoading(false);
+        return;
+      }
+
+      const portfolio = portfolioResult.value;
+      const tradeList = tradeListResult.value;
+      const needsPortfolioSetup =
+        portfolio.holdings.length === 0 && tradeList.totalCount === 0;
+
+      navigation.reset({
+        index: 0,
+        routes: [
+          needsPortfolioSetup
+            ? { name: 'PortfolioSetup' }
+            : { name: 'MainTabs', params: { screen: 'Home' } },
+        ],
+      });
     }
 
     checkPortfolioEntry();
@@ -95,7 +125,14 @@ export function PortfolioSetupGateScreen() {
 
           {error ? (
             <View style={styles.errorBlock}>
-              <Text style={styles.errorText}>{error}</Text>
+              <Text style={styles.errorText}>{error.summary}</Text>
+              <View style={styles.errorDetailList}>
+                {error.details.map((detail) => (
+                  <Text key={detail} style={styles.errorDetailText}>
+                    {detail}
+                  </Text>
+                ))}
+              </View>
               <PrimaryButton
                 label="다시 확인"
                 onPress={() => {
@@ -169,6 +206,28 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 22,
     color: tokens.colors.danger,
+    fontFamily: tokens.typography.heading,
+    fontWeight: '700',
+  },
+  errorDetailList: {
+    gap: 6,
+  },
+  errorDetailText: {
+    fontSize: 13,
+    lineHeight: 20,
+    color: tokens.colors.inkSoft,
     fontFamily: tokens.typography.body,
   },
 });
+
+function describeGateFailure(reason: unknown) {
+  if (reason instanceof ApiClientError) {
+    return reason.message;
+  }
+
+  if (reason instanceof Error) {
+    return reason.message;
+  }
+
+  return '알 수 없는 오류';
+}
