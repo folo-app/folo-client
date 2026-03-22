@@ -36,8 +36,23 @@ export function LoginScreen() {
     }
   }, [route.params?.email, route.params?.notice]);
 
+  async function completeSignIn(emailValue: string, passwordValue: string) {
+    const result = await signIn({
+      email: emailValue,
+      password: passwordValue,
+    });
+
+    if (result === 'verification_required') {
+      navigation.navigate('EmailVerification', { email: emailValue });
+      return false;
+    }
+
+    return true;
+  }
+
   async function handleLogin() {
     const normalizedEmail = email.trim().toLowerCase();
+    const trimmedPassword = password.trim();
 
     if (!normalizedEmail || !password) {
       setMessage('이메일과 비밀번호를 모두 입력해 주세요.');
@@ -48,16 +63,28 @@ export function LoginScreen() {
     setMessage(null);
 
     try {
-      const result = await signIn({
-        email: normalizedEmail,
-        password,
-      });
-
-      if (result === 'verification_required') {
-        navigation.navigate('EmailVerification', { email: normalizedEmail });
+      const signedIn = await completeSignIn(normalizedEmail, password);
+      if (signedIn) {
         return;
       }
     } catch (error) {
+      if (password !== trimmedPassword) {
+        try {
+          setPassword(trimmedPassword);
+          const signedIn = await completeSignIn(normalizedEmail, trimmedPassword);
+          if (signedIn) {
+            return;
+          }
+        } catch (retryError) {
+          setMessage(
+            retryError instanceof Error
+              ? retryError.message
+              : '로그인에 실패했습니다. 다시 시도해 주세요.',
+          );
+          return;
+        }
+      }
+
       setMessage(
         error instanceof Error ? error.message : '로그인에 실패했습니다. 다시 시도해 주세요.',
       );
