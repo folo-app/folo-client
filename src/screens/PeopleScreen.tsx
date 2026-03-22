@@ -11,6 +11,7 @@ import { DataStatusCard } from '../components/DataStatusCard';
 import {
   Chip,
   Page,
+  PageBackButton,
   PrimaryButton,
   SectionHeading,
   SurfaceCard,
@@ -203,15 +204,12 @@ export function PeopleScreen() {
     <Page
       eyebrow="People"
       title="사람 찾기"
-      subtitle="닉네임으로 사용자를 검색하고, 현재 팔로우 관계를 바로 바꿀 수 있습니다."
+      leading={<PageBackButton />}
     >
       <DataStatusCard error={combinedError} loading={combinedLoading} />
 
       <SurfaceCard tone="hero">
-        <SectionHeading
-          title="검색"
-          description="닉네임 2자 이상 입력 시 실제 `/users/search` 결과를 가져옵니다."
-        />
+        <SectionHeading title="검색" description="닉네임으로 계정을 찾아보세요." />
         <TextInput
           onChangeText={setQuery}
           placeholder="예: followcheck, godten"
@@ -287,17 +285,11 @@ export function PeopleScreen() {
         </>
       )}
 
-      <SurfaceCard tone="muted">
-        <SectionHeading
-          title="다음 단계"
-          description="사용자 상세 피드와 공개 포트폴리오 화면은 이어서 붙일 수 있습니다."
-        />
-        <PrimaryButton
-          label="피드로 돌아가기"
-          variant="secondary"
-          onPress={() => navigation.navigate('MainTabs', { screen: 'Feed' })}
-        />
-      </SurfaceCard>
+      <PrimaryButton
+        label="피드로 돌아가기"
+        variant="secondary"
+        onPress={() => navigation.navigate('MainTabs', { screen: 'Feed' })}
+      />
     </Page>
   );
 }

@@ -6,6 +6,7 @@ import { DataStatusCard } from '../components/DataStatusCard';
 import {
   Chip,
   Page,
+  PageBackButton,
   PrimaryButton,
   SectionHeading,
   SurfaceCard,
@@ -61,8 +62,8 @@ export function NotificationsScreen() {
   return (
     <Page
       eyebrow="Notifications"
-      title="알림 상세 화면"
-      subtitle="최근 알림을 실제 응답 순서대로 확인할 수 있습니다."
+      title="알림"
+      leading={<PageBackButton />}
       action={
         notifications.data.unreadCount > 0 ? (
           <PrimaryButton
@@ -87,10 +88,7 @@ export function NotificationsScreen() {
       </SurfaceCard>
 
       <SurfaceCard>
-        <SectionHeading
-          title="전체 알림"
-          description="NotificationListResponse를 그대로 표시합니다."
-        />
+        <SectionHeading title="전체 알림" />
         {notifications.data.notifications.length === 0 ? (
           <Text style={styles.emptyText}>표시할 알림이 없습니다.</Text>
         ) : (

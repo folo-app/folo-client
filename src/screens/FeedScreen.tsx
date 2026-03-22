@@ -25,15 +25,11 @@ export function FeedScreen() {
     <Page
       eyebrow="Feed"
       title="친구 거래 타임라인"
-      subtitle="친구가 남긴 실제 거래 기록을 시간순으로 확인하고 상세 화면으로 바로 이동할 수 있습니다."
     >
       <DataStatusCard error={feed.error} loading={feed.loading} />
 
       <SurfaceCard tone="muted">
-        <SectionHeading
-          title="피드 상태"
-          description={`현재 화면에 ${feed.data.trades.length}건의 거래가 표시됩니다.`}
-        />
+        <SectionHeading title="피드 상태" description={`${feed.data.trades.length}건의 거래`} />
         <View style={styles.actionStack}>
           <PrimaryButton label="피드 새로고침" onPress={feed.refresh} variant="secondary" />
           <PrimaryButton

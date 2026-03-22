@@ -15,6 +15,7 @@ import {
   Chip,
   MetricGrid,
   Page,
+  PageBackButton,
   PrimaryButton,
   SectionHeading,
   SurfaceCard,
@@ -167,7 +168,7 @@ export function TradeDetailScreen() {
     <Page
       eyebrow="Trade Detail"
       title={trade.data.ticker ? `${trade.data.ticker} 거래 상세` : '거래 상세'}
-      subtitle="거래 요약뿐 아니라 작성자 프로필, 리액션, 댓글, 수정/삭제 액션까지 한 화면에서 처리합니다."
+      leading={<PageBackButton />}
     >
       <DataStatusCard
         error={trade.error ?? comments.error ?? mutationError}
@@ -227,10 +228,7 @@ export function TradeDetailScreen() {
 
           {isOwner ? (
             <SurfaceCard>
-              <SectionHeading
-                title="거래 수정"
-                description="현재 백엔드가 지원하는 comment / visibility mutation을 바로 적용합니다."
-              />
+              <SectionHeading title="거래 수정" description="코멘트와 공개 범위를 바꿀 수 있습니다." />
               <TextInput
                 multiline
                 onChangeText={setEditComment}
@@ -274,10 +272,7 @@ export function TradeDetailScreen() {
           ) : null}
 
           <SurfaceCard>
-            <SectionHeading
-              title="리액션"
-              description="같은 사용자는 한 번에 한 가지 리액션만 유지하고, 다시 누르면 해제됩니다."
-            />
+            <SectionHeading title="리액션" />
             <View style={styles.reactionRow}>
               {REACTION_OPTIONS.map((emoji) => {
                 const summary = trade.data.reactions.find((reaction) => reaction.emoji === emoji);
@@ -295,10 +290,7 @@ export function TradeDetailScreen() {
           </SurfaceCard>
 
           <SurfaceCard>
-            <SectionHeading
-              title="댓글 작성"
-              description="거래 기록에 바로 의견을 남길 수 있습니다."
-            />
+            <SectionHeading title="댓글 작성" />
             <TextInput
               multiline
               onChangeText={setCommentDraft}

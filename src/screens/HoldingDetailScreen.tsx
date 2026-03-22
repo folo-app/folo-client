@@ -8,6 +8,7 @@ import {
   DetailRow,
   MetricGrid,
   Page,
+  PageBackButton,
   PrimaryButton,
   SectionHeading,
   SurfaceCard,
@@ -29,7 +30,7 @@ export function HoldingDetailScreen() {
     <Page
       eyebrow="Holding Detail"
       title={holding ? `${holding.ticker} 상세` : '보유 종목 상세'}
-      subtitle="Holding 전용 API는 아직 없어서 Portfolio projection에서 상세 뷰를 분리했습니다."
+      leading={<PageBackButton />}
     >
       <DataStatusCard error={portfolio.error} loading={portfolio.loading} />
 
@@ -65,10 +66,7 @@ export function HoldingDetailScreen() {
           </SurfaceCard>
 
           <SurfaceCard>
-            <SectionHeading
-              title="보유 정보"
-              description="PortfolioHoldingItem에 포함된 숫자를 그대로 노출합니다."
-            />
+            <SectionHeading title="보유 정보" />
             <DetailRow label="수량" value={String(holding.quantity)} />
             <DetailRow label="평균단가" value={formatCurrency(holding.avgPrice, holding.market)} />
             <DetailRow label="현재가" value={formatCurrency(holding.currentPrice, holding.market)} />

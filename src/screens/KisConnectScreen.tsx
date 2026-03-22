@@ -15,7 +15,14 @@ import type {
   KisConnectionStatusResponse,
 } from '../api/contracts';
 import { foloApi } from '../api/services';
-import { Chip, Page, PrimaryButton, SectionHeading, SurfaceCard } from '../components/ui';
+import {
+  Chip,
+  Page,
+  PageBackButton,
+  PrimaryButton,
+  SectionHeading,
+  SurfaceCard,
+} from '../components/ui';
 import { useMutation, useQuery } from '../hooks/query';
 import { formatDateLabel } from '../lib/format';
 import type { RootStackParamList } from '../navigation/types';
@@ -154,13 +161,10 @@ export function KisConnectScreen() {
     <Page
       eyebrow="KIS"
       title="한국투자 연결"
-      subtitle="서비스 공용 OAuth로 연결하고, 성공 시 앱으로 돌아와 계좌 상태와 동기화 액션을 이어서 보여줍니다."
+      leading={<PageBackButton />}
     >
       <SurfaceCard tone="hero">
-        <SectionHeading
-          title="현재 연결 상태"
-          description="직접 키를 받지 않고, 사용자 실명과 휴대폰번호로 KIS 인증을 시작합니다."
-        />
+        <SectionHeading title="현재 연결 상태" />
 
         {status.loading ? (
           <View style={styles.loaderRow}>
@@ -197,10 +201,7 @@ export function KisConnectScreen() {
 
       {status.data.connected ? (
         <SurfaceCard>
-          <SectionHeading
-            title="연결 완료 후 액션"
-            description="KIS 연결이 끝났다면 바로 포트폴리오 동기화와 연결 해제를 처리할 수 있습니다."
-          />
+          <SectionHeading title="연결 완료 후 액션" />
           <View style={styles.actionStack}>
             <PrimaryButton
               label={syncMutation.pending ? '동기화 중...' : '포트폴리오 동기화'}
@@ -217,10 +218,7 @@ export function KisConnectScreen() {
         </SurfaceCard>
       ) : (
         <SurfaceCard>
-          <SectionHeading
-            title="OAuth 시작 정보"
-            description="KIS authorizeP가 요구하는 실명과 휴대폰번호를 입력한 뒤 브라우저 인증으로 이동합니다."
-          />
+          <SectionHeading title="인증 시작" description="실명과 휴대폰번호를 입력하고 브라우저 인증으로 이동합니다." />
           <TextInput
             autoCapitalize="words"
             onChangeText={setCustomerName}
@@ -259,10 +257,7 @@ export function KisConnectScreen() {
       )}
 
       <SurfaceCard>
-        <SectionHeading
-          title="대안 경로"
-          description="초기 유저는 수동 포트폴리오 추가가 메인이고, CSV/OCR는 하단 보조 옵션으로 둡니다."
-        />
+        <SectionHeading title="다른 방법으로 시작하기" />
         <View style={styles.actionStack}>
           <PrimaryButton
             label="포트폴리오 직접 추가"

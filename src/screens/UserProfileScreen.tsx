@@ -7,7 +7,15 @@ import { StyleSheet, Text, View } from 'react-native';
 import { useAuth } from '../auth/AuthProvider';
 import { Avatar } from '../components/Avatar';
 import { DataStatusCard } from '../components/DataStatusCard';
-import { Chip, DetailRow, Page, PrimaryButton, SectionHeading, SurfaceCard } from '../components/ui';
+import {
+  Chip,
+  DetailRow,
+  Page,
+  PageBackButton,
+  PrimaryButton,
+  SectionHeading,
+  SurfaceCard,
+} from '../components/ui';
 import {
   useUserFeedData,
   useUserPortfolioData,
@@ -70,7 +78,7 @@ export function UserProfileScreen() {
     <Page
       eyebrow="Profile"
       title={profile.data.nickname ? `${profile.data.nickname} 프로필` : '사용자 프로필'}
-      subtitle="공개 프로필, 공개 포트폴리오, 개인 피드 미리보기를 한 화면에서 확인합니다."
+      leading={<PageBackButton />}
     >
       <DataStatusCard error={combinedError} loading={combinedLoading} />
 
@@ -117,10 +125,7 @@ export function UserProfileScreen() {
           </SurfaceCard>
 
           <SurfaceCard>
-            <SectionHeading
-              title="포트폴리오 접근"
-              description="상대 공개 범위에 따라 열람 가능 여부가 달라집니다."
-            />
+            <SectionHeading title="포트폴리오 접근" />
             <DetailRow
               label="현재 상태"
               value={profile.data.isAccessible ? '열람 가능' : '열람 제한'}

@@ -3,7 +3,7 @@ import { StyleSheet, Text, View } from 'react-native';
 
 import { foloApi } from '../api/services';
 import { DataStatusCard } from '../components/DataStatusCard';
-import { Chip, Page, SectionHeading, SurfaceCard } from '../components/ui';
+import { Chip, Page, PageBackButton, SectionHeading, SurfaceCard } from '../components/ui';
 import { useRemindersData } from '../hooks/useFoloData';
 import { formatCurrency } from '../lib/format';
 import { tokens } from '../theme/tokens';
@@ -62,8 +62,8 @@ export function RemindersScreen() {
   return (
     <Page
       eyebrow="Reminders"
-      title="리마인더 상세 화면"
-      subtitle="현재 계정에 등록된 정기 투자 리마인더를 확인합니다."
+      title="리마인더"
+      leading={<PageBackButton />}
     >
       <DataStatusCard
         error={reminders.error ?? actionError}
@@ -73,10 +73,7 @@ export function RemindersScreen() {
       {actionSuccess ? <Text style={styles.feedback}>{actionSuccess}</Text> : null}
 
       <SurfaceCard>
-        <SectionHeading
-          title="활성 리마인더"
-          description={`총 ${reminders.data.reminders.length}개`}
-        />
+        <SectionHeading title="활성 리마인더" description={`총 ${reminders.data.reminders.length}개`} />
         {reminders.data.reminders.length === 0 ? (
           <Text style={styles.emptyText}>등록된 리마인더가 없습니다.</Text>
         ) : (

@@ -1,3 +1,5 @@
+import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
 import type { ReactNode } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -5,9 +7,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { tokens } from '../theme/tokens';
 
 type PageProps = {
-  eyebrow: string;
+  eyebrow?: string;
   title: string;
-  subtitle: string;
+  subtitle?: string;
+  leading?: ReactNode;
   action?: ReactNode;
   children: ReactNode;
 };
@@ -46,7 +49,7 @@ type BottomActionBarProps = {
   children: ReactNode;
 };
 
-export function Page({ eyebrow, title, subtitle, action, children }: PageProps) {
+export function Page({ eyebrow, title, subtitle, leading, action, children }: PageProps) {
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const compact = width < 430;
@@ -75,15 +78,22 @@ export function Page({ eyebrow, title, subtitle, action, children }: PageProps) 
         <View style={styles.glowLarge} />
         <View style={styles.glowSmall} />
         <View style={styles.header}>
-          <Text style={styles.eyebrow}>{eyebrow}</Text>
+          {leading || action ? (
+            <View style={styles.headerChrome}>
+              <View style={styles.headerChromeSide}>{leading}</View>
+              <View style={styles.headerChromeSideRight}>{action}</View>
+            </View>
+          ) : null}
+          {eyebrow ? <Text style={styles.eyebrow}>{eyebrow}</Text> : null}
           <View style={styles.headerRow}>
             <View style={styles.titleBlock}>
               <Text style={[styles.title, compact && styles.titleCompact, narrow && styles.titleNarrow]}>
                 {title}
               </Text>
-              <Text style={[styles.subtitle, compact && styles.subtitleCompact]}>{subtitle}</Text>
+              {subtitle ? (
+                <Text style={[styles.subtitle, compact && styles.subtitleCompact]}>{subtitle}</Text>
+              ) : null}
             </View>
-            {action}
           </View>
         </View>
         {children}
@@ -190,13 +200,34 @@ export function SectionHeading({
   description,
 }: {
   title: string;
-  description: string;
+  description?: string;
 }) {
   return (
     <View style={styles.sectionHeading}>
       <Text style={styles.sectionTitle}>{title}</Text>
-      <Text style={styles.sectionDescription}>{description}</Text>
+      {description ? <Text style={styles.sectionDescription}>{description}</Text> : null}
     </View>
+  );
+}
+
+export function PageBackButton({
+  label = '뒤로가기',
+  onPress,
+}: {
+  label?: string;
+  onPress?: () => void;
+}) {
+  const navigation = useNavigation();
+
+  return (
+    <Pressable
+      accessibilityLabel={label}
+      accessibilityRole="button"
+      onPress={onPress ?? (() => navigation.goBack())}
+      style={({ pressed }) => [styles.backButton, pressed && styles.buttonPressed]}
+    >
+      <Ionicons color={tokens.colors.navy} name="chevron-back" size={20} />
+    </Pressable>
   );
 }
 
@@ -299,6 +330,20 @@ const styles = StyleSheet.create({
     paddingTop: 12,
     gap: 10,
   },
+  headerChrome: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    minHeight: 44,
+  },
+  headerChromeSide: {
+    alignItems: 'flex-start',
+    flex: 1,
+  },
+  headerChromeSideRight: {
+    alignItems: 'flex-end',
+    flex: 1,
+  },
   eyebrow: {
     fontSize: 12,
     letterSpacing: 1.1,
@@ -337,6 +382,17 @@ const styles = StyleSheet.create({
   subtitleCompact: {
     fontSize: 14,
     lineHeight: 22,
+  },
+  backButton: {
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.82)',
+    borderColor: 'rgba(214, 224, 234, 0.92)',
+    borderRadius: 16,
+    borderWidth: 1,
+    height: 40,
+    justifyContent: 'center',
+    width: 40,
+    ...tokens.shadow,
   },
   card: {
     borderRadius: tokens.radius.md,

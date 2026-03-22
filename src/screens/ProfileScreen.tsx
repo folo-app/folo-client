@@ -53,7 +53,6 @@ export function ProfileScreen() {
     <Page
       eyebrow="Profile"
       title="내 기록과 공개 범위"
-      subtitle="프로필 정보, 공개 범위, 알림과 리마인더, 최근 거래를 실제 응답 기준으로 보여줍니다."
     >
       <DataStatusCard error={combinedError} loading={combinedLoading} />
 
@@ -93,10 +92,7 @@ export function ProfileScreen() {
       </SurfaceCard>
 
       <SurfaceCard>
-        <SectionHeading
-          title="계정 상태"
-          description="로그인 계정과 공개 범위를 함께 확인합니다."
-        />
+        <SectionHeading title="계정 상태" />
         <DetailRow
           label="포트폴리오 공개 범위"
           value={visibilityLabel(profile.data.portfolioVisibility)}
@@ -118,7 +114,7 @@ export function ProfileScreen() {
             variant="secondary"
           />
           <PrimaryButton
-            label="KIS 연결 준비 상태"
+            label="KIS 연결"
             onPress={() => navigation.navigate('KisConnect')}
             variant="secondary"
           />
@@ -126,10 +122,7 @@ export function ProfileScreen() {
       </SurfaceCard>
 
       <SurfaceCard>
-        <SectionHeading
-          title="리마인더"
-          description="실제 등록된 정기 투자 리마인더입니다."
-        />
+        <SectionHeading title="리마인더" />
         {reminders.data.reminders.length === 0 ? (
           <Text style={styles.emptyText}>등록된 리마인더가 없습니다.</Text>
         ) : (
@@ -158,10 +151,7 @@ export function ProfileScreen() {
       </SurfaceCard>
 
       <SurfaceCard>
-        <SectionHeading
-          title="알림"
-          description="최근 알림만 미리 보여주고 전체 화면으로 이동할 수 있습니다."
-        />
+        <SectionHeading title="알림" />
         {notifications.data.notifications.length === 0 ? (
           <Text style={styles.emptyText}>표시할 알림이 없습니다.</Text>
         ) : (

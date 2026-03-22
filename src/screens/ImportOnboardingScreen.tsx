@@ -11,7 +11,7 @@ import type {
   OcrImportResponse,
 } from '../api/contracts';
 import { foloApi } from '../api/services';
-import { Page, PrimaryButton, SectionHeading, SurfaceCard } from '../components/ui';
+import { Page, PageBackButton, PrimaryButton, SectionHeading, SurfaceCard } from '../components/ui';
 import { useResponsiveLayout } from '../hooks/useResponsiveLayout';
 import { formatCurrency, tradeTypeLabel } from '../lib/format';
 import type { RootStackParamList } from '../navigation/types';
@@ -147,13 +147,10 @@ export function ImportOnboardingScreen() {
     <Page
       eyebrow="Import"
       title="CSV / OCR로 가져오기"
-      subtitle="직접 추가가 메인 경로이고, 이 화면은 증권사 내역이나 캡처 화면을 한 번에 불러오는 보조 기능입니다."
+      leading={<PageBackButton />}
     >
       <SurfaceCard tone="hero">
-        <SectionHeading
-          title="직접 추가가 더 빠르다면"
-          description="처음 포트폴리오를 만드는 경우에는 수동으로 종목을 고르고 수량과 평단만 넣는 흐름이 기본입니다."
-        />
+        <SectionHeading title="직접 추가가 더 빠르다면" />
         <PrimaryButton
           label="직접 추가로 돌아가기"
           onPress={() => navigation.navigate('PortfolioSetup')}
@@ -162,10 +159,7 @@ export function ImportOnboardingScreen() {
       </SurfaceCard>
 
       <SurfaceCard>
-        <SectionHeading
-          title="CSV 가져오기"
-          description="증권사 거래 내역 CSV를 업로드하면 파싱 결과를 미리 보고 저장할 항목을 고를 수 있습니다."
-        />
+        <SectionHeading title="CSV 가져오기" description="거래 내역 파일을 불러옵니다." />
         <TextInput
           autoCapitalize="characters"
           onChangeText={setBroker}
@@ -234,10 +228,7 @@ export function ImportOnboardingScreen() {
       </SurfaceCard>
 
       <SurfaceCard>
-        <SectionHeading
-          title="OCR 가져오기"
-          description="보유 화면 캡처를 업로드하면 파싱된 한 건을 확인한 뒤 포트폴리오에 반영할 수 있습니다."
-        />
+        <SectionHeading title="OCR 가져오기" description="캡처 이미지를 불러옵니다." />
         <PrimaryButton
           disabled={ocrUploading}
           label={ocrUploading ? 'OCR 업로드 중...' : '이미지 선택'}

@@ -17,7 +17,7 @@ export function DataStatusCard({
   return (
     <SurfaceCard tone="muted">
       <Text style={styles.title}>
-        {loading ? '백엔드 데이터를 불러오는 중입니다.' : '데이터 상태를 확인해 주세요.'}
+        {loading ? '불러오는 중입니다.' : '데이터 상태를 확인해 주세요.'}
       </Text>
       {error ? <Text style={styles.description}>{error}</Text> : null}
     </SurfaceCard>

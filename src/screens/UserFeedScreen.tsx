@@ -5,7 +5,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Avatar } from '../components/Avatar';
 import { DataStatusCard } from '../components/DataStatusCard';
-import { Chip, Page, SectionHeading, SurfaceCard } from '../components/ui';
+import { Chip, Page, PageBackButton, SectionHeading, SurfaceCard } from '../components/ui';
 import { useUserFeedData } from '../hooks/useFoloData';
 import { useResponsiveLayout } from '../hooks/useResponsiveLayout';
 import {
@@ -30,15 +30,12 @@ export function UserFeedScreen() {
     <Page
       eyebrow="Public Feed"
       title={title}
-      subtitle="공개 범위에 따라 노출 가능한 거래만 시간순으로 표시합니다."
+      leading={<PageBackButton />}
     >
       <DataStatusCard error={feed.error} loading={feed.loading} />
 
       <SurfaceCard tone="hero">
-        <SectionHeading
-          title="피드 요약"
-          description={`현재 ${feed.data.trades.length}건이 보입니다.`}
-        />
+        <SectionHeading title="피드 요약" description={`현재 ${feed.data.trades.length}건`} />
       </SurfaceCard>
 
       {feed.data.trades.length === 0 ? (
