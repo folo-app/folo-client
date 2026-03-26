@@ -1,7 +1,10 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import { useState } from 'react';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
+import type { FeedTradeItem } from '../api/contracts';
 import { Avatar } from '../components/Avatar';
 import { DataStatusCard } from '../components/DataStatusCard';
 import { Chip, Page, PrimaryButton, SectionHeading, SurfaceCard } from '../components/ui';
@@ -9,6 +12,7 @@ import { useFeedData } from '../hooks/useFoloData';
 import { useResponsiveLayout } from '../hooks/useResponsiveLayout';
 import {
   formatCurrency,
+  formatNumber,
   formatRelativeDate,
   reactionEmojiLabel,
   tradeTypeLabel,
@@ -16,211 +20,628 @@ import {
 import type { RootStackParamList } from '../navigation/types';
 import { tokens } from '../theme/tokens';
 
+const FILTER_OPTIONS = [
+  { key: 'all', label: '전체' },
+  { key: 'buy', label: '매수' },
+  { key: 'sell', label: '매도' },
+  { key: 'kr', label: '국내' },
+  { key: 'us', label: '미국' },
+] as const;
+
+type FeedFilter = (typeof FILTER_OPTIONS)[number]['key'];
+
 export function FeedScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { isCompact } = useResponsiveLayout();
   const feed = useFeedData();
+  const [query, setQuery] = useState('');
+  const [activeFilter, setActiveFilter] = useState<FeedFilter>('all');
+
+  const normalizedQuery = query.trim().toLowerCase();
+  const filteredTrades = feed.data.trades.filter(
+    (item) => matchesFilter(item, activeFilter) && matchesQuery(item, normalizedQuery),
+  );
+  const highlightTrade =
+    filteredTrades.length > 0
+      ? [...filteredTrades].sort((left, right) => {
+          const engagementDiff = tradeEngagement(right) - tradeEngagement(left);
+          if (engagementDiff !== 0) {
+            return engagementDiff;
+          }
+          return new Date(right.tradedAt).getTime() - new Date(left.tradedAt).getTime();
+        })[0]
+      : null;
+  const activeFilterLabel =
+    FILTER_OPTIONS.find((option) => option.key === activeFilter)?.label ?? '전체';
+  const listDescription = normalizedQuery
+    ? `검색 결과 ${filteredTrades.length}건`
+    : activeFilter === 'all'
+      ? `전체 거래 ${filteredTrades.length}건`
+      : `${activeFilterLabel} 거래 ${filteredTrades.length}건`;
 
   return (
     <Page
       eyebrow="Feed"
       title="친구 거래 타임라인"
+      subtitle="검색과 필터로 거래 흐름을 빠르게 훑고 반응합니다."
     >
       <DataStatusCard error={feed.error} loading={feed.loading} />
 
-      <SurfaceCard tone="muted">
-        <SectionHeading title="피드 상태" description={`${feed.data.trades.length}건의 거래`} />
-        <View style={styles.actionStack}>
-          <PrimaryButton label="피드 새로고침" onPress={feed.refresh} variant="secondary" />
-          <PrimaryButton
-            label="사람 찾기"
+      <SurfaceCard tone="hero">
+        <SectionHeading title="검색 / 필터" description={listDescription} />
+        <View style={styles.searchField}>
+          <Ionicons color={tokens.colors.inkMute} name="search-outline" size={18} />
+          <TextInput
+            onChangeText={setQuery}
+            placeholder="티커, 종목명, 친구 이름으로 검색"
+            placeholderTextColor={tokens.colors.inkMute}
+            style={styles.searchInput}
+            value={query}
+          />
+          {query.length > 0 ? (
+            <Pressable
+              accessibilityLabel="검색어 지우기"
+              accessibilityRole="button"
+              onPress={() => setQuery('')}
+              style={({ pressed }) => [styles.searchClearButton, pressed && styles.buttonPressed]}
+            >
+              <Ionicons color={tokens.colors.inkMute} name="close-circle" size={18} />
+            </Pressable>
+          ) : null}
+        </View>
+
+        <View style={styles.filterWrap}>
+          {FILTER_OPTIONS.map((option) => (
+            <Chip
+              key={option.key}
+              active={activeFilter === option.key}
+              label={option.label}
+              tone={chipToneForFilter(option.key)}
+              onPress={() => setActiveFilter(option.key)}
+            />
+          ))}
+        </View>
+
+        <View style={[styles.utilityRow, isCompact && styles.utilityRowCompact]}>
+          <Pressable
+            accessibilityRole="button"
             onPress={() => navigation.navigate('People')}
-            variant="secondary"
-          />
-          <PrimaryButton
-            label="거래 추가로 이동"
-            onPress={() => navigation.navigate('MainTabs', { screen: 'AddTrade' })}
-            variant="secondary"
-          />
+            style={({ pressed }) => [styles.utilityPill, pressed && styles.buttonPressed]}
+          >
+            <Ionicons color={tokens.colors.navy} name="people-outline" size={16} />
+            <Text style={styles.utilityLabel}>사람 찾기</Text>
+          </Pressable>
+          <Pressable
+            accessibilityRole="button"
+            onPress={feed.refresh}
+            style={({ pressed }) => [styles.utilityPill, pressed && styles.buttonPressed]}
+          >
+            <Ionicons color={tokens.colors.navy} name="refresh-outline" size={16} />
+            <Text style={styles.utilityLabel}>새로고침</Text>
+          </Pressable>
         </View>
       </SurfaceCard>
 
       {feed.data.trades.length === 0 ? (
         <SurfaceCard>
+          <SectionHeading
+            title="아직 친구 거래가 없습니다"
+            description="팔로우하면 거래 흐름이 여기 쌓입니다."
+          />
           <Text style={styles.emptyText}>
-            팔로우한 사용자의 거래가 아직 없습니다. 친구를 팔로우하면 피드가 채워집니다.
+            첫 연결을 만들면 매수와 매도 흐름이 이 화면에 시간순으로 정리됩니다.
           </Text>
+          <View style={styles.emptyActionStack}>
+            <PrimaryButton
+              label="사람 찾기"
+              onPress={() => navigation.navigate('People')}
+            />
+            <PrimaryButton
+              label="내 프로필 보기"
+              onPress={() => navigation.navigate('MainTabs', { screen: 'Profile' })}
+              variant="secondary"
+            />
+          </View>
+        </SurfaceCard>
+      ) : filteredTrades.length === 0 ? (
+        <SurfaceCard>
+          <SectionHeading
+            title="조건에 맞는 거래가 없습니다"
+            description="검색어나 필터를 조정해 보세요."
+          />
+          <Text style={styles.emptyText}>
+            현재 조건은 {activeFilterLabel}
+            {normalizedQuery ? ` / "${query.trim()}"` : ''} 입니다.
+          </Text>
+          <View style={styles.emptyActionStack}>
+            <PrimaryButton
+              label="필터 초기화"
+              onPress={() => {
+                setQuery('');
+                setActiveFilter('all');
+              }}
+            />
+            <PrimaryButton
+              label="사람 찾기"
+              onPress={() => navigation.navigate('People')}
+              variant="secondary"
+            />
+          </View>
         </SurfaceCard>
       ) : (
-        feed.data.trades.map((item) => (
-          <SurfaceCard key={item.tradeId}>
-            <View style={styles.cardHeader}>
-              <Pressable
-                onPress={() =>
-                  navigation.navigate('UserProfile', {
-                    userId: item.user.userId,
-                    nickname: item.user.nickname,
-                  })
+        <>
+          {highlightTrade ? (
+            <SurfaceCard>
+              <SectionHeading
+                title="지금 눈에 띄는 거래"
+                description={
+                  tradeEngagement(highlightTrade) > 0
+                    ? '반응이 가장 모인 거래'
+                    : '가장 최근 거래'
                 }
-                style={styles.identity}
-              >
-                <Avatar imageUrl={item.user.profileImage} name={item.user.nickname} size={44} />
-                <View style={styles.identityText}>
-                  <Text style={styles.user}>{item.user.nickname}</Text>
-                  <Text style={styles.handle}>
-                    {item.market} · {formatRelativeDate(item.tradedAt)}
-                  </Text>
-                </View>
-              </Pressable>
-              <View style={styles.chipWrap}>
+              />
+              <View style={[styles.highlightHeader, isCompact && styles.highlightHeaderCompact]}>
+                <Pressable
+                  onPress={() =>
+                    navigation.navigate('UserProfile', {
+                      userId: highlightTrade.user.userId,
+                      nickname: highlightTrade.user.nickname,
+                    })
+                  }
+                  style={styles.highlightIdentity}
+                >
+                  <Avatar
+                    imageUrl={highlightTrade.user.profileImage}
+                    name={highlightTrade.user.nickname}
+                    size={48}
+                  />
+                  <View style={styles.highlightIdentityText}>
+                    <Text style={styles.user}>{highlightTrade.user.nickname}</Text>
+                    <Text style={styles.handle}>
+                      {formatRelativeDate(highlightTrade.tradedAt)} ·{' '}
+                      {marketLabel(highlightTrade.market)}
+                    </Text>
+                  </View>
+                </Pressable>
                 <Chip
-                  label={`${tradeTypeLabel(item.tradeType)} · ${item.market}`}
-                  tone={item.tradeType === 'BUY' ? 'brand' : 'danger'}
+                  label={`${tradeTypeLabel(highlightTrade.tradeType)} · ${marketLabel(
+                    highlightTrade.market,
+                  )}`}
+                  tone={highlightTrade.tradeType === 'BUY' ? 'brand' : 'danger'}
                 />
               </View>
-            </View>
 
-            <Pressable
-              onPress={() => navigation.navigate('TradeDetail', { tradeId: item.tradeId })}
-              style={styles.tradeCardAction}
-            >
-              <View style={[styles.tradeRow, isCompact && styles.tradeRowCompact]}>
-                <View style={styles.tradeHero}>
-                  <Text style={styles.ticker}>{item.ticker}</Text>
-                  <Text style={styles.company}>{item.name}</Text>
-                </View>
-                <View style={styles.tradeMeta}>
-                  <Text style={styles.metaLabel}>수량</Text>
-                  <Text style={styles.metaValue}>
-                    {item.quantity > 1000
-                      ? formatCurrency(item.quantity, item.market)
-                      : `${item.quantity}주`}
+              <View style={[styles.highlightBody, isCompact && styles.highlightBodyCompact]}>
+                <View style={styles.highlightHero}>
+                  <Text style={styles.highlightTicker}>{highlightTrade.ticker}</Text>
+                  <Text style={styles.company}>{highlightTrade.name}</Text>
+                  <Text style={styles.highlightComment} numberOfLines={3}>
+                    {highlightTrade.comment ?? '작성된 코멘트가 없습니다.'}
                   </Text>
                 </View>
-                <View style={styles.tradeMeta}>
-                  <Text style={styles.metaLabel}>가격</Text>
-                  <Text style={styles.metaValue}>{formatCurrency(item.price, item.market)}</Text>
+                <View style={styles.highlightStats}>
+                  <View style={styles.statTile}>
+                    <Text style={styles.statLabel}>수량</Text>
+                    <Text style={styles.statValue}>
+                      {formatNumber(highlightTrade.quantity)}주
+                    </Text>
+                  </View>
+                  <View style={styles.statTile}>
+                    <Text style={styles.statLabel}>가격</Text>
+                    <Text style={styles.statValue}>
+                      {formatCurrency(highlightTrade.price, highlightTrade.market)}
+                    </Text>
+                  </View>
+                  <View style={styles.statTile}>
+                    <Text style={styles.statLabel}>거래금액</Text>
+                    <Text style={styles.statValue}>
+                      {formatCurrency(
+                        highlightTrade.quantity * highlightTrade.price,
+                        highlightTrade.market,
+                      )}
+                    </Text>
+                  </View>
                 </View>
               </View>
 
-              <Text style={styles.comment}>{item.comment ?? '작성된 코멘트가 없습니다.'}</Text>
-
-              <View style={styles.reactionRow}>
-                {item.reactions.map((reaction) => (
-                  <Chip
-                    key={`${item.tradeId}-${reaction.emoji}`}
-                    label={`${reactionEmojiLabel(reaction.emoji)} ${reaction.count}`}
-                  />
-                ))}
-                <Chip label={`댓글 ${item.commentCount}`} tone="brand" />
+              <View style={styles.highlightFooter}>
+                <Chip label={`반응 ${tradeEngagement(highlightTrade)}`} tone="brand" />
+                <Chip label={`댓글 ${highlightTrade.commentCount}`} />
+                <PrimaryButton
+                  label="거래 보기"
+                  onPress={() =>
+                    navigation.navigate('TradeDetail', { tradeId: highlightTrade.tradeId })
+                  }
+                  variant="secondary"
+                />
               </View>
-            </Pressable>
+            </SurfaceCard>
+          ) : null}
+
+          <SurfaceCard>
+            <SectionHeading title="타임라인" description={`시간순 거래 ${filteredTrades.length}건`} />
+            {filteredTrades.map((item, index) => (
+              <Pressable
+                key={item.tradeId}
+                onPress={() => navigation.navigate('TradeDetail', { tradeId: item.tradeId })}
+                style={[
+                  styles.timelineItem,
+                  index < filteredTrades.length - 1 && styles.divider,
+                ]}
+              >
+                <View style={styles.timelineHeader}>
+                  <Pressable
+                    onPress={() =>
+                      navigation.navigate('UserProfile', {
+                        userId: item.user.userId,
+                        nickname: item.user.nickname,
+                      })
+                    }
+                    style={styles.identity}
+                  >
+                    <Avatar imageUrl={item.user.profileImage} name={item.user.nickname} size={40} />
+                    <View style={styles.identityText}>
+                      <Text style={styles.user}>{item.user.nickname}</Text>
+                      <Text style={styles.handle}>
+                        {formatRelativeDate(item.tradedAt)} · {item.market}
+                      </Text>
+                    </View>
+                  </Pressable>
+                  <View style={styles.chipWrap}>
+                    <Chip
+                      label={tradeTypeLabel(item.tradeType)}
+                      tone={item.tradeType === 'BUY' ? 'brand' : 'danger'}
+                    />
+                  </View>
+                </View>
+
+                <View style={styles.symbolRow}>
+                  <View style={styles.symbolText}>
+                    <Text style={styles.ticker}>{item.ticker}</Text>
+                    <Text style={styles.company}>{item.name}</Text>
+                  </View>
+                </View>
+
+                <View style={styles.metricGrid}>
+                  <View style={styles.metricCell}>
+                    <Text style={styles.metricLabel}>수량</Text>
+                    <Text style={styles.metricValue}>{formatNumber(item.quantity)}주</Text>
+                  </View>
+                  <View style={styles.metricCell}>
+                    <Text style={styles.metricLabel}>가격</Text>
+                    <Text style={styles.metricValue}>
+                      {formatCurrency(item.price, item.market)}
+                    </Text>
+                  </View>
+                  <View style={styles.metricCell}>
+                    <Text style={styles.metricLabel}>거래금액</Text>
+                    <Text style={styles.metricValue}>
+                      {formatCurrency(item.quantity * item.price, item.market)}
+                    </Text>
+                  </View>
+                </View>
+
+                <Text style={styles.comment} numberOfLines={2}>
+                  {item.comment ?? '작성된 코멘트가 없습니다.'}
+                </Text>
+
+                <View style={styles.reactionRow}>
+                  {item.reactions.length > 0 ? (
+                    item.reactions.map((reaction) => (
+                      <Chip
+                        key={`${item.tradeId}-${reaction.emoji}`}
+                        label={`${reactionEmojiLabel(reaction.emoji)} ${reaction.count}`}
+                      />
+                    ))
+                  ) : (
+                    <Chip label="아직 반응 없음" />
+                  )}
+                  <Chip label={`댓글 ${item.commentCount}`} tone="brand" />
+                </View>
+              </Pressable>
+            ))}
+            {feed.data.hasNext ? (
+              <Text style={styles.paginationHint}>
+                더 많은 거래는 다음 페이지 연결이 추가되면 이어서 볼 수 있습니다.
+              </Text>
+            ) : null}
           </SurfaceCard>
-        ))
+        </>
       )}
     </Page>
   );
 }
 
+function matchesFilter(item: FeedTradeItem, filter: FeedFilter) {
+  switch (filter) {
+    case 'buy':
+      return item.tradeType === 'BUY';
+    case 'sell':
+      return item.tradeType === 'SELL';
+    case 'kr':
+      return item.market === 'KRX';
+    case 'us':
+      return item.market !== 'KRX';
+    case 'all':
+      return true;
+  }
+}
+
+function matchesQuery(item: FeedTradeItem, normalizedQuery: string) {
+  if (!normalizedQuery) {
+    return true;
+  }
+
+  const fields = [
+    item.ticker,
+    item.name,
+    item.market,
+    item.user.nickname,
+    item.comment ?? '',
+    tradeTypeLabel(item.tradeType),
+  ];
+
+  return fields.some((field) => field.toLowerCase().includes(normalizedQuery));
+}
+
+function chipToneForFilter(filter: FeedFilter) {
+  switch (filter) {
+    case 'buy':
+      return 'brand' as const;
+    case 'sell':
+      return 'danger' as const;
+    default:
+      return 'default' as const;
+  }
+}
+
+function tradeEngagement(item: FeedTradeItem) {
+  return item.reactions.reduce((sum, reaction) => sum + reaction.count, 0) + item.commentCount;
+}
+
+function marketLabel(market: string) {
+  return market === 'KRX' ? '국내' : '미국';
+}
+
 const styles = StyleSheet.create({
-  actionStack: {
+  searchField: {
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.84)',
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: 'rgba(214, 224, 234, 0.9)',
+    flexDirection: 'row',
+    gap: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+  },
+  searchInput: {
+    color: tokens.colors.navy,
+    flex: 1,
+    fontFamily: tokens.typography.body,
+    fontSize: 15,
+    paddingVertical: 0,
+  },
+  searchClearButton: {
+    borderRadius: 999,
+  },
+  filterWrap: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 10,
   },
-  emptyText: {
-    fontSize: 14,
-    lineHeight: 22,
-    color: tokens.colors.inkSoft,
-    fontFamily: tokens.typography.body,
-  },
-  tradeCardAction: {
-    gap: 16,
-  },
-  cardHeader: {
+  utilityRow: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-    gap: 12,
-    flexWrap: 'wrap',
+    gap: 10,
   },
-  identity: {
-    flexDirection: 'row',
-    gap: 12,
+  utilityRowCompact: {
+    flexDirection: 'column',
+  },
+  utilityPill: {
     alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.72)',
+    borderColor: 'rgba(214, 224, 234, 0.9)',
+    borderRadius: tokens.radius.pill,
+    borderWidth: 1,
     flex: 1,
+    flexDirection: 'row',
+    gap: 8,
+    justifyContent: 'center',
+    paddingHorizontal: 14,
+    paddingVertical: 12,
   },
-  identityText: {
-    gap: 4,
-    flex: 1,
-  },
-  user: {
-    fontSize: 15,
+  utilityLabel: {
     color: tokens.colors.navy,
     fontFamily: tokens.typography.heading,
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  emptyText: {
+    color: tokens.colors.inkSoft,
+    fontFamily: tokens.typography.body,
+    fontSize: 14,
+    lineHeight: 22,
+  },
+  emptyActionStack: {
+    gap: 10,
+  },
+  highlightHeader: {
+    alignItems: 'flex-start',
+    flexDirection: 'row',
+    gap: 12,
+    justifyContent: 'space-between',
+  },
+  highlightHeaderCompact: {
+    flexDirection: 'column',
+  },
+  highlightIdentity: {
+    alignItems: 'center',
+    flex: 1,
+    flexDirection: 'row',
+    gap: 12,
+  },
+  highlightIdentityText: {
+    flex: 1,
+    gap: 4,
+  },
+  highlightBody: {
+    flexDirection: 'row',
+    gap: 14,
+  },
+  highlightBodyCompact: {
+    flexDirection: 'column',
+  },
+  highlightHero: {
+    backgroundColor: tokens.colors.surfaceMuted,
+    borderRadius: 22,
+    flex: 1.2,
+    gap: 8,
+    minHeight: 156,
+    padding: 18,
+  },
+  highlightTicker: {
+    color: tokens.colors.navy,
+    fontFamily: tokens.typography.heading,
+    fontSize: 28,
+    fontWeight: '800',
+  },
+  highlightComment: {
+    color: tokens.colors.inkSoft,
+    fontFamily: tokens.typography.body,
+    fontSize: 13,
+    lineHeight: 20,
+  },
+  highlightStats: {
+    flex: 1,
+    gap: 10,
+    justifyContent: 'space-between',
+  },
+  statTile: {
+    backgroundColor: '#F8FAFC',
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: 'rgba(214, 224, 234, 0.84)',
+    gap: 4,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+  },
+  statLabel: {
+    color: tokens.colors.inkMute,
+    fontFamily: tokens.typography.body,
+    fontSize: 12,
+  },
+  statValue: {
+    color: tokens.colors.navy,
+    fontFamily: tokens.typography.heading,
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  highlightFooter: {
+    alignItems: 'flex-start',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  timelineItem: {
+    gap: 14,
+  },
+  timelineHeader: {
+    alignItems: 'flex-start',
+    flexDirection: 'row',
+    gap: 12,
+    justifyContent: 'space-between',
+  },
+  identity: {
+    alignItems: 'center',
+    flex: 1,
+    flexDirection: 'row',
+    gap: 12,
+  },
+  identityText: {
+    flex: 1,
+    gap: 4,
+  },
+  user: {
+    color: tokens.colors.navy,
+    fontFamily: tokens.typography.heading,
+    fontSize: 15,
     fontWeight: '700',
   },
   handle: {
-    fontSize: 13,
     color: tokens.colors.inkMute,
     fontFamily: tokens.typography.body,
+    fontSize: 13,
   },
-  tradeRow: {
-    flexDirection: 'row',
-    alignItems: 'stretch',
-    gap: 10,
+  chipWrap: {
+    maxWidth: '100%',
   },
-  tradeRowCompact: {
-    flexDirection: 'column',
+  symbolRow: {
+    gap: 8,
   },
-  tradeHero: {
-    flex: 1.2,
-    backgroundColor: tokens.colors.surfaceMuted,
-    borderRadius: 18,
-    padding: 16,
-    gap: 6,
+  symbolText: {
+    gap: 4,
   },
   ticker: {
-    fontSize: 24,
     color: tokens.colors.navy,
     fontFamily: tokens.typography.heading,
+    fontSize: 24,
     fontWeight: '800',
   },
   company: {
-    fontSize: 13,
     color: tokens.colors.inkSoft,
     fontFamily: tokens.typography.body,
+    fontSize: 13,
   },
-  tradeMeta: {
-    flex: 1,
-    minWidth: 120,
+  metricGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  metricCell: {
     backgroundColor: '#F8FAFC',
     borderRadius: 18,
-    padding: 16,
-    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(214, 224, 234, 0.84)',
+    flex: 1,
     gap: 4,
+    minWidth: 96,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
   },
-  metaLabel: {
-    fontSize: 12,
+  metricLabel: {
     color: tokens.colors.inkMute,
     fontFamily: tokens.typography.body,
+    fontSize: 12,
   },
-  metaValue: {
-    fontSize: 16,
+  metricValue: {
     color: tokens.colors.navy,
     fontFamily: tokens.typography.heading,
+    fontSize: 15,
     fontWeight: '700',
   },
   comment: {
-    fontSize: 14,
-    lineHeight: 22,
     color: tokens.colors.ink,
     fontFamily: tokens.typography.body,
+    fontSize: 14,
+    lineHeight: 22,
   },
   reactionRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 10,
   },
-  chipWrap: {
-    maxWidth: '100%',
+  divider: {
+    borderBottomColor: 'rgba(214, 224, 234, 0.8)',
+    borderBottomWidth: 1,
+    paddingBottom: 18,
+  },
+  paginationHint: {
+    color: tokens.colors.inkMute,
+    fontFamily: tokens.typography.body,
+    fontSize: 12,
+    lineHeight: 18,
+  },
+  buttonPressed: {
+    opacity: 0.86,
   },
 });
