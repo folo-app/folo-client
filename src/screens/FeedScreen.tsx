@@ -32,7 +32,7 @@ type FeedFilter = (typeof FILTER_OPTIONS)[number]['key'];
 
 export function FeedScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const { isCompact } = useResponsiveLayout();
+  const { isCompact, isLarge } = useResponsiveLayout();
   const feed = useFeedData();
   const [query, setQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState<FeedFilter>('all');
@@ -58,6 +58,197 @@ export function FeedScreen() {
     : activeFilter === 'all'
       ? `전체 거래 ${filteredTrades.length}건`
       : `${activeFilterLabel} 거래 ${filteredTrades.length}건`;
+  const hasActiveControls = activeFilter !== 'all' || normalizedQuery.length > 0;
+  const resetControls = () => {
+    setQuery('');
+    setActiveFilter('all');
+  };
+  const highlightReason =
+    highlightTrade && tradeEngagement(highlightTrade) > 0
+      ? '반응이 가장 모인 거래'
+      : '가장 최근 거래';
+
+  const highlightCard = highlightTrade ? (
+    <SurfaceCard tone="muted">
+      <SectionHeading
+        title="지금 눈에 띄는 거래"
+        description={highlightReason}
+        actionLabel="거래 보기"
+        onActionPress={() =>
+          navigation.navigate('TradeDetail', { tradeId: highlightTrade.tradeId })
+        }
+      />
+      <View style={[styles.highlightHeader, isCompact && styles.highlightHeaderCompact]}>
+        <Pressable
+          onPress={() =>
+            navigation.navigate('UserProfile', {
+              userId: highlightTrade.user.userId,
+              nickname: highlightTrade.user.nickname,
+            })
+          }
+          style={styles.highlightIdentity}
+        >
+          <Avatar
+            imageUrl={highlightTrade.user.profileImage}
+            name={highlightTrade.user.nickname}
+            size={48}
+          />
+          <View style={styles.highlightIdentityText}>
+            <Text style={styles.user}>{highlightTrade.user.nickname}</Text>
+            <Text style={styles.handle}>
+              {formatRelativeDate(highlightTrade.tradedAt)} · {marketLabel(highlightTrade.market)}
+            </Text>
+          </View>
+        </Pressable>
+        <Chip
+          label={`${tradeTypeLabel(highlightTrade.tradeType)} · ${marketLabel(
+            highlightTrade.market,
+          )}`}
+          tone={highlightTrade.tradeType === 'BUY' ? 'brand' : 'danger'}
+        />
+      </View>
+
+      <View style={styles.highlightHero}>
+        <Text style={styles.highlightTicker}>{highlightTrade.ticker}</Text>
+        <Text style={styles.company}>{highlightTrade.name}</Text>
+        <Text style={styles.highlightComment} numberOfLines={3}>
+          {highlightTrade.comment ?? '작성된 코멘트가 없습니다.'}
+        </Text>
+      </View>
+
+      <View style={[styles.highlightStatGrid, isCompact && styles.highlightStatGridCompact]}>
+        <View style={styles.statTile}>
+          <Text style={styles.statLabel}>수량</Text>
+          <Text style={styles.statValue}>{formatNumber(highlightTrade.quantity)}주</Text>
+        </View>
+        <View style={styles.statTile}>
+          <Text style={styles.statLabel}>가격</Text>
+          <Text style={styles.statValue}>
+            {formatCurrency(highlightTrade.price, highlightTrade.market)}
+          </Text>
+        </View>
+        <View style={styles.statTile}>
+          <Text style={styles.statLabel}>거래금액</Text>
+          <Text style={styles.statValue}>
+            {formatCurrency(
+              highlightTrade.quantity * highlightTrade.price,
+              highlightTrade.market,
+            )}
+          </Text>
+        </View>
+      </View>
+
+      <View style={styles.highlightFooter}>
+        <Chip label={`반응 ${tradeEngagement(highlightTrade)}`} tone="brand" />
+        <Chip label={`댓글 ${highlightTrade.commentCount}`} />
+      </View>
+    </SurfaceCard>
+  ) : null;
+
+  const timelineCard = (
+    <SurfaceCard>
+      <SectionHeading
+        title="타임라인"
+        description={`시간순 거래 ${filteredTrades.length}건`}
+        actionLabel={hasActiveControls ? '초기화' : undefined}
+        onActionPress={hasActiveControls ? resetControls : undefined}
+      />
+      {filteredTrades.map((item, index) => (
+        <Pressable
+          key={item.tradeId}
+          onPress={() => navigation.navigate('TradeDetail', { tradeId: item.tradeId })}
+          style={({ pressed }) => [
+            styles.timelineItem,
+            item.tradeType === 'BUY' ? styles.timelineItemBuy : styles.timelineItemSell,
+            index < filteredTrades.length - 1 && styles.divider,
+            pressed && styles.buttonPressed,
+          ]}
+        >
+          <View style={[styles.timelineHeader, isCompact && styles.timelineHeaderCompact]}>
+            <Pressable
+              onPress={() =>
+                navigation.navigate('UserProfile', {
+                  userId: item.user.userId,
+                  nickname: item.user.nickname,
+                })
+              }
+              style={styles.identity}
+            >
+              <Avatar imageUrl={item.user.profileImage} name={item.user.nickname} size={40} />
+              <View style={styles.identityText}>
+                <Text style={styles.user}>{item.user.nickname}</Text>
+                <Text style={styles.handle}>
+                  {formatRelativeDate(item.tradedAt)} · {marketLabel(item.market)}
+                </Text>
+              </View>
+            </Pressable>
+            <View style={styles.timelineHeaderMeta}>
+              <Chip
+                label={tradeTypeLabel(item.tradeType)}
+                tone={item.tradeType === 'BUY' ? 'brand' : 'danger'}
+              />
+            </View>
+          </View>
+
+          <View style={[styles.timelineHeadline, isCompact && styles.timelineHeadlineCompact]}>
+            <View style={styles.symbolText}>
+              <Text style={styles.ticker}>{item.ticker}</Text>
+              <Text style={styles.company}>{item.name}</Text>
+            </View>
+            <Text style={styles.tradeTotal}>
+              {formatCurrency(item.quantity * item.price, item.market)}
+            </Text>
+          </View>
+
+          <View style={styles.metricGrid}>
+            <View style={styles.metricCell}>
+              <Text style={styles.metricLabel}>수량</Text>
+              <Text style={styles.metricValue}>{formatNumber(item.quantity)}주</Text>
+            </View>
+            <View style={styles.metricCell}>
+              <Text style={styles.metricLabel}>가격</Text>
+              <Text style={styles.metricValue}>{formatCurrency(item.price, item.market)}</Text>
+            </View>
+            <View style={styles.metricCell}>
+              <Text style={styles.metricLabel}>거래금액</Text>
+              <Text style={styles.metricValue}>
+                {formatCurrency(item.quantity * item.price, item.market)}
+              </Text>
+            </View>
+          </View>
+
+          <View style={styles.commentCard}>
+            <Text style={styles.commentLabel}>코멘트</Text>
+            <Text style={styles.comment} numberOfLines={2}>
+              {item.comment ?? '작성된 코멘트가 없습니다.'}
+            </Text>
+          </View>
+
+          <View style={[styles.timelineFooter, isCompact && styles.timelineFooterCompact]}>
+            <View style={styles.reactionRow}>
+              {item.reactions.length > 0 ? (
+                item.reactions.map((reaction) => (
+                  <Chip
+                    key={`${item.tradeId}-${reaction.emoji}`}
+                    label={`${reactionEmojiLabel(reaction.emoji)} ${reaction.count}`}
+                  />
+                ))
+              ) : (
+                <Chip label="아직 반응 없음" />
+              )}
+              <Chip label={`댓글 ${item.commentCount}`} tone="brand" />
+            </View>
+            <Text style={styles.timelineHint}>눌러서 거래 상세 보기</Text>
+          </View>
+        </Pressable>
+      ))}
+      {feed.data.hasNext ? (
+        <Text style={styles.paginationHint}>
+          더 많은 거래는 다음 페이지 연결이 추가되면 이어서 볼 수 있습니다.
+        </Text>
+      ) : null}
+    </SurfaceCard>
+  );
 
   return (
     <Page
@@ -68,7 +259,12 @@ export function FeedScreen() {
       <DataStatusCard error={feed.error} loading={feed.loading} />
 
       <SurfaceCard tone="hero">
-        <SectionHeading title="검색 / 필터" description={listDescription} />
+        <SectionHeading
+          title="검색 / 필터"
+          description={listDescription}
+          actionLabel={hasActiveControls ? '초기화' : undefined}
+          onActionPress={hasActiveControls ? resetControls : undefined}
+        />
         <View style={styles.searchField}>
           <Ionicons color={tokens.colors.inkMute} name="search-outline" size={18} />
           <TextInput
@@ -102,7 +298,7 @@ export function FeedScreen() {
           ))}
         </View>
 
-        <View style={[styles.utilityRow, isCompact && styles.utilityRowCompact]}>
+        <View style={styles.utilityRow}>
           <Pressable
             accessibilityRole="button"
             onPress={() => navigation.navigate('People')}
@@ -169,184 +365,17 @@ export function FeedScreen() {
           </View>
         </SurfaceCard>
       ) : (
-        <>
-          {highlightTrade ? (
-            <SurfaceCard>
-              <SectionHeading
-                title="지금 눈에 띄는 거래"
-                description={
-                  tradeEngagement(highlightTrade) > 0
-                    ? '반응이 가장 모인 거래'
-                    : '가장 최근 거래'
-                }
-              />
-              <View style={[styles.highlightHeader, isCompact && styles.highlightHeaderCompact]}>
-                <Pressable
-                  onPress={() =>
-                    navigation.navigate('UserProfile', {
-                      userId: highlightTrade.user.userId,
-                      nickname: highlightTrade.user.nickname,
-                    })
-                  }
-                  style={styles.highlightIdentity}
-                >
-                  <Avatar
-                    imageUrl={highlightTrade.user.profileImage}
-                    name={highlightTrade.user.nickname}
-                    size={48}
-                  />
-                  <View style={styles.highlightIdentityText}>
-                    <Text style={styles.user}>{highlightTrade.user.nickname}</Text>
-                    <Text style={styles.handle}>
-                      {formatRelativeDate(highlightTrade.tradedAt)} ·{' '}
-                      {marketLabel(highlightTrade.market)}
-                    </Text>
-                  </View>
-                </Pressable>
-                <Chip
-                  label={`${tradeTypeLabel(highlightTrade.tradeType)} · ${marketLabel(
-                    highlightTrade.market,
-                  )}`}
-                  tone={highlightTrade.tradeType === 'BUY' ? 'brand' : 'danger'}
-                />
-              </View>
-
-              <View style={[styles.highlightBody, isCompact && styles.highlightBodyCompact]}>
-                <View style={styles.highlightHero}>
-                  <Text style={styles.highlightTicker}>{highlightTrade.ticker}</Text>
-                  <Text style={styles.company}>{highlightTrade.name}</Text>
-                  <Text style={styles.highlightComment} numberOfLines={3}>
-                    {highlightTrade.comment ?? '작성된 코멘트가 없습니다.'}
-                  </Text>
-                </View>
-                <View style={styles.highlightStats}>
-                  <View style={styles.statTile}>
-                    <Text style={styles.statLabel}>수량</Text>
-                    <Text style={styles.statValue}>
-                      {formatNumber(highlightTrade.quantity)}주
-                    </Text>
-                  </View>
-                  <View style={styles.statTile}>
-                    <Text style={styles.statLabel}>가격</Text>
-                    <Text style={styles.statValue}>
-                      {formatCurrency(highlightTrade.price, highlightTrade.market)}
-                    </Text>
-                  </View>
-                  <View style={styles.statTile}>
-                    <Text style={styles.statLabel}>거래금액</Text>
-                    <Text style={styles.statValue}>
-                      {formatCurrency(
-                        highlightTrade.quantity * highlightTrade.price,
-                        highlightTrade.market,
-                      )}
-                    </Text>
-                  </View>
-                </View>
-              </View>
-
-              <View style={styles.highlightFooter}>
-                <Chip label={`반응 ${tradeEngagement(highlightTrade)}`} tone="brand" />
-                <Chip label={`댓글 ${highlightTrade.commentCount}`} />
-                <PrimaryButton
-                  label="거래 보기"
-                  onPress={() =>
-                    navigation.navigate('TradeDetail', { tradeId: highlightTrade.tradeId })
-                  }
-                  variant="secondary"
-                />
-              </View>
-            </SurfaceCard>
-          ) : null}
-
-          <SurfaceCard>
-            <SectionHeading title="타임라인" description={`시간순 거래 ${filteredTrades.length}건`} />
-            {filteredTrades.map((item, index) => (
-              <Pressable
-                key={item.tradeId}
-                onPress={() => navigation.navigate('TradeDetail', { tradeId: item.tradeId })}
-                style={[
-                  styles.timelineItem,
-                  index < filteredTrades.length - 1 && styles.divider,
-                ]}
-              >
-                <View style={styles.timelineHeader}>
-                  <Pressable
-                    onPress={() =>
-                      navigation.navigate('UserProfile', {
-                        userId: item.user.userId,
-                        nickname: item.user.nickname,
-                      })
-                    }
-                    style={styles.identity}
-                  >
-                    <Avatar imageUrl={item.user.profileImage} name={item.user.nickname} size={40} />
-                    <View style={styles.identityText}>
-                      <Text style={styles.user}>{item.user.nickname}</Text>
-                      <Text style={styles.handle}>
-                        {formatRelativeDate(item.tradedAt)} · {item.market}
-                      </Text>
-                    </View>
-                  </Pressable>
-                  <View style={styles.chipWrap}>
-                    <Chip
-                      label={tradeTypeLabel(item.tradeType)}
-                      tone={item.tradeType === 'BUY' ? 'brand' : 'danger'}
-                    />
-                  </View>
-                </View>
-
-                <View style={styles.symbolRow}>
-                  <View style={styles.symbolText}>
-                    <Text style={styles.ticker}>{item.ticker}</Text>
-                    <Text style={styles.company}>{item.name}</Text>
-                  </View>
-                </View>
-
-                <View style={styles.metricGrid}>
-                  <View style={styles.metricCell}>
-                    <Text style={styles.metricLabel}>수량</Text>
-                    <Text style={styles.metricValue}>{formatNumber(item.quantity)}주</Text>
-                  </View>
-                  <View style={styles.metricCell}>
-                    <Text style={styles.metricLabel}>가격</Text>
-                    <Text style={styles.metricValue}>
-                      {formatCurrency(item.price, item.market)}
-                    </Text>
-                  </View>
-                  <View style={styles.metricCell}>
-                    <Text style={styles.metricLabel}>거래금액</Text>
-                    <Text style={styles.metricValue}>
-                      {formatCurrency(item.quantity * item.price, item.market)}
-                    </Text>
-                  </View>
-                </View>
-
-                <Text style={styles.comment} numberOfLines={2}>
-                  {item.comment ?? '작성된 코멘트가 없습니다.'}
-                </Text>
-
-                <View style={styles.reactionRow}>
-                  {item.reactions.length > 0 ? (
-                    item.reactions.map((reaction) => (
-                      <Chip
-                        key={`${item.tradeId}-${reaction.emoji}`}
-                        label={`${reactionEmojiLabel(reaction.emoji)} ${reaction.count}`}
-                      />
-                    ))
-                  ) : (
-                    <Chip label="아직 반응 없음" />
-                  )}
-                  <Chip label={`댓글 ${item.commentCount}`} tone="brand" />
-                </View>
-              </Pressable>
-            ))}
-            {feed.data.hasNext ? (
-              <Text style={styles.paginationHint}>
-                더 많은 거래는 다음 페이지 연결이 추가되면 이어서 볼 수 있습니다.
-              </Text>
-            ) : null}
-          </SurfaceCard>
-        </>
+        isLarge ? (
+          <View style={styles.contentColumns}>
+            <View style={styles.mainColumn}>{timelineCard}</View>
+            {highlightCard ? <View style={styles.sideColumn}>{highlightCard}</View> : null}
+          </View>
+        ) : (
+          <>
+            {highlightCard}
+            {timelineCard}
+          </>
+        )
       )}
     </Page>
   );
@@ -430,12 +459,25 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: 10,
   },
+  contentColumns: {
+    alignItems: 'flex-start',
+    flexDirection: 'row',
+    gap: 18,
+  },
+  mainColumn: {
+    flex: 1.65,
+    minWidth: 0,
+  },
+  sideColumn: {
+    flex: 1,
+    gap: 18,
+    maxWidth: 360,
+    minWidth: 280,
+  },
   utilityRow: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 10,
-  },
-  utilityRowCompact: {
-    flexDirection: 'column',
   },
   utilityPill: {
     alignItems: 'center',
@@ -443,7 +485,6 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(214, 224, 234, 0.9)',
     borderRadius: tokens.radius.pill,
     borderWidth: 1,
-    flex: 1,
     flexDirection: 'row',
     gap: 8,
     justifyContent: 'center',
@@ -475,7 +516,7 @@ const styles = StyleSheet.create({
     flexDirection: 'column',
   },
   highlightIdentity: {
-    alignItems: 'center',
+    alignItems: 'flex-start',
     flex: 1,
     flexDirection: 'row',
     gap: 12,
@@ -484,19 +525,18 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: 4,
   },
-  highlightBody: {
+  highlightStatGrid: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 14,
   },
-  highlightBodyCompact: {
+  highlightStatGridCompact: {
     flexDirection: 'column',
   },
   highlightHero: {
-    backgroundColor: tokens.colors.surfaceMuted,
+    backgroundColor: 'rgba(255,255,255,0.72)',
     borderRadius: 22,
-    flex: 1.2,
     gap: 8,
-    minHeight: 156,
     padding: 18,
   },
   highlightTicker: {
@@ -508,20 +548,17 @@ const styles = StyleSheet.create({
   highlightComment: {
     color: tokens.colors.inkSoft,
     fontFamily: tokens.typography.body,
-    fontSize: 13,
-    lineHeight: 20,
-  },
-  highlightStats: {
-    flex: 1,
-    gap: 10,
-    justifyContent: 'space-between',
+    fontSize: 14,
+    lineHeight: 22,
   },
   statTile: {
     backgroundColor: '#F8FAFC',
     borderRadius: 18,
     borderWidth: 1,
     borderColor: 'rgba(214, 224, 234, 0.84)',
+    flex: 1,
     gap: 4,
+    minWidth: 92,
     paddingHorizontal: 16,
     paddingVertical: 14,
   },
@@ -543,13 +580,24 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   timelineItem: {
+    borderLeftWidth: 4,
     gap: 14,
+    paddingLeft: 14,
+  },
+  timelineItemBuy: {
+    borderLeftColor: tokens.colors.brand,
+  },
+  timelineItemSell: {
+    borderLeftColor: tokens.colors.danger,
   },
   timelineHeader: {
     alignItems: 'flex-start',
     flexDirection: 'row',
     gap: 12,
     justifyContent: 'space-between',
+  },
+  timelineHeaderCompact: {
+    flexDirection: 'column',
   },
   identity: {
     alignItems: 'center',
@@ -572,14 +620,22 @@ const styles = StyleSheet.create({
     fontFamily: tokens.typography.body,
     fontSize: 13,
   },
-  chipWrap: {
+  timelineHeaderMeta: {
     maxWidth: '100%',
   },
-  symbolRow: {
+  timelineHeadline: {
+    alignItems: 'flex-start',
+    flexDirection: 'row',
+    gap: 16,
+    justifyContent: 'space-between',
+  },
+  timelineHeadlineCompact: {
+    flexDirection: 'column',
     gap: 8,
   },
   symbolText: {
     gap: 4,
+    minWidth: 0,
   },
   ticker: {
     color: tokens.colors.navy,
@@ -591,6 +647,13 @@ const styles = StyleSheet.create({
     color: tokens.colors.inkSoft,
     fontFamily: tokens.typography.body,
     fontSize: 13,
+  },
+  tradeTotal: {
+    color: tokens.colors.navy,
+    fontFamily: tokens.typography.heading,
+    fontSize: 16,
+    fontWeight: '700',
+    textAlign: 'right',
   },
   metricGrid: {
     flexDirection: 'row',
@@ -619,16 +682,43 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '700',
   },
+  commentCard: {
+    backgroundColor: tokens.colors.surfaceMuted,
+    borderRadius: 18,
+    gap: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 14,
+  },
+  commentLabel: {
+    color: tokens.colors.inkMute,
+    fontFamily: tokens.typography.body,
+    fontSize: 12,
+  },
   comment: {
     color: tokens.colors.ink,
     fontFamily: tokens.typography.body,
     fontSize: 14,
     lineHeight: 22,
   },
+  timelineFooter: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 12,
+    justifyContent: 'space-between',
+  },
+  timelineFooterCompact: {
+    alignItems: 'flex-start',
+    flexDirection: 'column',
+  },
   reactionRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 10,
+  },
+  timelineHint: {
+    color: tokens.colors.inkMute,
+    fontFamily: tokens.typography.body,
+    fontSize: 12,
   },
   divider: {
     borderBottomColor: 'rgba(214, 224, 234, 0.8)',
