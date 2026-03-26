@@ -7,7 +7,15 @@ import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import type { FeedTradeItem } from '../api/contracts';
 import { Avatar } from '../components/Avatar';
 import { DataStatusCard } from '../components/DataStatusCard';
-import { Chip, Page, PrimaryButton, SectionHeading, SurfaceCard } from '../components/ui';
+import {
+  Chip,
+  MetricBadge,
+  MetricGrid,
+  Page,
+  PrimaryButton,
+  SectionHeading,
+  SurfaceCard,
+} from '../components/ui';
 import { useFeedData } from '../hooks/useFoloData';
 import { useResponsiveLayout } from '../hooks/useResponsiveLayout';
 import {
@@ -67,6 +75,18 @@ export function FeedScreen() {
     highlightTrade && tradeEngagement(highlightTrade) > 0
       ? '반응이 가장 모인 거래'
       : '가장 최근 거래';
+  const tradeSummary = {
+    buyCount: filteredTrades.filter((item) => item.tradeType === 'BUY').length,
+    sellCount: filteredTrades.filter((item) => item.tradeType === 'SELL').length,
+    krCount: filteredTrades.filter((item) => item.market === 'KRX').length,
+    usCount: filteredTrades.filter((item) => item.market !== 'KRX').length,
+    totalEngagement: filteredTrades.reduce((sum, item) => sum + tradeEngagement(item), 0),
+    uniqueWriters: new Set(filteredTrades.map((item) => item.user.userId)).size,
+  };
+  const notablePeople = summarizeActivePeople(filteredTrades).slice(0, 3);
+  const showEmptyState = !feed.loading && feed.data.trades.length === 0;
+  const showFilteredEmptyState =
+    !feed.loading && feed.data.trades.length > 0 && filteredTrades.length === 0;
 
   const highlightCard = highlightTrade ? (
     <SurfaceCard tone="muted">
@@ -144,6 +164,78 @@ export function FeedScreen() {
       </View>
     </SurfaceCard>
   ) : null;
+
+  const flowSummaryCard =
+    filteredTrades.length > 0 ? (
+      <SurfaceCard>
+        <SectionHeading title="피드 흐름 요약" description="현재 검색 범위를 기준으로 집계합니다." />
+        <MetricGrid>
+          <MetricBadge label="작성자" value={`${tradeSummary.uniqueWriters}명`} />
+          <MetricBadge label="매수" value={`${tradeSummary.buyCount}건`} tone="brand" />
+          <MetricBadge label="매도" value={`${tradeSummary.sellCount}건`} tone="danger" />
+          <MetricBadge label="반응" value={`${tradeSummary.totalEngagement}`} />
+        </MetricGrid>
+        <Text style={styles.sideNote}>
+          국내 {tradeSummary.krCount}건 · 미국 {tradeSummary.usCount}건
+        </Text>
+      </SurfaceCard>
+    ) : null;
+
+  const peopleSummaryCard =
+    notablePeople.length > 0 ? (
+      <SurfaceCard>
+        <SectionHeading
+          title="눈여겨볼 사람"
+          description="현재 흐름에서 반응이 모인 작성자입니다."
+          actionLabel="사람 찾기"
+          onActionPress={() => navigation.navigate('People')}
+        />
+        {notablePeople.map((person, index) => (
+          <Pressable
+            key={person.user.userId}
+            accessibilityRole="button"
+            onPress={() =>
+              navigation.navigate('UserFeed', {
+                userId: person.user.userId,
+                nickname: person.user.nickname,
+              })
+            }
+            style={({ pressed }) => [
+              styles.personCard,
+              index < notablePeople.length - 1 && styles.divider,
+              pressed && styles.buttonPressed,
+            ]}
+          >
+            <View style={styles.personRow}>
+              <View style={styles.personIdentity}>
+                <Avatar
+                  imageUrl={person.user.profileImage}
+                  name={person.user.nickname}
+                  size={40}
+                />
+                <View style={styles.personText}>
+                  <Text style={styles.personName}>{person.user.nickname}</Text>
+                  <Text style={styles.personMeta}>
+                    거래 {person.tradeCount}건 · 반응 {person.engagement}
+                  </Text>
+                </View>
+              </View>
+              <View style={styles.personTrail}>
+                <Text style={styles.personTicker}>{person.latestTrade.ticker}</Text>
+                <Text style={styles.personTime}>
+                  {formatRelativeDate(person.latestTrade.tradedAt)}
+                </Text>
+              </View>
+            </View>
+            <Text numberOfLines={2} style={styles.personDetail}>
+              {tradeTypeLabel(person.latestTrade.tradeType)} ·{' '}
+              {marketLabel(person.latestTrade.market)} ·{' '}
+              {person.latestTrade.comment ?? `${person.latestTrade.ticker} 거래를 기록했습니다.`}
+            </Text>
+          </Pressable>
+        ))}
+      </SurfaceCard>
+    ) : null;
 
   const timelineCard = (
     <SurfaceCard>
@@ -256,8 +348,6 @@ export function FeedScreen() {
       title="친구 거래 타임라인"
       subtitle="검색과 필터로 거래 흐름을 빠르게 훑고 반응합니다."
     >
-      <DataStatusCard error={feed.error} loading={feed.loading} />
-
       <SurfaceCard tone="hero">
         <SectionHeading
           title="검색 / 필터"
@@ -316,9 +406,11 @@ export function FeedScreen() {
             <Text style={styles.utilityLabel}>새로고침</Text>
           </Pressable>
         </View>
+
+        <DataStatusCard error={feed.error} loading={feed.loading} variant="inline" />
       </SurfaceCard>
 
-      {feed.data.trades.length === 0 ? (
+      {showEmptyState ? (
         <SurfaceCard>
           <SectionHeading
             title="아직 친구 거래가 없습니다"
@@ -339,7 +431,7 @@ export function FeedScreen() {
             />
           </View>
         </SurfaceCard>
-      ) : filteredTrades.length === 0 ? (
+      ) : showFilteredEmptyState ? (
         <SurfaceCard>
           <SectionHeading
             title="조건에 맞는 거래가 없습니다"
@@ -368,7 +460,13 @@ export function FeedScreen() {
         isLarge ? (
           <View style={styles.contentColumns}>
             <View style={styles.mainColumn}>{timelineCard}</View>
-            {highlightCard ? <View style={styles.sideColumn}>{highlightCard}</View> : null}
+            {highlightCard || flowSummaryCard || peopleSummaryCard ? (
+              <View style={styles.sideColumn}>
+                {highlightCard}
+                {flowSummaryCard}
+                {peopleSummaryCard}
+              </View>
+            ) : null}
           </View>
         ) : (
           <>
@@ -430,6 +528,56 @@ function tradeEngagement(item: FeedTradeItem) {
 
 function marketLabel(market: string) {
   return market === 'KRX' ? '국내' : '미국';
+}
+
+function summarizeActivePeople(items: FeedTradeItem[]) {
+  const grouped = new Map<
+    number,
+    {
+      user: FeedTradeItem['user'];
+      tradeCount: number;
+      engagement: number;
+      latestTrade: FeedTradeItem;
+    }
+  >();
+
+  items.forEach((item) => {
+    const current = grouped.get(item.user.userId);
+
+    if (!current) {
+      grouped.set(item.user.userId, {
+        user: item.user,
+        tradeCount: 1,
+        engagement: tradeEngagement(item),
+        latestTrade: item,
+      });
+      return;
+    }
+
+    current.tradeCount += 1;
+    current.engagement += tradeEngagement(item);
+
+    if (new Date(item.tradedAt).getTime() > new Date(current.latestTrade.tradedAt).getTime()) {
+      current.latestTrade = item;
+    }
+  });
+
+  return [...grouped.values()].sort((left, right) => {
+    const engagementDiff = right.engagement - left.engagement;
+    if (engagementDiff !== 0) {
+      return engagementDiff;
+    }
+
+    const tradeDiff = right.tradeCount - left.tradeCount;
+    if (tradeDiff !== 0) {
+      return tradeDiff;
+    }
+
+    return (
+      new Date(right.latestTrade.tradedAt).getTime() -
+      new Date(left.latestTrade.tradedAt).getTime()
+    );
+  });
 }
 
 const styles = StyleSheet.create({
@@ -496,6 +644,12 @@ const styles = StyleSheet.create({
     fontFamily: tokens.typography.heading,
     fontSize: 14,
     fontWeight: '700',
+  },
+  sideNote: {
+    color: tokens.colors.inkMute,
+    fontFamily: tokens.typography.body,
+    fontSize: 12,
+    lineHeight: 18,
   },
   emptyText: {
     color: tokens.colors.inkSoft,
@@ -578,6 +732,59 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 10,
+  },
+  personCard: {
+    gap: 10,
+  },
+  personRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 12,
+    justifyContent: 'space-between',
+  },
+  personIdentity: {
+    alignItems: 'center',
+    flex: 1,
+    flexDirection: 'row',
+    gap: 12,
+    minWidth: 0,
+  },
+  personText: {
+    flex: 1,
+    gap: 4,
+    minWidth: 0,
+  },
+  personName: {
+    color: tokens.colors.navy,
+    fontFamily: tokens.typography.heading,
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  personMeta: {
+    color: tokens.colors.inkMute,
+    fontFamily: tokens.typography.body,
+    fontSize: 12,
+  },
+  personTrail: {
+    alignItems: 'flex-end',
+    gap: 4,
+  },
+  personTicker: {
+    color: tokens.colors.navy,
+    fontFamily: tokens.typography.heading,
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  personTime: {
+    color: tokens.colors.inkMute,
+    fontFamily: tokens.typography.body,
+    fontSize: 12,
+  },
+  personDetail: {
+    color: tokens.colors.inkSoft,
+    fontFamily: tokens.typography.body,
+    fontSize: 13,
+    lineHeight: 20,
   },
   timelineItem: {
     borderLeftWidth: 4,
