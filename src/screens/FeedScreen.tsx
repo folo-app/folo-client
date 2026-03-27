@@ -81,6 +81,7 @@ export function FeedScreen() {
     krCount: filteredTrades.filter((item) => item.market === 'KRX').length,
     usCount: filteredTrades.filter((item) => item.market !== 'KRX').length,
     totalEngagement: filteredTrades.reduce((sum, item) => sum + tradeEngagement(item), 0),
+    totalComments: filteredTrades.reduce((sum, item) => sum + item.commentCount, 0),
     uniqueWriters: new Set(filteredTrades.map((item) => item.user.userId)).size,
   };
   const notablePeople = summarizeActivePeople(filteredTrades).slice(0, 3);
@@ -165,19 +166,24 @@ export function FeedScreen() {
     </SurfaceCard>
   ) : null;
 
-  const flowSummaryCard =
+  const engagementSummaryCard =
     filteredTrades.length > 0 ? (
       <SurfaceCard>
-        <SectionHeading title="피드 흐름 요약" description="현재 검색 범위를 기준으로 집계합니다." />
+        <SectionHeading
+          title="반응이 모이는 흐름"
+          description="현재 범위에서 대화가 붙는 거래를 먼저 짚습니다."
+        />
         <MetricGrid>
           <MetricBadge label="작성자" value={`${tradeSummary.uniqueWriters}명`} />
-          <MetricBadge label="매수" value={`${tradeSummary.buyCount}건`} tone="brand" />
-          <MetricBadge label="매도" value={`${tradeSummary.sellCount}건`} tone="danger" />
           <MetricBadge label="반응" value={`${tradeSummary.totalEngagement}`} />
+          <MetricBadge label="댓글" value={`${tradeSummary.totalComments}`} tone="brand" />
+          <MetricBadge
+            label="매수 / 매도"
+            value={`${tradeSummary.buyCount} / ${tradeSummary.sellCount}`}
+            tone="danger"
+          />
         </MetricGrid>
-        <Text style={styles.sideNote}>
-          국내 {tradeSummary.krCount}건 · 미국 {tradeSummary.usCount}건
-        </Text>
+        <Text style={styles.sideNote}>국내 {tradeSummary.krCount}건 · 미국 {tradeSummary.usCount}건</Text>
       </SurfaceCard>
     ) : null;
 
@@ -241,10 +247,13 @@ export function FeedScreen() {
     <SurfaceCard>
       <SectionHeading
         title="타임라인"
-        description={`시간순 거래 ${filteredTrades.length}건`}
+        description="최신 거래부터 바로 읽습니다."
         actionLabel={hasActiveControls ? '초기화' : undefined}
         onActionPress={hasActiveControls ? resetControls : undefined}
       />
+      <Text style={styles.timelineIntro}>
+        {listDescription} · 거래를 누르면 상세와 반응으로 이어집니다.
+      </Text>
       {filteredTrades.map((item, index) => (
         <Pressable
           key={item.tradeId}
@@ -330,7 +339,6 @@ export function FeedScreen() {
               )}
               <Chip label={`댓글 ${item.commentCount}`} tone="brand" />
             </View>
-            <Text style={styles.timelineHint}>눌러서 거래 상세 보기</Text>
           </View>
         </Pressable>
       ))}
@@ -348,13 +356,22 @@ export function FeedScreen() {
       title="친구 거래 타임라인"
       subtitle="검색과 필터로 거래 흐름을 빠르게 훑고 반응합니다."
     >
-      <SurfaceCard tone="hero">
-        <SectionHeading
-          title="검색 / 필터"
-          description={listDescription}
-          actionLabel={hasActiveControls ? '초기화' : undefined}
-          onActionPress={hasActiveControls ? resetControls : undefined}
-        />
+      <SurfaceCard tone="muted">
+        <View style={[styles.controlHeader, isCompact && styles.controlHeaderCompact]}>
+          <View style={styles.controlHeading}>
+            <Text style={styles.controlLabel}>탐색 도구</Text>
+            <Text style={styles.controlSummary}>{listDescription}</Text>
+          </View>
+          {hasActiveControls ? (
+            <Pressable
+              accessibilityRole="button"
+              onPress={resetControls}
+              style={({ pressed }) => [styles.resetPill, pressed && styles.buttonPressed]}
+            >
+              <Text style={styles.resetPillLabel}>초기화</Text>
+            </Pressable>
+          ) : null}
+        </View>
         <View style={styles.searchField}>
           <Ionicons color={tokens.colors.inkMute} name="search-outline" size={18} />
           <TextInput
@@ -406,9 +423,9 @@ export function FeedScreen() {
             <Text style={styles.utilityLabel}>새로고침</Text>
           </Pressable>
         </View>
-
-        <DataStatusCard error={feed.error} loading={feed.loading} variant="inline" />
       </SurfaceCard>
+
+      <DataStatusCard error={feed.error} loading={feed.loading} variant="inline" />
 
       {showEmptyState ? (
         <SurfaceCard>
@@ -460,10 +477,10 @@ export function FeedScreen() {
         isLarge ? (
           <View style={styles.contentColumns}>
             <View style={styles.mainColumn}>{timelineCard}</View>
-            {highlightCard || flowSummaryCard || peopleSummaryCard ? (
+            {highlightCard || engagementSummaryCard || peopleSummaryCard ? (
               <View style={styles.sideColumn}>
                 {highlightCard}
-                {flowSummaryCard}
+                {engagementSummaryCard}
                 {peopleSummaryCard}
               </View>
             ) : null}
@@ -581,6 +598,50 @@ function summarizeActivePeople(items: FeedTradeItem[]) {
 }
 
 const styles = StyleSheet.create({
+  controlHeader: {
+    alignItems: 'flex-start',
+    flexDirection: 'row',
+    gap: 12,
+    justifyContent: 'space-between',
+  },
+  controlHeaderCompact: {
+    flexDirection: 'column',
+  },
+  controlHeading: {
+    flex: 1,
+    gap: 4,
+  },
+  controlLabel: {
+    color: tokens.colors.brandStrong,
+    fontFamily: tokens.typography.heading,
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
+  },
+  controlSummary: {
+    color: tokens.colors.navy,
+    fontFamily: tokens.typography.heading,
+    fontSize: 18,
+    fontWeight: '700',
+  },
+  resetPill: {
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    backgroundColor: 'rgba(255,255,255,0.82)',
+    borderColor: 'rgba(214, 224, 234, 0.92)',
+    borderRadius: tokens.radius.pill,
+    borderWidth: 1,
+    justifyContent: 'center',
+    minHeight: 40,
+    paddingHorizontal: 14,
+  },
+  resetPillLabel: {
+    color: tokens.colors.navy,
+    fontFamily: tokens.typography.heading,
+    fontSize: 13,
+    fontWeight: '700',
+  },
   searchField: {
     alignItems: 'center',
     backgroundColor: 'rgba(255,255,255,0.84)',
@@ -650,6 +711,12 @@ const styles = StyleSheet.create({
     fontFamily: tokens.typography.body,
     fontSize: 12,
     lineHeight: 18,
+  },
+  timelineIntro: {
+    color: tokens.colors.inkSoft,
+    fontFamily: tokens.typography.body,
+    fontSize: 13,
+    lineHeight: 20,
   },
   emptyText: {
     color: tokens.colors.inkSoft,
@@ -921,11 +988,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 10,
-  },
-  timelineHint: {
-    color: tokens.colors.inkMute,
-    fontFamily: tokens.typography.body,
-    fontSize: 12,
   },
   divider: {
     borderBottomColor: 'rgba(214, 224, 234, 0.8)',
