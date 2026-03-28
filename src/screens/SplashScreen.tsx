@@ -1,4 +1,4 @@
-import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { tokens } from '../theme/tokens';
@@ -7,48 +7,57 @@ const bootSteps = ['보안 세션 확인', '포트폴리오 복원', '피드 상
 
 export function SplashScreen() {
   const insets = useSafeAreaInsets();
+  const { height } = useWindowDimensions();
+  const compact = height < 700;
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <View
         style={[
           styles.shell,
+          compact && styles.shellCompact,
           {
-            paddingTop: Math.max(insets.top + 24, 40),
-            paddingBottom: Math.max(insets.bottom + 28, 36),
+            paddingTop: Math.max(insets.top + (compact ? 16 : 24), compact ? 28 : 40),
+            paddingBottom: Math.max(insets.bottom + (compact ? 20 : 28), compact ? 28 : 36),
           },
         ]}
       >
         <View style={styles.glowTop} />
         <View style={styles.glowBottom} />
 
-        <View style={styles.brandBlock}>
-          <View style={styles.brandMark}>
-            <Text style={styles.brandMarkText}>Fo</Text>
+        <View style={[styles.brandBlock, compact && styles.brandBlockCompact]}>
+          <View style={[styles.brandMark, compact && styles.brandMarkCompact]}>
+            <Text style={[styles.brandMarkText, compact && styles.brandMarkTextCompact]}>Fo</Text>
           </View>
-          <Text style={styles.brandName}>FOLO</Text>
-          <Text style={styles.tagline}>투자 기록과 관계를 가장 빠르게 이어주는 앱</Text>
-        </View>
-
-        <View style={styles.centerCopy}>
-          <Text style={styles.title}>마지막 투자 흐름을 불러오는 중</Text>
-          <Text style={styles.subtitle}>
-            보안 세션을 확인하고, 포트폴리오와 친구 피드를 안전하게 이어서 준비합니다.
+          <Text style={[styles.brandName, compact && styles.brandNameCompact]}>FOLO</Text>
+          <Text style={[styles.tagline, compact && styles.taglineCompact]}>
+            밝고 빠른 투자 기록 흐름을 준비합니다
           </Text>
         </View>
 
-        <View style={styles.stepList}>
+        <View style={[styles.centerCopy, compact && styles.centerCopyCompact]}>
+          <Text style={[styles.title, compact && styles.titleCompact]}>
+            마지막 투자 흐름을 불러오는 중
+          </Text>
+          <Text style={[styles.subtitle, compact && styles.subtitleCompact]}>
+            보안 세션을 확인하고, 포트폴리오와 친구 피드를 밝은 캔버스 위에 이어서 준비합니다.
+          </Text>
+        </View>
+
+        <View style={[styles.stepPanel, compact && styles.stepPanelCompact]}>
           {bootSteps.map((step) => (
             <View key={step} style={styles.stepRow}>
               <View style={styles.stepDot} />
-              <Text style={styles.stepText}>{step}</Text>
+              <Text style={[styles.stepText, compact && styles.stepTextCompact]}>{step}</Text>
             </View>
           ))}
         </View>
 
-        <View style={styles.loadingRow}>
-          <ActivityIndicator color={tokens.colors.surface} size="small" />
-          <Text style={styles.loadingLabel}>앱 진입 준비 중</Text>
+        <View style={[styles.loadingRow, compact && styles.loadingRowCompact]}>
+          <ActivityIndicator color={tokens.colors.brandStrong} size="small" />
+          <Text style={[styles.loadingLabel, compact && styles.loadingLabelCompact]}>
+            앱 진입 준비 중
+          </Text>
         </View>
       </View>
     </SafeAreaView>
@@ -58,80 +67,134 @@ export function SplashScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: tokens.colors.navy,
+    backgroundColor: tokens.colors.canvas,
   },
   shell: {
     flex: 1,
     paddingHorizontal: 24,
     justifyContent: 'space-between',
   },
+  shellCompact: {
+    paddingHorizontal: 20,
+  },
   glowTop: {
     position: 'absolute',
-    top: 40,
-    right: -20,
-    width: 220,
-    height: 220,
+    top: 10,
+    right: -10,
+    width: 240,
+    height: 240,
     borderRadius: 999,
-    backgroundColor: 'rgba(96, 165, 250, 0.20)',
+    backgroundColor: 'rgba(37, 99, 235, 0.14)',
   },
   glowBottom: {
     position: 'absolute',
-    bottom: 60,
+    bottom: 40,
     left: -40,
-    width: 200,
-    height: 200,
+    width: 220,
+    height: 220,
     borderRadius: 999,
-    backgroundColor: 'rgba(45, 212, 191, 0.18)',
+    backgroundColor: 'rgba(15, 118, 110, 0.12)',
   },
   brandBlock: {
     gap: 10,
+    alignItems: 'flex-start',
+  },
+  brandBlockCompact: {
+    gap: 8,
   },
   brandMark: {
     width: 78,
     height: 78,
     borderRadius: 28,
-    backgroundColor: 'rgba(255,255,255,0.12)',
+    backgroundColor: 'rgba(255,255,255,0.92)',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.14)',
+    borderColor: 'rgba(214, 224, 234, 0.9)',
+    shadowColor: '#0F172A',
+    shadowOpacity: 0.06,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 10 },
+    elevation: 4,
+  },
+  brandMarkCompact: {
+    width: 68,
+    height: 68,
+    borderRadius: 24,
   },
   brandMarkText: {
-    color: tokens.colors.surface,
+    color: tokens.colors.navy,
     fontSize: 32,
     fontFamily: tokens.typography.heading,
     fontWeight: '800',
   },
+  brandMarkTextCompact: {
+    fontSize: 28,
+  },
   brandName: {
-    color: tokens.colors.surface,
+    color: tokens.colors.navy,
     fontSize: 34,
     fontFamily: tokens.typography.heading,
     fontWeight: '800',
   },
+  brandNameCompact: {
+    fontSize: 30,
+  },
   tagline: {
-    color: 'rgba(255,255,255,0.72)',
+    color: tokens.colors.inkSoft,
     fontSize: 14,
     lineHeight: 22,
     fontFamily: tokens.typography.body,
   },
+  taglineCompact: {
+    fontSize: 13,
+    lineHeight: 20,
+  },
   centerCopy: {
     gap: 14,
   },
+  centerCopyCompact: {
+    gap: 10,
+  },
   title: {
-    color: tokens.colors.surface,
+    color: tokens.colors.navy,
     fontSize: 32,
     lineHeight: 38,
     fontFamily: tokens.typography.heading,
     fontWeight: '800',
   },
+  titleCompact: {
+    fontSize: 28,
+    lineHeight: 34,
+  },
   subtitle: {
-    color: 'rgba(255,255,255,0.72)',
+    color: tokens.colors.inkSoft,
     fontSize: 15,
     lineHeight: 24,
     fontFamily: tokens.typography.body,
   },
-  stepList: {
+  subtitleCompact: {
+    fontSize: 14,
+    lineHeight: 22,
+  },
+  stepPanel: {
     gap: 12,
+    backgroundColor: 'rgba(255,255,255,0.88)',
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: 'rgba(214, 224, 234, 0.9)',
+    paddingHorizontal: 18,
+    paddingVertical: 18,
+    shadowColor: '#0F172A',
+    shadowOpacity: 0.05,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 3,
+  },
+  stepPanelCompact: {
+    gap: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
   },
   stepRow: {
     flexDirection: 'row',
@@ -142,22 +205,39 @@ const styles = StyleSheet.create({
     width: 9,
     height: 9,
     borderRadius: 999,
-    backgroundColor: '#7DD3FC',
+    backgroundColor: tokens.colors.brand,
   },
   stepText: {
-    color: tokens.colors.surface,
+    color: tokens.colors.navy,
     fontSize: 14,
     fontFamily: tokens.typography.heading,
     fontWeight: '700',
+  },
+  stepTextCompact: {
+    fontSize: 13,
   },
   loadingRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
+    alignSelf: 'flex-start',
+    backgroundColor: tokens.colors.surfaceMuted,
+    borderRadius: tokens.radius.pill,
+    borderWidth: 1,
+    borderColor: 'rgba(214, 224, 234, 0.86)',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+  },
+  loadingRowCompact: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
   },
   loadingLabel: {
-    color: 'rgba(255,255,255,0.84)',
+    color: tokens.colors.navy,
     fontSize: 14,
     fontFamily: tokens.typography.body,
+  },
+  loadingLabelCompact: {
+    fontSize: 13,
   },
 });
