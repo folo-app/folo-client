@@ -10,6 +10,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useAuth } from '../auth/AuthProvider';
 import { BottomNav } from '../components/BottomNav';
 import { AddTradeScreen } from '../screens/AddTradeScreen';
+import { AddTradeReviewScreen } from '../screens/AddTradeReviewScreen';
 import { EmailVerificationScreen } from '../screens/EmailVerificationScreen';
 import { FeedScreen } from '../screens/FeedScreen';
 import { HoldingDetailScreen } from '../screens/HoldingDetailScreen';
@@ -43,7 +44,6 @@ const Tabs = createBottomTabNavigator<MainTabParamList>();
 const routeToTab = {
   Home: 'home',
   Feed: 'feed',
-  AddTrade: 'add',
   Portfolio: 'portfolio',
   Profile: 'profile',
 } as const;
@@ -51,7 +51,6 @@ const routeToTab = {
 const tabToRoute = {
   home: 'Home',
   feed: 'Feed',
-  add: 'AddTrade',
   portfolio: 'Portfolio',
   profile: 'Profile',
 } as const;
@@ -75,14 +74,20 @@ function MainTabsNavigator() {
       screenOptions={{ headerShown: false }}
       tabBar={({ navigation, state }) => (
         <BottomNav
-          activeTab={routeToTab[state.routeNames[state.index] as keyof MainTabParamList]}
-          onChange={(tab) => navigation.navigate(tabToRoute[tab])}
+          activeTab={routeToTab[state.routeNames[state.index] as keyof typeof routeToTab]}
+          onChange={(tab) => {
+            if (tab === 'add') {
+              navigation.getParent()?.navigate('AddTrade');
+              return;
+            }
+
+            navigation.navigate(tabToRoute[tab]);
+          }}
         />
       )}
     >
       <Tabs.Screen component={HomeScreen} name="Home" />
       <Tabs.Screen component={FeedScreen} name="Feed" />
-      <Tabs.Screen component={AddTradeScreen} name="AddTrade" />
       <Tabs.Screen component={PortfolioScreen} name="Portfolio" />
       <Tabs.Screen component={ProfileScreen} name="Profile" />
     </Tabs.Navigator>
@@ -108,6 +113,8 @@ function RootNavigator() {
             component={PortfolioSetupReviewScreen}
             name="PortfolioSetupReview"
           />
+          <Stack.Screen component={AddTradeScreen} name="AddTrade" />
+          <Stack.Screen component={AddTradeReviewScreen} name="AddTradeReview" />
           <Stack.Screen component={MainTabsNavigator} name="MainTabs" />
           <Stack.Screen component={TradeDetailScreen} name="TradeDetail" />
           <Stack.Screen component={HoldingDetailScreen} name="HoldingDetail" />
