@@ -356,12 +356,9 @@ export function FeedScreen() {
       title="친구 거래 타임라인"
       subtitle="검색과 필터로 거래 흐름을 빠르게 훑고 반응합니다."
     >
-      <SurfaceCard tone="muted">
+      <View style={styles.controlsPanel}>
         <View style={[styles.controlHeader, isCompact && styles.controlHeaderCompact]}>
-          <View style={styles.controlHeading}>
-            <Text style={styles.controlLabel}>탐색 도구</Text>
-            <Text style={styles.controlSummary}>{listDescription}</Text>
-          </View>
+          <Text style={styles.controlSummary}>{listDescription}</Text>
           {hasActiveControls ? (
             <Pressable
               accessibilityRole="button"
@@ -405,25 +402,7 @@ export function FeedScreen() {
           ))}
         </View>
 
-        <View style={styles.utilityRow}>
-          <Pressable
-            accessibilityRole="button"
-            onPress={() => navigation.navigate('People')}
-            style={({ pressed }) => [styles.utilityPill, pressed && styles.buttonPressed]}
-          >
-            <Ionicons color={tokens.colors.navy} name="people-outline" size={16} />
-            <Text style={styles.utilityLabel}>사람 찾기</Text>
-          </Pressable>
-          <Pressable
-            accessibilityRole="button"
-            onPress={feed.refresh}
-            style={({ pressed }) => [styles.utilityPill, pressed && styles.buttonPressed]}
-          >
-            <Ionicons color={tokens.colors.navy} name="refresh-outline" size={16} />
-            <Text style={styles.utilityLabel}>새로고침</Text>
-          </Pressable>
-        </View>
-      </SurfaceCard>
+      </View>
 
       <DataStatusCard error={feed.error} loading={feed.loading} variant="inline" />
 
@@ -598,6 +577,9 @@ function summarizeActivePeople(items: FeedTradeItem[]) {
 }
 
 const styles = StyleSheet.create({
+  controlsPanel: {
+    gap: 12,
+  },
   controlHeader: {
     alignItems: 'flex-start',
     flexDirection: 'row',
@@ -607,51 +589,41 @@ const styles = StyleSheet.create({
   controlHeaderCompact: {
     flexDirection: 'column',
   },
-  controlHeading: {
-    flex: 1,
-    gap: 4,
-  },
-  controlLabel: {
-    color: tokens.colors.brandStrong,
-    fontFamily: tokens.typography.heading,
-    fontSize: 12,
-    fontWeight: '700',
-    letterSpacing: 0.8,
-    textTransform: 'uppercase',
-  },
   controlSummary: {
     color: tokens.colors.navy,
-    fontFamily: tokens.typography.heading,
-    fontSize: 18,
+    flex: 1,
+    fontFamily: tokens.typography.body,
+    fontSize: 14,
     fontWeight: '700',
+    lineHeight: 20,
   },
   resetPill: {
     alignItems: 'center',
     alignSelf: 'flex-start',
-    backgroundColor: 'rgba(255,255,255,0.82)',
+    backgroundColor: 'rgba(255,255,255,0.64)',
     borderColor: 'rgba(214, 224, 234, 0.92)',
     borderRadius: tokens.radius.pill,
     borderWidth: 1,
     justifyContent: 'center',
-    minHeight: 40,
-    paddingHorizontal: 14,
+    minHeight: 36,
+    paddingHorizontal: 12,
   },
   resetPillLabel: {
     color: tokens.colors.navy,
     fontFamily: tokens.typography.heading,
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '700',
   },
   searchField: {
     alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.84)',
+    backgroundColor: 'rgba(255,255,255,0.68)',
     borderRadius: 18,
     borderWidth: 1,
-    borderColor: 'rgba(214, 224, 234, 0.9)',
+    borderColor: 'rgba(214, 224, 234, 0.82)',
     flexDirection: 'row',
     gap: 10,
     paddingHorizontal: 16,
-    paddingVertical: 14,
+    paddingVertical: 12,
   },
   searchInput: {
     color: tokens.colors.navy,
@@ -666,7 +638,7 @@ const styles = StyleSheet.create({
   filterWrap: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 10,
+    gap: 8,
   },
   contentColumns: {
     alignItems: 'flex-start',
@@ -682,29 +654,6 @@ const styles = StyleSheet.create({
     gap: 18,
     maxWidth: 360,
     minWidth: 280,
-  },
-  utilityRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
-  },
-  utilityPill: {
-    alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.72)',
-    borderColor: 'rgba(214, 224, 234, 0.9)',
-    borderRadius: tokens.radius.pill,
-    borderWidth: 1,
-    flexDirection: 'row',
-    gap: 8,
-    justifyContent: 'center',
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-  },
-  utilityLabel: {
-    color: tokens.colors.navy,
-    fontFamily: tokens.typography.heading,
-    fontSize: 14,
-    fontWeight: '700',
   },
   sideNote: {
     color: tokens.colors.inkMute,
