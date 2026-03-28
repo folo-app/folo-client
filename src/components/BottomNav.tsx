@@ -45,7 +45,7 @@ export function BottomNav({
                   <Ionicons
                     name="add"
                     size={24}
-                    color={isActive ? tokens.colors.surface : tokens.colors.navy}
+                    color={isActive ? tokens.colors.surface : tokens.colors.brandStrong}
                   />
                 </View>
               ) : (
@@ -123,13 +123,13 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: tokens.colors.sand,
+    backgroundColor: '#E5EFFC',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(15, 23, 42, 0.08)',
+    borderColor: 'rgba(37, 99, 235, 0.18)',
   },
   fabActive: {
-    backgroundColor: tokens.colors.navy,
+    backgroundColor: tokens.colors.brandStrong,
   },
 });

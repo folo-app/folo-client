@@ -38,8 +38,9 @@ export function HoldingDetailScreen() {
         <SurfaceCard>
           <Text style={styles.emptyText}>표시할 보유 종목이 없습니다.</Text>
           <PrimaryButton
-            label="거래 기록 추가"
-            onPress={() => navigation.navigate('MainTabs', { screen: 'AddTrade' })}
+            label="포트폴리오 보기"
+            onPress={() => navigation.navigate('MainTabs', { screen: 'Portfolio' })}
+            variant="secondary"
           />
         </SurfaceCard>
       ) : holding ? (

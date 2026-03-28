@@ -1,396 +1,511 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useState } from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useMemo, useState } from 'react';
+import {
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
-import type { MarketType, TradeType, TradeVisibility } from '../api/contracts';
-import { foloApi } from '../api/services';
-import { DataStatusCard } from '../components/DataStatusCard';
-import { Chip, Page, PrimaryButton, SectionHeading, SurfaceCard } from '../components/ui';
-import { useStockPriceData, useStockSearchData } from '../hooks/useFoloData';
+import { foloApiConfig } from '../api/config';
+import type { StockSearchItem } from '../api/contracts';
+import { StockIdentityBadge } from '../components/StockIdentityBadge';
+import {
+  BottomActionBar,
+  Chip,
+  PageBackButton,
+  PrimaryButton,
+} from '../components/ui';
+import {
+  usePortfolioData,
+  useStockDiscoverData,
+  useStockSearchData,
+} from '../hooks/useFoloData';
 import { useResponsiveLayout } from '../hooks/useResponsiveLayout';
-import { formatCurrency, formatPercent } from '../lib/format';
-import type { RootStackParamList } from '../navigation/types';
+import { formatCurrency } from '../lib/format';
+import type {
+  PortfolioSetupSelection,
+  RootStackParamList,
+} from '../navigation/types';
 import { tokens } from '../theme/tokens';
 
-const visibilityOptions: Array<{ label: string; value: TradeVisibility }> = [
-  { label: '전체 공개', value: 'PUBLIC' },
-  { label: '친구만', value: 'FRIENDS_ONLY' },
-  { label: '비공개', value: 'PRIVATE' },
+type MarketFilter = 'ALL' | 'KRX' | 'US';
+
+const marketFilterOptions: Array<{ label: string; value: MarketFilter }> = [
+  { label: '전체', value: 'ALL' },
+  { label: '국내', value: 'KRX' },
+  { label: '미국', value: 'US' },
 ];
 
-const tradeTypeOptions: Array<{ label: string; value: TradeType }> = [
-  { label: '매수', value: 'BUY' },
-  { label: '매도', value: 'SELL' },
-];
+type StockSection = {
+  key: string;
+  title: string;
+  items: StockSearchItem[];
+};
+
+type StockTileItem = PortfolioSetupSelection & {
+  logoUrl?: string | null;
+};
+
+function selectionKey(item: Pick<PortfolioSetupSelection, 'market' | 'ticker'>) {
+  return `${item.market}:${item.ticker}`;
+}
+
+function resolveLogoUrl(logoUrl?: string | null) {
+  if (!logoUrl) {
+    return null;
+  }
+
+  if (logoUrl.startsWith('http://') || logoUrl.startsWith('https://')) {
+    return logoUrl;
+  }
+
+  return `${foloApiConfig.baseUrl}${logoUrl.startsWith('/') ? '' : '/'}${logoUrl}`;
+}
 
 export function AddTradeScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const { isCompact } = useResponsiveLayout();
-  const [query, setQuery] = useState<string>('');
-  const search = useStockSearchData(query);
-  const [selectedTicker, setSelectedTicker] = useState<string>('');
-  const [selectedMarket, setSelectedMarket] = useState<MarketType>('NASDAQ');
-  const stockPrice = useStockPriceData(selectedTicker, selectedMarket);
-  const [tradeType, setTradeType] = useState<TradeType>('BUY');
-  const [quantity, setQuantity] = useState<string>('1');
-  const [price, setPrice] = useState<string>('');
-  const [comment, setComment] = useState<string>('');
-  const [visibility, setVisibility] = useState<TradeVisibility>('FRIENDS_ONLY');
-  const [submitMessage, setSubmitMessage] = useState<string | null>(null);
-  const [submitting, setSubmitting] = useState(false);
-  const searchReady = query.trim().length >= 2;
+  const { isCompact, tileColumns, width } = useResponsiveLayout();
+  const portfolio = usePortfolioData();
+  const [query, setQuery] = useState('');
+  const [marketFilter, setMarketFilter] = useState<MarketFilter>('ALL');
+  const [selectedItem, setSelectedItem] = useState<PortfolioSetupSelection | null>(null);
+  const trimmedQuery = query.trim();
+  const searchMarket = marketFilter === 'ALL' ? undefined : marketFilter;
+  const search = useStockSearchData(query, 2, searchMarket);
+  const discover = useStockDiscoverData(12);
 
-  const selectedStock =
-    search.data.stocks.find((item) => item.ticker === selectedTicker) ??
-    search.data.stocks[0] ??
-    null;
+  const filteredResults = useMemo(() => {
+    const stocks = search.data.stocks;
 
-  async function handleSubmit() {
-    if (!selectedStock) {
-      setSubmitMessage('종목을 먼저 선택해 주세요.');
-      return;
+    if (marketFilter === 'KRX') {
+      return stocks.filter((item) => item.market === 'KRX');
     }
 
-    if ((Number(quantity) || 0) <= 0) {
-      setSubmitMessage('수량은 0보다 커야 합니다.');
-      return;
+    if (marketFilter === 'US') {
+      return stocks.filter((item) => item.market !== 'KRX');
     }
 
-    if ((Number(price) || stockPrice.data.currentPrice) <= 0) {
-      setSubmitMessage('가격을 확인해 주세요.');
-      return;
+    return stocks;
+  }, [marketFilter, search.data.stocks]);
+
+  const featuredSections = useMemo<StockSection[]>(() => {
+    if (marketFilter === 'KRX') {
+      return [{ key: 'krx', title: '국내 인기 종목', items: discover.data.krxStocks }];
     }
 
-    setSubmitting(true);
-    setSubmitMessage(null);
-
-    try {
-      const trade = await foloApi.createTrade({
-        ticker: selectedStock.ticker,
-        market: selectedStock.market,
-        tradeType,
-        quantity: Number(quantity) || 0,
-        price: Number(price) || stockPrice.data.currentPrice,
-        comment: comment.trim() || null,
-        visibility,
-        tradedAt: new Date().toISOString(),
-      });
-
-      setSubmitMessage('거래가 등록되었습니다.');
-      navigation.navigate('TradeDetail', { tradeId: trade.tradeId });
-    } catch (error) {
-      setSubmitMessage(
-        error instanceof Error ? error.message : '거래 등록에 실패했습니다.',
-      );
-    } finally {
-      setSubmitting(false);
+    if (marketFilter === 'US') {
+      return [{ key: 'us', title: '미국 인기 종목', items: discover.data.usStocks }];
     }
+
+    return [
+      { key: 'krx', title: '국내 인기 종목', items: discover.data.krxStocks },
+      { key: 'us', title: '미국 인기 종목', items: discover.data.usStocks },
+    ];
+  }, [discover.data.krxStocks, discover.data.usStocks, marketFilter]);
+
+  const tileGap = 12;
+  const horizontalPadding = isCompact ? 16 : 20;
+  const tileWidth = Math.max(
+    104,
+    Math.floor(
+      (Math.min(width, tokens.layout.maxWidth) -
+        horizontalPadding * 2 -
+        tileGap * (tileColumns - 1)) /
+        tileColumns,
+    ),
+  );
+
+  const showFirstTradeHint = !portfolio.loading && portfolio.data.holdings.length === 0;
+
+  function toggleSelection(item: PortfolioSetupSelection) {
+    const nextItem: PortfolioSetupSelection = {
+      ticker: item.ticker,
+      name: item.name,
+      market: item.market,
+      currentPrice: item.currentPrice,
+    };
+
+    setSelectedItem((current) =>
+      current && selectionKey(current) === selectionKey(nextItem) ? null : nextItem,
+    );
+  }
+
+  function renderTile(item: StockTileItem) {
+    const key = selectionKey(item);
+    const isSelected = selectedItem ? selectionKey(selectedItem) === key : false;
+    const logoUrl = resolveLogoUrl(item.logoUrl);
+
+    return (
+      <Pressable
+        key={key}
+        onPress={() => toggleSelection(item)}
+        style={[
+          styles.tile,
+          { width: tileWidth },
+          isSelected && styles.tileSelected,
+        ]}
+      >
+        <StockIdentityBadge
+          logoUrl={logoUrl}
+          market={item.market}
+          name={item.name}
+          ticker={item.ticker}
+        />
+        <Text numberOfLines={1} style={styles.tileTitle}>
+          {item.name}
+        </Text>
+        <Text numberOfLines={1} style={styles.tileMeta}>
+          {item.ticker} · {item.market}
+        </Text>
+        <Text numberOfLines={1} style={styles.tilePrice}>
+          {formatCurrency(item.currentPrice, item.market)}
+        </Text>
+        {isSelected ? (
+          <View style={styles.selectedMark}>
+            <Ionicons color={tokens.colors.surface} name="checkmark" size={14} />
+          </View>
+        ) : null}
+      </Pressable>
+    );
   }
 
   return (
-    <Page
-      eyebrow="Capture"
-      title="거래 기록 추가"
-    >
-      <DataStatusCard
-        error={search.error ?? stockPrice.error}
-        loading={(searchReady && search.loading) || (Boolean(selectedTicker) && stockPrice.loading)}
-      />
-
-      <SurfaceCard tone="muted">
-        <SectionHeading title="처음 시작하는 경우" description="첫 포트폴리오는 직접 추가로 만드는 편이 빠릅니다." />
-        <View style={styles.importActionStack}>
-          <PrimaryButton
-            label="포트폴리오 직접 추가"
-            onPress={() => navigation.navigate('PortfolioSetup')}
-            variant="secondary"
-          />
-          <PrimaryButton
-            label="CSV / OCR 가져오기"
-            onPress={() => navigation.navigate('ImportOnboarding')}
-            variant="secondary"
-          />
-        </View>
-      </SurfaceCard>
-
-      <SurfaceCard tone="hero">
-        <SectionHeading title="빠른 입력" description="국장은 종목번호, 미국장은 티커로 검색할 수 있습니다." />
-        <View style={styles.toggleRow}>
-          {tradeTypeOptions.map((option) => (
-            <Chip
-              key={option.value}
-              active={tradeType === option.value}
-              label={option.label}
-              tone={option.value === 'BUY' ? 'brand' : 'danger'}
-              onPress={() => setTradeType(option.value)}
-            />
-          ))}
-        </View>
-
-        <View style={styles.inputGroup}>
-          <Text style={styles.fieldLabel}>종목 검색</Text>
-          <TextInput
-            onChangeText={setQuery}
-            placeholder="예: AAPL, 005930, Apple, 삼성"
-            placeholderTextColor={tokens.colors.inkMute}
-            style={styles.input}
-            value={query}
-          />
-          <Text style={styles.fieldSupporting}>
-            검색은 2자 이상부터 시작됩니다.
-          </Text>
-        </View>
-
-        {searchReady ? (
-          <View style={styles.searchResults}>
-            {search.data.stocks.slice(0, 6).map((item) => (
-              <Pressable
-                key={item.ticker}
-                onPress={() => {
-                  setSelectedTicker(item.ticker);
-                  setSelectedMarket(item.market);
-                  setQuery(item.ticker);
-                  setPrice(String(item.currentPrice || ''));
-                }}
-                style={[
-                  styles.searchItem,
-                  isCompact && styles.searchItemCompact,
-                  selectedTicker === item.ticker && styles.searchItemActive,
-                ]}
-              >
-                <View style={styles.searchText}>
-                  <Text style={styles.searchTicker}>{item.ticker}</Text>
-                  <Text style={styles.searchName}>
-                    {item.name} · {item.market}
-                  </Text>
-                </View>
-                <Text style={styles.searchPrice}>
-                  {formatCurrency(item.currentPrice, item.market)}
-                </Text>
-              </Pressable>
-            ))}
-            {!search.loading && !search.error && search.data.stocks.length === 0 ? (
-              <Text style={styles.emptyText}>검색 결과가 없습니다.</Text>
-            ) : null}
+    <SafeAreaView edges={['top', 'bottom']} style={styles.safeArea}>
+      <View style={styles.container}>
+        <ScrollView
+          contentContainerStyle={[
+            styles.scrollContent,
+            isCompact && styles.scrollContentCompact,
+          ]}
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.headerChrome}>
+            <PageBackButton />
           </View>
-        ) : (
-          <Text style={styles.emptyText}>종목명 또는 티커를 2자 이상 입력해 주세요.</Text>
-        )}
 
-        <View style={[styles.formGrid, isCompact && styles.formGridCompact]}>
-          <View style={styles.inputGroup}>
-            <Text style={styles.fieldLabel}>수량</Text>
-            <TextInput
-              keyboardType="decimal-pad"
-              onChangeText={setQuantity}
-              placeholder="예: 1"
-              placeholderTextColor={tokens.colors.inkMute}
-              style={styles.input}
-              value={quantity}
-            />
+          <View style={styles.header}>
+            <Text style={styles.title}>거래 기록 추가</Text>
+            <Text style={styles.subtitle}>
+              보유 중인 종목을 먼저 고르고, 다음 화면에서 수량과 평균 매수가를
+              입력해 기록을 남기세요.
+            </Text>
           </View>
-          <View style={styles.inputGroup}>
-            <Text style={styles.fieldLabel}>가격</Text>
-            <TextInput
-              keyboardType="decimal-pad"
-              onChangeText={setPrice}
-              placeholder="현재가를 반영하거나 직접 입력"
-              placeholderTextColor={tokens.colors.inkMute}
-              style={styles.input}
-              value={price}
-            />
-            {selectedStock ? (
-              <Text style={styles.fieldSupporting}>
-                현재가 {formatCurrency(stockPrice.data.currentPrice, selectedStock.market)} · 등락{' '}
-                {formatPercent(stockPrice.data.dayReturnRate)}
+
+          {showFirstTradeHint ? (
+            <View style={styles.guideCard}>
+              <Text style={styles.guideTitle}>첫 거래부터 바로 시작할 수 있습니다</Text>
+              <Text style={styles.guideDescription}>
+                아직 포트폴리오가 비어 있어도 종목 하나를 고른 뒤 첫 매수 기록을
+                남기면 포트폴리오가 시작됩니다.
               </Text>
-            ) : null}
-          </View>
-        </View>
+            </View>
+          ) : null}
 
-        <View style={styles.inputGroup}>
-          <Text style={styles.fieldLabel}>한 줄 코멘트</Text>
-          <TextInput
-            multiline
-            onChangeText={setComment}
-            placeholder="매수/매도 이유를 남겨두세요."
-            placeholderTextColor={tokens.colors.inkMute}
-            style={[styles.input, styles.textArea]}
-            value={comment}
-          />
-        </View>
-
-        <View style={styles.visibilityRow}>
-          {visibilityOptions.map((option) => (
-            <Chip
-              key={option.value}
-              active={visibility === option.value}
-              label={option.label}
-              onPress={() => setVisibility(option.value)}
+          <View style={styles.searchShell}>
+            <Ionicons color={tokens.colors.inkMute} name="search" size={20} />
+            <TextInput
+              autoCapitalize="characters"
+              autoCorrect={false}
+              onChangeText={setQuery}
+              placeholder="검색 / 직접입력"
+              placeholderTextColor={tokens.colors.inkMute}
+              style={styles.searchInput}
+              value={query}
             />
-          ))}
-        </View>
+          </View>
 
-        {submitMessage ? <Text style={styles.submitMessage}>{submitMessage}</Text> : null}
-        <PrimaryButton
-          disabled={submitting}
-          label={submitting ? '등록 중...' : '거래 등록'}
-          onPress={handleSubmit}
-        />
-      </SurfaceCard>
+          <View style={styles.filterRow}>
+            {marketFilterOptions.map((option) => (
+              <Chip
+                key={option.value}
+                active={marketFilter === option.value}
+                label={option.label}
+                onPress={() => setMarketFilter(option.value)}
+                tone={
+                  option.value === 'KRX'
+                    ? 'positive'
+                    : option.value === 'US'
+                      ? 'brand'
+                      : 'default'
+                }
+              />
+            ))}
+          </View>
 
-      {selectedStock ? (
-        <SurfaceCard>
-          <SectionHeading
-            title="선택 종목 스냅샷"
-            description="검색한 종목의 현재 가격 정보입니다."
+          {selectedItem ? (
+            <View style={styles.selectedSection}>
+              <Text style={styles.sectionTitle}>선택한 종목</Text>
+              <View style={styles.selectedWrap}>
+                <Pressable
+                  onPress={() => setSelectedItem(null)}
+                  style={styles.selectedChip}
+                >
+                  <Text style={styles.selectedChipText}>
+                    {selectedItem.ticker} · {selectedItem.name}
+                  </Text>
+                  <Ionicons color={tokens.colors.inkMute} name="close" size={14} />
+                </Pressable>
+              </View>
+            </View>
+          ) : null}
+
+          {trimmedQuery.length === 0 ? (
+            <>
+              {featuredSections.map((section) =>
+                section.items.length > 0 ? (
+                  <View key={section.key} style={styles.sectionBlock}>
+                    <Text style={styles.sectionTitle}>{section.title}</Text>
+                    <View style={styles.resultGrid}>
+                      {section.items.map((item) => renderTile(item))}
+                    </View>
+                  </View>
+                ) : null,
+              )}
+            </>
+          ) : null}
+
+          {trimmedQuery.length > 0 ? (
+            <View style={styles.resultGrid}>
+              {filteredResults.slice(0, 24).map((item) => renderTile(item))}
+            </View>
+          ) : null}
+
+          {trimmedQuery.length === 1 ? (
+            <Text style={styles.helperText}>검색어를 2자 이상 입력해 주세요.</Text>
+          ) : null}
+
+          {trimmedQuery.length === 0 &&
+          !discover.loading &&
+          featuredSections.every((section) => section.items.length === 0) ? (
+            <View style={styles.guideCard}>
+              <Text style={styles.guideTitle}>추천 종목을 불러오지 못했습니다</Text>
+              <Text style={styles.guideDescription}>
+                검색창에서 티커나 종목명을 직접 입력해 종목을 선택해 주세요.
+              </Text>
+            </View>
+          ) : null}
+
+          {trimmedQuery.length > 1 && !search.loading && filteredResults.length === 0 ? (
+            <View style={styles.guideCard}>
+              <Text style={styles.guideTitle}>검색 결과가 없습니다</Text>
+              <Text style={styles.guideDescription}>
+                영문 티커, 한글 종목명, 국장 종목번호로 다시 검색해 주세요.
+              </Text>
+            </View>
+          ) : null}
+
+          {trimmedQuery.length === 0 && discover.loading ? (
+            <Text style={styles.helperText}>인기 종목 불러오는 중...</Text>
+          ) : null}
+          {trimmedQuery.length > 1 && search.loading ? (
+            <Text style={styles.helperText}>종목 검색 중...</Text>
+          ) : null}
+          {trimmedQuery.length === 0 && discover.error ? (
+            <Text style={styles.errorText}>{discover.error}</Text>
+          ) : null}
+          {trimmedQuery.length > 1 && search.error ? (
+            <Text style={styles.errorText}>{search.error}</Text>
+          ) : null}
+        </ScrollView>
+
+        <BottomActionBar>
+          <PrimaryButton
+            disabled={!selectedItem}
+            label={selectedItem ? '선택한 종목으로 계속' : '종목을 먼저 선택하세요'}
+            onPress={() => {
+              if (!selectedItem) {
+                return;
+              }
+
+              navigation.navigate('AddTradeReview', { selection: selectedItem });
+            }}
           />
-          <View style={styles.snapshotRow}>
-            <Text style={styles.snapshotLabel}>종목</Text>
-            <Text style={styles.snapshotValue}>
-              {selectedStock.ticker} · {selectedStock.name}
-            </Text>
-          </View>
-          <View style={styles.snapshotRow}>
-            <Text style={styles.snapshotLabel}>시장</Text>
-            <Text style={styles.snapshotValue}>{selectedStock.market}</Text>
-          </View>
-          <View style={styles.snapshotRow}>
-            <Text style={styles.snapshotLabel}>현재가</Text>
-            <Text style={styles.snapshotValue}>
-              {formatCurrency(stockPrice.data.currentPrice, selectedStock.market)}
-            </Text>
-          </View>
-          <View style={styles.snapshotRow}>
-            <Text style={styles.snapshotLabel}>당일 등락률</Text>
-            <Text style={styles.snapshotValue}>
-              {formatPercent(stockPrice.data.dayReturnRate)}
-            </Text>
-          </View>
-        </SurfaceCard>
-      ) : null}
-    </Page>
+        </BottomActionBar>
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  importActionStack: {
-    gap: 10,
-  },
-  toggleRow: {
-    flexDirection: 'row',
-    gap: 10,
-  },
-  formGrid: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  formGridCompact: {
-    flexDirection: 'column',
-  },
-  inputGroup: {
+  safeArea: {
     flex: 1,
-    gap: 8,
+    backgroundColor: tokens.colors.canvas,
   },
-  fieldLabel: {
-    fontSize: 12,
-    color: tokens.colors.inkMute,
+  container: {
+    flex: 1,
+    width: '100%',
+    maxWidth: tokens.layout.maxWidth,
+    alignSelf: 'center',
+  },
+  scrollContent: {
+    paddingHorizontal: 20,
+    paddingTop: 18,
+    paddingBottom: 180,
+    gap: 18,
+  },
+  scrollContentCompact: {
+    paddingHorizontal: 16,
+  },
+  headerChrome: {
+    alignItems: 'flex-start',
+  },
+  header: {
+    gap: 10,
+  },
+  title: {
+    fontSize: 30,
+    lineHeight: 36,
+    color: tokens.colors.navy,
+    fontFamily: tokens.typography.heading,
+    fontWeight: '800',
+  },
+  subtitle: {
+    fontSize: 15,
+    lineHeight: 24,
+    color: tokens.colors.inkSoft,
     fontFamily: tokens.typography.body,
   },
-  input: {
-    backgroundColor: 'rgba(255,255,255,0.84)',
-    borderRadius: 18,
+  searchShell: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: 'rgba(214, 224, 234, 0.9)',
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    fontSize: 16,
+    borderColor: 'rgba(214, 224, 234, 0.92)',
+    borderRadius: 24,
+    paddingHorizontal: 18,
+    paddingVertical: 16,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 18,
     color: tokens.colors.navy,
     fontFamily: tokens.typography.body,
   },
-  fieldSupporting: {
-    fontSize: 12,
-    color: tokens.colors.brandStrong,
-    fontFamily: tokens.typography.body,
+  filterRow: {
+    flexDirection: 'row',
+    gap: 10,
+    flexWrap: 'wrap',
   },
-  textArea: {
-    minHeight: 96,
-    textAlignVertical: 'top',
+  selectedSection: {
+    gap: 12,
   },
-  searchResults: {
+  sectionBlock: {
+    gap: 12,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    color: tokens.colors.navy,
+    fontFamily: tokens.typography.heading,
+    fontWeight: '700',
+  },
+  selectedWrap: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 10,
   },
-  emptyText: {
+  selectedChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    borderRadius: 999,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    backgroundColor: tokens.colors.surface,
+    borderWidth: 1,
+    borderColor: tokens.colors.line,
+  },
+  selectedChipText: {
+    fontSize: 13,
+    color: tokens.colors.navy,
+    fontFamily: tokens.typography.heading,
+    fontWeight: '600',
+  },
+  guideCard: {
+    borderRadius: 22,
+    backgroundColor: tokens.colors.surface,
+    borderWidth: 1,
+    borderColor: 'rgba(214, 224, 234, 0.92)',
+    padding: 18,
+    gap: 8,
+  },
+  guideTitle: {
+    fontSize: 18,
+    color: tokens.colors.navy,
+    fontFamily: tokens.typography.heading,
+    fontWeight: '800',
+  },
+  guideDescription: {
     fontSize: 14,
     lineHeight: 22,
     color: tokens.colors.inkSoft,
     fontFamily: tokens.typography.body,
   },
-  searchItem: {
-    backgroundColor: 'rgba(255,255,255,0.76)',
-    borderRadius: 18,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: 'rgba(214, 224, 234, 0.9)',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: 12,
-    alignItems: 'center',
-  },
-  searchItemCompact: {
-    alignItems: 'flex-start',
-    flexDirection: 'column',
-  },
-  searchItemActive: {
-    borderColor: tokens.colors.navy,
-    backgroundColor: '#F7FAFF',
-  },
-  searchText: {
-    gap: 4,
-    flex: 1,
-  },
-  searchTicker: {
-    fontSize: 15,
-    color: tokens.colors.navy,
-    fontFamily: tokens.typography.heading,
-    fontWeight: '800',
-  },
-  searchName: {
-    fontSize: 13,
-    color: tokens.colors.inkSoft,
-    fontFamily: tokens.typography.body,
-  },
-  searchPrice: {
-    fontSize: 14,
-    color: tokens.colors.navy,
-    fontFamily: tokens.typography.heading,
-    fontWeight: '700',
-    alignSelf: 'flex-start',
-  },
-  visibilityRow: {
+  resultGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 10,
+    gap: 12,
   },
-  submitMessage: {
-    fontSize: 13,
-    lineHeight: 20,
-    color: tokens.colors.inkSoft,
-    fontFamily: tokens.typography.body,
+  tile: {
+    position: 'relative',
+    minWidth: 0,
+    borderRadius: 26,
+    backgroundColor: tokens.colors.surface,
+    borderWidth: 1,
+    borderColor: 'rgba(214, 224, 234, 0.92)',
+    paddingHorizontal: 12,
+    paddingVertical: 14,
+    alignItems: 'center',
+    gap: 8,
   },
-  snapshotRow: {
-    gap: 4,
+  tileSelected: {
+    borderColor: tokens.colors.navy,
+    backgroundColor: '#F8FBFF',
   },
-  snapshotLabel: {
-    fontSize: 14,
-    color: tokens.colors.inkSoft,
-    fontFamily: tokens.typography.body,
-  },
-  snapshotValue: {
+  tileTitle: {
     fontSize: 14,
     color: tokens.colors.navy,
+    textAlign: 'center',
     fontFamily: tokens.typography.heading,
     fontWeight: '700',
+  },
+  tileMeta: {
+    fontSize: 11,
+    color: tokens.colors.inkMute,
+    textAlign: 'center',
+    fontFamily: tokens.typography.body,
+  },
+  tilePrice: {
+    fontSize: 12,
+    color: tokens.colors.brandStrong,
+    textAlign: 'center',
+    fontFamily: tokens.typography.body,
+  },
+  selectedMark: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: tokens.colors.navy,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  helperText: {
+    fontSize: 13,
+    color: tokens.colors.brandStrong,
+    fontFamily: tokens.typography.body,
+  },
+  errorText: {
+    fontSize: 13,
+    color: tokens.colors.danger,
+    fontFamily: tokens.typography.body,
   },
 });
