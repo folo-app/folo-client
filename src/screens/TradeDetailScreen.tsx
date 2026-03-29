@@ -20,6 +20,7 @@ import {
   SectionHeading,
   SurfaceCard,
 } from '../components/ui';
+import { syncGrowthWidgetSnapshotInBackground } from '../features/widgets';
 import { useTradeCommentsData, useTradeDetailData } from '../hooks/useFoloData';
 import { useResponsiveLayout } from '../hooks/useResponsiveLayout';
 import { useMutation } from '../hooks/query';
@@ -119,6 +120,7 @@ export function TradeDetailScreen() {
         comment: editComment.trim() ? editComment.trim() : null,
         visibility: editVisibility,
       });
+      syncGrowthWidgetSnapshotInBackground();
       setActionSuccess('거래 공개 범위와 코멘트를 저장했습니다.');
       refreshAll();
     } catch {}
@@ -132,6 +134,7 @@ export function TradeDetailScreen() {
 
     try {
       await deleteTradeMutation.mutate(undefined);
+      syncGrowthWidgetSnapshotInBackground();
       navigation.goBack();
     } catch {}
   }

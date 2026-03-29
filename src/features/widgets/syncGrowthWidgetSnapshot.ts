@@ -3,6 +3,10 @@ import {
   fetchGrowthWidgetSourceData,
   type FetchGrowthWidgetSourceDataOptions,
 } from './fetchGrowthWidgetSourceData';
+import {
+  clearGrowthWidgetSnapshot,
+  saveGrowthWidgetSnapshot,
+} from './native/WidgetSnapshotBridge';
 import type { GrowthWidgetSnapshot, GrowthWidgetSourceData } from './types';
 
 export type SyncGrowthWidgetSnapshotOptions = {
@@ -18,7 +22,7 @@ export type SyncGrowthWidgetSnapshotOptions = {
 export async function syncGrowthWidgetSnapshot({
   fetchOptions,
   fetchSourceData = fetchGrowthWidgetSourceData,
-  persistSnapshot,
+  persistSnapshot = saveGrowthWidgetSnapshot,
   referenceDate,
   generatedAt,
 }: SyncGrowthWidgetSnapshotOptions = {}) {
@@ -34,4 +38,21 @@ export async function syncGrowthWidgetSnapshot({
 
   await persistSnapshot?.(snapshot);
   return snapshot;
+}
+
+function reportGrowthWidgetSyncError(error: unknown) {
+  console.warn(
+    '[widgets] Growth widget sync failed:',
+    error instanceof Error ? error.message : error,
+  );
+}
+
+export function syncGrowthWidgetSnapshotInBackground(
+  options?: SyncGrowthWidgetSnapshotOptions,
+) {
+  void syncGrowthWidgetSnapshot(options).catch(reportGrowthWidgetSyncError);
+}
+
+export function clearGrowthWidgetSnapshotInBackground() {
+  void clearGrowthWidgetSnapshot().catch(reportGrowthWidgetSyncError);
 }

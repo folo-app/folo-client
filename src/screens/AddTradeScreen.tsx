@@ -7,6 +7,7 @@ import type { MarketType, TradeType, TradeVisibility } from '../api/contracts';
 import { foloApi } from '../api/services';
 import { DataStatusCard } from '../components/DataStatusCard';
 import { Chip, Page, PrimaryButton, SectionHeading, SurfaceCard } from '../components/ui';
+import { syncGrowthWidgetSnapshotInBackground } from '../features/widgets';
 import { useStockPriceData, useStockSearchData } from '../hooks/useFoloData';
 import { useResponsiveLayout } from '../hooks/useResponsiveLayout';
 import { formatCurrency, formatPercent } from '../lib/format';
@@ -77,6 +78,7 @@ export function AddTradeScreen() {
         tradedAt: new Date().toISOString(),
       });
 
+      syncGrowthWidgetSnapshotInBackground();
       setSubmitMessage('거래가 등록되었습니다.');
       navigation.navigate('TradeDetail', { tradeId: trade.tradeId });
     } catch (error) {

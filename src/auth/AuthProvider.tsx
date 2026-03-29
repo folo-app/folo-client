@@ -3,9 +3,11 @@ import {
   createContext,
   useContext,
   useEffect,
+  useRef,
   useState,
   type ReactNode,
 } from 'react';
+import { AppState, type AppStateStatus } from 'react-native';
 
 import { setFoloAccessToken } from '../api/config';
 import { ApiClientError } from '../api/client';
@@ -16,6 +18,10 @@ import type {
   SignupRequest,
 } from '../api/contracts';
 import { foloApi } from '../api/services';
+import {
+  clearGrowthWidgetSnapshotInBackground,
+  syncGrowthWidgetSnapshotInBackground,
+} from '../features/widgets';
 
 type AuthStatus = 'booting' | 'signed_out' | 'authenticated';
 type SignInResult = 'authenticated' | 'verification_required';
@@ -125,6 +131,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<AuthResponse | null>(null);
   const [pendingVerification, setPendingVerification] =
     useState<PendingVerification>(null);
+  const appStateRef = useRef<AppStateStatus>(AppState.currentState);
 
   useEffect(() => {
     let alive = true;
@@ -180,6 +187,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       alive = false;
     };
   }, []);
+
+  useEffect(() => {
+    if (status === 'authenticated') {
+      syncGrowthWidgetSnapshotInBackground();
+      return;
+    }
+
+    if (status === 'signed_out') {
+      clearGrowthWidgetSnapshotInBackground();
+    }
+  }, [session?.accessToken, status]);
+
+  useEffect(() => {
+    appStateRef.current = AppState.currentState;
+
+    if (status !== 'authenticated') {
+      return;
+    }
+
+    const subscription = AppState.addEventListener('change', (nextState) => {
+      const previousState = appStateRef.current;
+      appStateRef.current = nextState;
+
+      const becameActive =
+        (previousState === 'background' || previousState === 'inactive') &&
+        nextState === 'active';
+
+      if (becameActive) {
+        syncGrowthWidgetSnapshotInBackground();
+      }
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, [status]);
 
   async function signIn(body: LoginRequest): Promise<SignInResult> {
     try {

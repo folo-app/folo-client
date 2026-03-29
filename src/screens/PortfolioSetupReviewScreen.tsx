@@ -16,6 +16,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { foloApi } from '../api/services';
 import { BottomActionBar, PrimaryButton } from '../components/ui';
+import { syncGrowthWidgetSnapshotInBackground } from '../features/widgets';
 import { useResponsiveLayout } from '../hooks/useResponsiveLayout';
 import { formatCurrency } from '../lib/format';
 import type { PortfolioSetupSelection, RootStackParamList } from '../navigation/types';
@@ -94,6 +95,7 @@ export function PortfolioSetupReviewScreen() {
         });
       }
 
+      syncGrowthWidgetSnapshotInBackground();
       navigation.reset({
         index: 0,
         routes: [{ name: 'MainTabs', params: { screen: 'Portfolio' } }],
