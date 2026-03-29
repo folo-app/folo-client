@@ -11,7 +11,11 @@ export type PortfolioSetupSelection = {
 export type MainTabParamList = {
   Home: undefined;
   Feed: undefined;
-  Portfolio: undefined;
+  Portfolio:
+    | {
+        source?: 'widget-growth';
+      }
+    | undefined;
   Profile: undefined;
 };
 

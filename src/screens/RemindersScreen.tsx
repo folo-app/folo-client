@@ -4,6 +4,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import { foloApi } from '../api/services';
 import { DataStatusCard } from '../components/DataStatusCard';
 import { Chip, Page, PageBackButton, SectionHeading, SurfaceCard } from '../components/ui';
+import { syncGrowthWidgetSnapshotInBackground } from '../features/widgets';
 import { useRemindersData } from '../hooks/useFoloData';
 import { formatCurrency } from '../lib/format';
 import { tokens } from '../theme/tokens';
@@ -31,7 +32,9 @@ export function RemindersScreen() {
         dayOfMonth: reminder.dayOfMonth,
         isActive: !reminder.isActive,
       });
+      syncGrowthWidgetSnapshotInBackground();
       reminders.refresh();
+      setActionSuccess('리마인더를 업데이트했습니다.');
     } catch (error) {
       setActionError(
         error instanceof Error ? error.message : '리마인더 수정에 실패했습니다.',
@@ -48,6 +51,7 @@ export function RemindersScreen() {
 
     try {
       await foloApi.deleteReminder(reminderId);
+      syncGrowthWidgetSnapshotInBackground();
       reminders.refresh();
       setActionSuccess('리마인더를 삭제했습니다.');
     } catch (error) {

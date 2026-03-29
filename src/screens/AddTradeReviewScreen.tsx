@@ -22,6 +22,7 @@ import {
   PrimaryButton,
   SurfaceCard,
 } from '../components/ui';
+import { syncGrowthWidgetSnapshotInBackground } from '../features/widgets';
 import { useResponsiveLayout } from '../hooks/useResponsiveLayout';
 import { formatCurrency } from '../lib/format';
 import type { RootStackParamList } from '../navigation/types';
@@ -79,6 +80,7 @@ export function AddTradeReviewScreen() {
         tradedAt: new Date().toISOString(),
       });
 
+      syncGrowthWidgetSnapshotInBackground();
       navigation.replace('TradeDetail', { tradeId: trade.tradeId });
     } catch (error) {
       setMessage(
