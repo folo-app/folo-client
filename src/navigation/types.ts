@@ -12,7 +12,11 @@ export type MainTabParamList = {
   Home: undefined;
   Feed: undefined;
   AddTrade: undefined;
-  Portfolio: undefined;
+  Portfolio:
+    | {
+        source?: 'widget-growth';
+      }
+    | undefined;
   Profile: undefined;
 };
 

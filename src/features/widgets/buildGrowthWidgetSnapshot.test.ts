@@ -14,6 +14,10 @@ test('buildGrowthWidgetSnapshot returns setup placeholder when there is no activ
   assert.equal(snapshot.currentStreak, 0);
   assert.equal(snapshot.longestStreak, 0);
   assert.equal(snapshot.footerCopy, 'Start your streak');
+  assert.equal(
+    snapshot.deepLinkUrl,
+    'folo://widget/growth-streak?source=widget-growth',
+  );
   assert.equal(snapshot.cells.length, 35);
   assert.ok(snapshot.cells.every((cell) => cell.level === 0));
   assert.equal(snapshot.cells.at(-1)?.isToday, true);

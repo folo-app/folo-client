@@ -32,7 +32,7 @@ export function buildGrowthWidgetSnapshot({
   return {
     schemaVersion: 1,
     generatedAt: generatedAt.toISOString(),
-    deepLinkUrl: getGrowthWidgetDeepLink(),
+    deepLinkUrl: getGrowthWidgetDeepLink({ source: 'widget-growth' }),
     title: 'Growth Streak',
     monthLabel: formatMonthLabel(referenceDay),
     status,

@@ -11,7 +11,7 @@
     "run:android": "expo run:android",
     "run:ios": "expo run:ios",
     "prebuild": "expo prebuild",
-    "test": "tsx --test src/features/widgets/*.test.ts",
+    "test": "tsx --test src/features/widgets/*.test.ts src/navigation/*.test.ts",
     "web": "expo start --web",
     "typecheck": "tsc --noEmit"
   },

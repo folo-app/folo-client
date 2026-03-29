@@ -13,10 +13,41 @@
 		A1B2C3D42F11111144C1D900 /* WidgetSnapshotBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D42F11111144C1D901 /* WidgetSnapshotBridge.swift */; };
 		A1B2C3D42F11111144C1D902 /* WidgetSnapshotBridge.m in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D42F11111144C1D903 /* WidgetSnapshotBridge.m */; };
 		BB2F792D24A3F905000567C9 /* Expo.plist in Resources */ = {isa = PBXBuildFile; fileRef = BB2F792C24A3F905000567C9 /* Expo.plist */; };
+		C10100000000000000000001 /* FoloGrowthWidgetExtension.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = C10200000000000000000001 /* FoloGrowthWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		C10100000000000000000002 /* FoloGrowthWidgetBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = C10200000000000000000002 /* FoloGrowthWidgetBundle.swift */; };
+		C10100000000000000000003 /* FoloGrowthWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = C10200000000000000000003 /* FoloGrowthWidget.swift */; };
+		C10100000000000000000004 /* GrowthWidgetEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = C10200000000000000000004 /* GrowthWidgetEntry.swift */; };
+		C10100000000000000000005 /* GrowthWidgetSnapshotStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = C10200000000000000000005 /* GrowthWidgetSnapshotStore.swift */; };
+		C10100000000000000000006 /* GrowthWidgetSmallView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C10200000000000000000008 /* GrowthWidgetSmallView.swift */; };
+		C10100000000000000000007 /* GrowthWidgetMediumView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C10200000000000000000009 /* GrowthWidgetMediumView.swift */; };
 		DDDFB65420ACAB0FDE8949A6 /* libPods-Folo.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 885AE0AF54678D93D1B6AE0E /* libPods-Folo.a */; };
 		E2DC9A3742C93A2B639DCCA7 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = DE77F350F10C7E5CC5726F9A /* PrivacyInfo.xcprivacy */; };
 		F11748422D0307B40044C1D9 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11748412D0307B40044C1D9 /* AppDelegate.swift */; };
 /* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		C10900000000000000000001 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 83CBB9F71A601CBA00E9B192 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = C10800000000000000000001;
+			remoteInfo = FoloGrowthWidgetExtension;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		C10300000000000000000001 /* Embed App Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				C10100000000000000000001 /* FoloGrowthWidgetExtension.appex in Embed App Extensions */,
+			);
+			name = "Embed App Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		13B07F961A680F5B00A75B9A /* Folo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Folo.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -30,6 +61,15 @@
 		A776ACBC7207FDFC712D8DF8 /* Pods-Folo.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Folo.debug.xcconfig"; path = "Target Support Files/Pods-Folo/Pods-Folo.debug.xcconfig"; sourceTree = "<group>"; };
 		AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = SplashScreen.storyboard; path = Folo/SplashScreen.storyboard; sourceTree = "<group>"; };
 		BB2F792C24A3F905000567C9 /* Expo.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Expo.plist; sourceTree = "<group>"; };
+		C10200000000000000000001 /* FoloGrowthWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = FoloGrowthWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		C10200000000000000000002 /* FoloGrowthWidgetBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FoloGrowthWidgetBundle.swift; sourceTree = "<group>"; };
+		C10200000000000000000003 /* FoloGrowthWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FoloGrowthWidget.swift; sourceTree = "<group>"; };
+		C10200000000000000000004 /* GrowthWidgetEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GrowthWidgetEntry.swift; sourceTree = "<group>"; };
+		C10200000000000000000005 /* GrowthWidgetSnapshotStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GrowthWidgetSnapshotStore.swift; sourceTree = "<group>"; };
+		C10200000000000000000006 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		C10200000000000000000007 /* FoloGrowthWidgetExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = FoloGrowthWidgetExtension.entitlements; sourceTree = "<group>"; };
+		C10200000000000000000008 /* GrowthWidgetSmallView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GrowthWidgetSmallView.swift; sourceTree = "<group>"; };
+		C10200000000000000000009 /* GrowthWidgetMediumView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GrowthWidgetMediumView.swift; sourceTree = "<group>"; };
 		DE77F350F10C7E5CC5726F9A /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; name = PrivacyInfo.xcprivacy; path = Folo/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
 		F11748412D0307B40044C1D9 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = Folo/AppDelegate.swift; sourceTree = "<group>"; };
@@ -42,6 +82,13 @@
 			buildActionMask = 2147483647;
 			files = (
 				DDDFB65420ACAB0FDE8949A6 /* libPods-Folo.a in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C10400000000000000000001 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -91,6 +138,29 @@
 			name = ExpoModulesProviders;
 			sourceTree = "<group>";
 		};
+		C10700000000000000000001 /* FoloGrowthWidgetExtension */ = {
+			isa = PBXGroup;
+			children = (
+				C10200000000000000000002 /* FoloGrowthWidgetBundle.swift */,
+				C10200000000000000000003 /* FoloGrowthWidget.swift */,
+				C10200000000000000000004 /* GrowthWidgetEntry.swift */,
+				C10200000000000000000005 /* GrowthWidgetSnapshotStore.swift */,
+				C10700000000000000000002 /* GrowthWidgetViews */,
+				C10200000000000000000006 /* Info.plist */,
+				C10200000000000000000007 /* FoloGrowthWidgetExtension.entitlements */,
+			);
+			path = FoloGrowthWidgetExtension;
+			sourceTree = "<group>";
+		};
+		C10700000000000000000002 /* GrowthWidgetViews */ = {
+			isa = PBXGroup;
+			children = (
+				C10200000000000000000008 /* GrowthWidgetSmallView.swift */,
+				C10200000000000000000009 /* GrowthWidgetMediumView.swift */,
+			);
+			path = GrowthWidgetViews;
+			sourceTree = "<group>";
+		};
 		832341AE1AAA6A7D00B99B32 /* Libraries */ = {
 			isa = PBXGroup;
 			children = (
@@ -102,6 +172,7 @@
 			isa = PBXGroup;
 			children = (
 				13B07FAE1A68108700A75B9A /* Folo */,
+				C10700000000000000000001 /* FoloGrowthWidgetExtension */,
 				832341AE1AAA6A7D00B99B32 /* Libraries */,
 				83CBBA001A601CBA00E9B192 /* Products */,
 				2D16E6871FA4F8E400B85C8A /* Frameworks */,
@@ -117,6 +188,7 @@
 			isa = PBXGroup;
 			children = (
 				13B07F961A680F5B00A75B9A /* Folo.app */,
+				C10200000000000000000001 /* FoloGrowthWidgetExtension.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -150,6 +222,7 @@
 				13B07F871A680F5B00A75B9A /* Sources */,
 				13B07F8C1A680F5B00A75B9A /* Frameworks */,
 				13B07F8E1A680F5B00A75B9A /* Resources */,
+				C10300000000000000000001 /* Embed App Extensions */,
 				00DD1BFF1BD5951E006B06BC /* Bundle React Native code and images */,
 				800E24972A6A228C8D4807E9 /* [CP] Copy Pods Resources */,
 				F18FB885B7744D258A1E4B7A /* [Expo Dev Launcher] Strip Local Network Keys for Release */,
@@ -158,11 +231,29 @@
 			buildRules = (
 			);
 			dependencies = (
+				C10A00000000000000000001 /* PBXTargetDependency */,
 			);
 			name = Folo;
 			productName = Folo;
 			productReference = 13B07F961A680F5B00A75B9A /* Folo.app */;
 			productType = "com.apple.product-type.application";
+		};
+		C10800000000000000000001 /* FoloGrowthWidgetExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = C10C00000000000000000001 /* Build configuration list for PBXNativeTarget "FoloGrowthWidgetExtension" */;
+			buildPhases = (
+				C10600000000000000000001 /* Sources */,
+				C10400000000000000000001 /* Frameworks */,
+				C10500000000000000000001 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = FoloGrowthWidgetExtension;
+			productName = FoloGrowthWidgetExtension;
+			productReference = C10200000000000000000001 /* FoloGrowthWidgetExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
 		};
 /* End PBXNativeTarget section */
 
@@ -173,7 +264,15 @@
 				LastUpgradeCheck = 1130;
 				TargetAttributes = {
 					13B07F861A680F5B00A75B9A = {
+						DevelopmentTeam = 9G4VJRM933;
 						LastSwiftMigration = 1250;
+						ProvisioningStyle = Automatic;
+					};
+					C10800000000000000000001 = {
+						CreatedOnToolsVersion = 16.4;
+						DevelopmentTeam = 9G4VJRM933;
+						LastSwiftMigration = 1600;
+						ProvisioningStyle = Automatic;
 					};
 				};
 			};
@@ -191,6 +290,7 @@
 			projectRoot = "";
 			targets = (
 				13B07F861A680F5B00A75B9A /* Folo */,
+				C10800000000000000000001 /* FoloGrowthWidgetExtension */,
 			);
 		};
 /* End PBXProject section */
@@ -204,6 +304,13 @@
 				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
 				3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */,
 				E2DC9A3742C93A2B639DCCA7 /* PrivacyInfo.xcprivacy in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C10500000000000000000001 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -359,7 +466,28 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		C10600000000000000000001 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				C10100000000000000000002 /* FoloGrowthWidgetBundle.swift in Sources */,
+				C10100000000000000000003 /* FoloGrowthWidget.swift in Sources */,
+				C10100000000000000000004 /* GrowthWidgetEntry.swift in Sources */,
+				C10100000000000000000005 /* GrowthWidgetSnapshotStore.swift in Sources */,
+				C10100000000000000000006 /* GrowthWidgetSmallView.swift in Sources */,
+				C10100000000000000000007 /* GrowthWidgetMediumView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		C10A00000000000000000001 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = C10800000000000000000001 /* FoloGrowthWidgetExtension */;
+			targetProxy = C10900000000000000000001 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		13B07F941A680F5B00A75B9A /* Debug */ = {
@@ -369,7 +497,9 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = Folo/Folo.entitlements;
+				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 9G4VJRM933;
 				ENABLE_BITCODE = NO;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"$(inherited)",
@@ -381,7 +511,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.0.0;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-ObjC",
@@ -405,14 +535,16 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = Folo/Folo.entitlements;
+				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 9G4VJRM933;
 				INFOPLIST_FILE = Folo/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.0.0;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-ObjC",
@@ -550,6 +682,60 @@
 			};
 			name = Release;
 		};
+		C10B00000000000000000001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = FoloGrowthWidgetExtension/FoloGrowthWidgetExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 9G4VJRM933;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = FoloGrowthWidgetExtension/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.godten.folo.growthwidgetextension;
+				PRODUCT_NAME = FoloGrowthWidgetExtension;
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		C10B00000000000000000002 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = FoloGrowthWidgetExtension/FoloGrowthWidgetExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 9G4VJRM933;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = FoloGrowthWidgetExtension/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.godten.folo.growthwidgetextension;
+				PRODUCT_NAME = FoloGrowthWidgetExtension;
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -567,6 +753,15 @@
 			buildConfigurations = (
 				83CBBA201A601CBA00E9B192 /* Debug */,
 				83CBBA211A601CBA00E9B192 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		C10C00000000000000000001 /* Build configuration list for PBXNativeTarget "FoloGrowthWidgetExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				C10B00000000000000000001 /* Debug */,
+				C10B00000000000000000002 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

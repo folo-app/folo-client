@@ -35,6 +35,7 @@ import { UserFeedScreen } from '../screens/UserFeedScreen';
 import { UserProfileScreen } from '../screens/UserProfileScreen';
 import { KisConnectScreen } from '../screens/KisConnectScreen';
 import { tokens } from '../theme/tokens';
+import { appLinking } from './linking';
 import type { MainTabParamList, RootStackParamList } from './types';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -156,7 +157,7 @@ export function AppNavigator() {
 
   return (
     <SafeAreaProvider>
-      <NavigationContainer theme={navigationTheme}>
+      <NavigationContainer linking={appLinking} theme={navigationTheme}>
         <RootNavigator />
       </NavigationContainer>
     </SafeAreaProvider>

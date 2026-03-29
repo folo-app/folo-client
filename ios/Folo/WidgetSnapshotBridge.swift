@@ -4,6 +4,7 @@ import WidgetKit
 
 @objc(WidgetSnapshotBridge)
 final class WidgetSnapshotBridge: NSObject {
+  private let growthWidgetKind = "FoloGrowthWidget"
   private let appGroupIdentifier = "group.com.godten.folo"
   private let growthSnapshotKey = "growth_widget_snapshot"
 
@@ -69,7 +70,7 @@ final class WidgetSnapshotBridge: NSObject {
 
   private func reloadWidgets() {
     if #available(iOS 14.0, *) {
-      WidgetCenter.shared.reloadAllTimelines()
+      WidgetCenter.shared.reloadTimelines(ofKind: growthWidgetKind)
     }
   }
 }
