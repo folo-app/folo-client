@@ -198,14 +198,29 @@ export function DetailRow({ label, value }: DetailRowProps) {
 export function SectionHeading({
   title,
   description,
+  actionLabel,
+  onActionPress,
 }: {
   title: string;
   description?: string;
+  actionLabel?: string;
+  onActionPress?: () => void;
 }) {
   return (
-    <View style={styles.sectionHeading}>
-      <Text style={styles.sectionTitle}>{title}</Text>
-      {description ? <Text style={styles.sectionDescription}>{description}</Text> : null}
+    <View style={styles.sectionHeadingRow}>
+      <View style={styles.sectionHeading}>
+        <Text style={styles.sectionTitle}>{title}</Text>
+        {description ? <Text style={styles.sectionDescription}>{description}</Text> : null}
+      </View>
+      {actionLabel ? (
+        <Pressable
+          accessibilityRole="button"
+          onPress={onActionPress}
+          style={({ pressed }) => [styles.sectionAction, pressed && styles.buttonPressed]}
+        >
+          <Text style={styles.sectionActionLabel}>{actionLabel}</Text>
+        </Pressable>
+      ) : null}
     </View>
   );
 }
@@ -490,6 +505,14 @@ const styles = StyleSheet.create({
   },
   sectionHeading: {
     gap: 4,
+    flex: 1,
+    minWidth: 0,
+  },
+  sectionHeadingRow: {
+    alignItems: 'flex-start',
+    flexDirection: 'row',
+    gap: 12,
+    justifyContent: 'space-between',
   },
   sectionTitle: {
     fontSize: 20,
@@ -502,6 +525,17 @@ const styles = StyleSheet.create({
     color: tokens.colors.inkSoft,
     lineHeight: 22,
     fontFamily: tokens.typography.body,
+  },
+  sectionAction: {
+    borderRadius: tokens.radius.pill,
+    paddingHorizontal: 2,
+    paddingVertical: 2,
+  },
+  sectionActionLabel: {
+    color: tokens.colors.brandStrong,
+    fontFamily: tokens.typography.heading,
+    fontSize: 13,
+    fontWeight: '700',
   },
   detailRow: {
     flexDirection: 'row',

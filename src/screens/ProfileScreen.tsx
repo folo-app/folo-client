@@ -109,11 +109,6 @@ export function ProfileScreen() {
             variant="secondary"
           />
           <PrimaryButton
-            label="포트폴리오 직접 추가"
-            onPress={() => navigation.navigate('PortfolioSetup')}
-            variant="secondary"
-          />
-          <PrimaryButton
             label="KIS 연결"
             onPress={() => navigation.navigate('KisConnect')}
             variant="secondary"

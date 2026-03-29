@@ -11,7 +11,6 @@ export type PortfolioSetupSelection = {
 export type MainTabParamList = {
   Home: undefined;
   Feed: undefined;
-  AddTrade: undefined;
   Portfolio:
     | {
         source?: 'widget-growth';
@@ -44,6 +43,10 @@ export type RootStackParamList = {
   PortfolioSetup: undefined;
   PortfolioSetupReview: {
     selections: PortfolioSetupSelection[];
+  };
+  AddTrade: undefined;
+  AddTradeReview: {
+    selection: PortfolioSetupSelection;
   };
   MainTabs: NavigatorScreenParams<MainTabParamList> | undefined;
   TradeDetail: { tradeId: number };
