@@ -10,8 +10,6 @@ import com.facebook.react.bridge.ReactMethod
 import org.json.JSONTokener
 
 private const val MODULE_NAME = "WidgetSnapshotBridge"
-private const val SHARED_PREFERENCES_NAME = "folo_widget_snapshot_store"
-private const val GROWTH_SNAPSHOT_KEY = "growth_widget_snapshot"
 
 class WidgetSnapshotBridgeModule(
   private val reactContext: ReactApplicationContext,
@@ -25,7 +23,7 @@ class WidgetSnapshotBridgeModule(
       validateSnapshotJson(snapshotJson)
       sharedPreferences()
         .edit()
-        .putString(GROWTH_SNAPSHOT_KEY, snapshotJson)
+        .putString(GROWTH_WIDGET_SNAPSHOT_KEY, snapshotJson)
         .apply()
 
       requestWidgetReload(reactContext)
@@ -44,7 +42,7 @@ class WidgetSnapshotBridgeModule(
     try {
       sharedPreferences()
         .edit()
-        .remove(GROWTH_SNAPSHOT_KEY)
+        .remove(GROWTH_WIDGET_SNAPSHOT_KEY)
         .apply()
 
       requestWidgetReload(reactContext)
@@ -59,7 +57,7 @@ class WidgetSnapshotBridgeModule(
   }
 
   private fun sharedPreferences() =
-    reactContext.getSharedPreferences(SHARED_PREFERENCES_NAME, Context.MODE_PRIVATE)
+    GrowthWidgetStorage.sharedPreferences(reactContext)
 
   private fun validateSnapshotJson(snapshotJson: String) {
     JSONTokener(snapshotJson).nextValue()
