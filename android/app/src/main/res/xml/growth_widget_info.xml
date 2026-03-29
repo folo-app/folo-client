@@ -1,0 +1,12 @@
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+  android:description="@string/growth_widget_description"
+  android:initialLayout="@layout/glance_default_loading_layout"
+  android:minHeight="170dp"
+  android:minResizeHeight="170dp"
+  android:minResizeWidth="170dp"
+  android:minWidth="170dp"
+  android:resizeMode="horizontal|vertical"
+  android:targetCellHeight="2"
+  android:targetCellWidth="2"
+  android:updatePeriodMillis="0"
+  android:widgetCategory="home_screen"/>
