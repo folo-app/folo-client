@@ -5,8 +5,13 @@
   "main": "index.ts",
   "scripts": {
     "start": "expo start",
-    "android": "expo start --android",
-    "ios": "expo start --ios",
+    "dev": "expo start --dev-client",
+    "android": "expo run:android",
+    "ios": "expo run:ios",
+    "run:android": "expo run:android",
+    "run:ios": "expo run:ios",
+    "prebuild": "expo prebuild",
+    "test": "tsx --test src/features/widgets/*.test.ts",
     "web": "expo start --web",
     "typecheck": "tsc --noEmit"
   },
@@ -18,9 +23,11 @@
     "@react-navigation/native": "^7.1.33",
     "@react-navigation/native-stack": "^7.14.5",
     "expo": "~55.0.7",
+    "expo-dev-client": "~55.0.17",
     "expo-document-picker": "^55.0.9",
     "expo-image-picker": "^55.0.13",
     "expo-status-bar": "~55.0.4",
+    "expo-system-ui": "~55.0.10",
     "react": "19.2.0",
     "react-dom": "19.2.0",
     "react-native": "0.83.2",
@@ -32,6 +39,7 @@
   "devDependencies": {
     "@types/react": "~19.2.2",
     "openapi-typescript": "^7.13.0",
+    "tsx": "^4.21.0",
     "typescript": "~5.9.2"
   }
 }
