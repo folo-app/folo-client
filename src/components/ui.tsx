@@ -17,7 +17,7 @@ type PageProps = {
 
 type SurfaceCardProps = {
   children: ReactNode;
-  tone?: 'default' | 'hero' | 'muted';
+  tone?: 'default' | 'hero' | 'muted' | 'utility';
 };
 
 type PrimaryButtonProps = {
@@ -200,17 +200,28 @@ export function SectionHeading({
   description,
   actionLabel,
   onActionPress,
+  tone = 'default',
 }: {
   title: string;
   description?: string;
   actionLabel?: string;
   onActionPress?: () => void;
+  tone?: 'default' | 'utility';
 }) {
   return (
     <View style={styles.sectionHeadingRow}>
       <View style={styles.sectionHeading}>
-        <Text style={styles.sectionTitle}>{title}</Text>
-        {description ? <Text style={styles.sectionDescription}>{description}</Text> : null}
+        <Text style={[styles.sectionTitle, tone === 'utility' && styles.sectionTitleUtility]}>{title}</Text>
+        {description ? (
+          <Text
+            style={[
+              styles.sectionDescription,
+              tone === 'utility' && styles.sectionDescriptionUtility,
+            ]}
+          >
+            {description}
+          </Text>
+        ) : null}
       </View>
       {actionLabel ? (
         <Pressable
@@ -218,7 +229,14 @@ export function SectionHeading({
           onPress={onActionPress}
           style={({ pressed }) => [styles.sectionAction, pressed && styles.buttonPressed]}
         >
-          <Text style={styles.sectionActionLabel}>{actionLabel}</Text>
+          <Text
+            style={[
+              styles.sectionActionLabel,
+              tone === 'utility' && styles.sectionActionLabelUtility,
+            ]}
+          >
+            {actionLabel}
+          </Text>
         </Pressable>
       ) : null}
     </View>
@@ -269,12 +287,39 @@ export function BottomActionBar({ children }: BottomActionBarProps) {
 const cardToneStyles = StyleSheet.create({
   default: {
     backgroundColor: tokens.colors.surface,
+    borderColor: 'rgba(214, 224, 234, 0.72)',
+    shadowColor: '#0F172A',
+    shadowOpacity: 0.08,
+    shadowRadius: 20,
+    shadowOffset: { width: 0, height: 12 },
+    elevation: 8,
   },
   hero: {
     backgroundColor: '#E9F0FF',
+    borderColor: 'rgba(37, 99, 235, 0.14)',
+    shadowColor: '#1749B5',
+    shadowOpacity: 0.14,
+    shadowRadius: 26,
+    shadowOffset: { width: 0, height: 14 },
+    elevation: 10,
   },
   muted: {
     backgroundColor: tokens.colors.surfaceMuted,
+    borderColor: 'rgba(198, 213, 226, 0.9)',
+    shadowColor: '#0F172A',
+    shadowOpacity: 0.04,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 10 },
+    elevation: 4,
+  },
+  utility: {
+    backgroundColor: 'rgba(255,255,255,0.68)',
+    borderColor: 'rgba(214, 224, 234, 0.82)',
+    shadowColor: '#0F172A',
+    shadowOpacity: 0.02,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 1,
   },
 });
 
@@ -412,10 +457,8 @@ const styles = StyleSheet.create({
   card: {
     borderRadius: tokens.radius.md,
     borderWidth: 1,
-    borderColor: 'rgba(214, 224, 234, 0.72)',
     padding: 20,
     gap: 16,
-    ...tokens.shadow,
   },
   cardCompact: {
     padding: 18,
@@ -520,11 +563,20 @@ const styles = StyleSheet.create({
     fontFamily: tokens.typography.heading,
     fontWeight: '800',
   },
+  sectionTitleUtility: {
+    fontSize: 17,
+    fontWeight: '700',
+  },
   sectionDescription: {
     fontSize: 14,
     color: tokens.colors.inkSoft,
     lineHeight: 22,
     fontFamily: tokens.typography.body,
+  },
+  sectionDescriptionUtility: {
+    fontSize: 13,
+    color: tokens.colors.inkMute,
+    lineHeight: 20,
   },
   sectionAction: {
     borderRadius: tokens.radius.pill,
@@ -536,6 +588,10 @@ const styles = StyleSheet.create({
     fontFamily: tokens.typography.heading,
     fontSize: 13,
     fontWeight: '700',
+  },
+  sectionActionLabelUtility: {
+    color: tokens.colors.inkMute,
+    fontWeight: '600',
   },
   detailRow: {
     flexDirection: 'row',

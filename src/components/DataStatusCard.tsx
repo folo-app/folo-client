@@ -28,7 +28,7 @@ export function DataStatusCard({
   }
 
   return (
-    <SurfaceCard tone="muted">
+    <SurfaceCard tone="utility">
       <Text style={styles.title}>{title}</Text>
       {error ? <Text style={styles.description}>{error}</Text> : null}
     </SurfaceCard>
