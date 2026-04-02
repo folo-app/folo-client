@@ -142,7 +142,38 @@ export function HomeScreen() {
       subtitle="오늘 확인할 투자 상태와 다음 행동을 빠르게 정리합니다."
     >
       <SurfaceCard tone="hero">
-        <Text style={styles.summaryLabel}>오늘 상태</Text>
+        <SectionHeading title="오늘 할 일" />
+        <View style={[styles.priorityHeader, isCompact && styles.priorityHeaderCompact]}>
+          <View style={[styles.priorityPill, priorityToneStyles[todayAction.tone]]}>
+            <Ionicons color={priorityIconColors[todayAction.tone]} name={todayAction.icon} size={14} />
+            <Text style={[styles.priorityPillLabel, priorityTextToneStyles[todayAction.tone]]}>
+              {todayAction.kicker}
+            </Text>
+          </View>
+          <Text style={styles.priorityMeta}>{todayAction.meta}</Text>
+        </View>
+        <Text style={styles.priorityTitle}>{todayAction.title}</Text>
+        <Text style={styles.priorityBody}>{todayAction.description}</Text>
+        <View style={styles.priorityActions}>
+          <PrimaryButton label={todayAction.primaryLabel} onPress={todayAction.primaryAction} />
+        </View>
+        {todayAction.secondaryLabel && todayAction.secondaryAction ? (
+          <View style={styles.prioritySecondaryBlock}>
+            <Text style={styles.prioritySecondaryHint}>{todayAction.secondaryHint}</Text>
+            <Pressable
+              accessibilityRole="button"
+              onPress={todayAction.secondaryAction}
+              style={({ pressed }) => [styles.prioritySecondaryLink, pressed && styles.quickActionTilePressed]}
+            >
+              <Text style={styles.prioritySecondaryLinkLabel}>{todayAction.secondaryLabel}</Text>
+              <Ionicons color={tokens.colors.brandStrong} name="chevron-forward" size={16} />
+            </Pressable>
+          </View>
+        ) : null}
+      </SurfaceCard>
+
+      <SurfaceCard>
+        <Text style={styles.summaryLabel}>포트폴리오 상태</Text>
         <Text
           adjustsFontSizeToFit
           minimumFontScale={0.7}
@@ -206,68 +237,7 @@ export function HomeScreen() {
             </Text>
           </View>
         </View>
-        <DataStatusCard error={portfolio.error} loading={portfolio.loading} variant="inline" />
       </SurfaceCard>
-
-      <SurfaceCard>
-        <SectionHeading title="오늘 할 일" />
-        <View style={[styles.priorityHeader, isCompact && styles.priorityHeaderCompact]}>
-          <View style={[styles.priorityPill, priorityToneStyles[todayAction.tone]]}>
-            <Ionicons color={priorityIconColors[todayAction.tone]} name={todayAction.icon} size={14} />
-            <Text style={[styles.priorityPillLabel, priorityTextToneStyles[todayAction.tone]]}>
-              {todayAction.kicker}
-            </Text>
-          </View>
-          <Text style={styles.priorityMeta}>{todayAction.meta}</Text>
-        </View>
-        <Text style={styles.priorityTitle}>{todayAction.title}</Text>
-        <Text style={styles.priorityBody}>{todayAction.description}</Text>
-        <View style={styles.priorityActions}>
-          <PrimaryButton label={todayAction.primaryLabel} onPress={todayAction.primaryAction} />
-        </View>
-        {todayAction.secondaryLabel && todayAction.secondaryAction ? (
-          <View style={styles.prioritySecondaryBlock}>
-            <Text style={styles.prioritySecondaryHint}>{todayAction.secondaryHint}</Text>
-            <Pressable
-              accessibilityRole="button"
-              onPress={todayAction.secondaryAction}
-              style={({ pressed }) => [styles.prioritySecondaryLink, pressed && styles.quickActionTilePressed]}
-            >
-              <Text style={styles.prioritySecondaryLinkLabel}>{todayAction.secondaryLabel}</Text>
-              <Ionicons color={tokens.colors.brandStrong} name="chevron-forward" size={16} />
-            </Pressable>
-          </View>
-        ) : null}
-        <DataStatusCard error={myTrades.error} loading={myTrades.loading} variant="inline" />
-      </SurfaceCard>
-
-      {quickActions.length > 0 ? (
-        <SurfaceCard tone="utility">
-        <SectionHeading
-          title="빠른 확인"
-          description="메인 행동과 겹치지 않는 조회와 관리만 남깁니다."
-          tone="utility"
-        />
-        <View style={[styles.quickActionGrid, isCompact && styles.quickActionGridCompact]}>
-          {quickActions.map((action) => (
-            <Pressable
-              key={action.key}
-              accessibilityRole="button"
-              onPress={action.onPress}
-              style={({ pressed }) => [styles.quickActionTile, pressed && styles.quickActionTilePressed]}
-            >
-              <View style={styles.quickActionIconWrap}>
-                <Ionicons color={tokens.colors.navy} name={action.icon} size={22} />
-              </View>
-              <View style={styles.quickActionText}>
-                <Text style={styles.quickActionLabel}>{action.label}</Text>
-                <Text style={styles.quickActionDescription}>{action.description}</Text>
-              </View>
-            </Pressable>
-          ))}
-        </View>
-        </SurfaceCard>
-      ) : null}
 
       <SurfaceCard>
         <SectionHeading
@@ -454,6 +424,34 @@ export function HomeScreen() {
           )) : null
         )}
       </SurfaceCard>
+
+      {quickActions.length > 0 ? (
+        <SurfaceCard tone="utility">
+        <SectionHeading
+          title="빠른 확인"
+          description="메인 행동과 겹치지 않는 조회와 관리만 남깁니다."
+          tone="utility"
+        />
+        <View style={[styles.quickActionGrid, isCompact && styles.quickActionGridCompact]}>
+          {quickActions.map((action) => (
+            <Pressable
+              key={action.key}
+              accessibilityRole="button"
+              onPress={action.onPress}
+              style={({ pressed }) => [styles.quickActionTile, pressed && styles.quickActionTilePressed]}
+            >
+              <View style={styles.quickActionIconWrap}>
+                <Ionicons color={tokens.colors.navy} name={action.icon} size={22} />
+              </View>
+              <View style={styles.quickActionText}>
+                <Text style={styles.quickActionLabel}>{action.label}</Text>
+                <Text style={styles.quickActionDescription}>{action.description}</Text>
+              </View>
+            </Pressable>
+          ))}
+        </View>
+        </SurfaceCard>
+      ) : null}
     </Page>
   );
 }
