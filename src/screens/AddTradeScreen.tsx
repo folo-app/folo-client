@@ -79,6 +79,31 @@ export function AddTradeScreen() {
   const searchMarket = marketFilter === 'ALL' ? undefined : marketFilter;
   const search = useStockSearchData(query, 2, searchMarket);
   const discover = useStockDiscoverData(12);
+  const ownedItems = useMemo<StockTileItem[]>(() => {
+    const holdings = [...portfolio.data.holdings].sort(
+      (left, right) => (right.totalValue ?? 0) - (left.totalValue ?? 0),
+    );
+
+    return holdings
+      .filter((item) => {
+        if (marketFilter === 'KRX') {
+          return item.market === 'KRX';
+        }
+
+        if (marketFilter === 'US') {
+          return item.market !== 'KRX';
+        }
+
+        return true;
+      })
+      .map((item) => ({
+        ticker: item.ticker,
+        name: item.name,
+        market: item.market as PortfolioSetupSelection['market'],
+        currentPrice: item.currentPrice,
+        logoUrl: null,
+      }));
+  }, [marketFilter, portfolio.data.holdings]);
 
   const filteredResults = useMemo(() => {
     const stocks = search.data.stocks;
@@ -192,8 +217,8 @@ export function AddTradeScreen() {
           <View style={styles.header}>
             <Text style={styles.title}>거래 기록 추가</Text>
             <Text style={styles.subtitle}>
-              보유 중인 종목을 먼저 고르고, 다음 화면에서 수량과 평균 매수가를
-              입력해 기록을 남기세요.
+              내 보유 종목부터 바로 고르고, 없으면 검색이나 인기 종목으로 새 거래를
+              시작하세요.
             </Text>
           </View>
 
@@ -257,10 +282,36 @@ export function AddTradeScreen() {
 
           {trimmedQuery.length === 0 ? (
             <>
+              {ownedItems.length > 0 ? (
+                <View style={styles.sectionBlock}>
+                  <View style={styles.sectionHeader}>
+                    <Text style={styles.sectionTitle}>내 보유 종목</Text>
+                    <Text style={styles.sectionDescription}>
+                      현재 포트폴리오 기준으로 바로 기록할 수 있습니다.
+                    </Text>
+                  </View>
+                  <View style={styles.resultGrid}>
+                    {ownedItems.slice(0, 12).map((item) => renderTile(item))}
+                  </View>
+                </View>
+              ) : null}
+
+              {portfolio.data.holdings.length > 0 && ownedItems.length === 0 ? (
+                <Text style={styles.helperText}>
+                  현재 필터에 맞는 내 보유 종목이 없습니다. 다른 시장을 보거나 새 종목을
+                  검색해 주세요.
+                </Text>
+              ) : null}
+
               {featuredSections.map((section) =>
                 section.items.length > 0 ? (
                   <View key={section.key} style={styles.sectionBlock}>
-                    <Text style={styles.sectionTitle}>{section.title}</Text>
+                    <View style={styles.sectionHeader}>
+                      <Text style={styles.sectionTitle}>{section.title}</Text>
+                      <Text style={styles.sectionDescription}>
+                        새 종목을 추가하거나 다음 후보를 탐색할 때 사용하세요.
+                      </Text>
+                    </View>
                     <View style={styles.resultGrid}>
                       {section.items.map((item) => renderTile(item))}
                     </View>
@@ -399,11 +450,20 @@ const styles = StyleSheet.create({
   sectionBlock: {
     gap: 12,
   },
+  sectionHeader: {
+    gap: 4,
+  },
   sectionTitle: {
     fontSize: 16,
     color: tokens.colors.navy,
     fontFamily: tokens.typography.heading,
     fontWeight: '700',
+  },
+  sectionDescription: {
+    fontSize: 13,
+    lineHeight: 20,
+    color: tokens.colors.inkSoft,
+    fontFamily: tokens.typography.body,
   },
   selectedWrap: {
     flexDirection: 'row',

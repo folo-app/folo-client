@@ -324,7 +324,7 @@ export function FeedScreen() {
 
   const timelineCard = (
     <SurfaceCard>
-      <SectionHeading title="타임라인" />
+      <SectionHeading title="타임라인" description="최신 거래부터 바로 읽습니다." />
       {filteredTrades.map((item, index) => (
         <Pressable
           key={item.tradeId}
@@ -383,52 +383,51 @@ export function FeedScreen() {
             </Text>
           </View>
 
-          <View style={[styles.metricGrid, isNarrow && styles.metricGridNarrow]}>
-            <View style={[styles.metricCell, isNarrow && styles.metricCellNarrow]}>
-              <Text style={styles.metricLabel}>수량 · 가격</Text>
+          <View style={styles.tradeFactsRow}>
+            <View style={styles.tradeFactPill}>
+              <Text style={styles.tradeFactLabel}>행동</Text>
               <Text
-                adjustsFontSizeToFit
-                minimumFontScale={0.72}
-                numberOfLines={1}
-                style={styles.metricValue}
+                style={[
+                  styles.tradeFactValue,
+                  item.tradeType === 'SELL' && styles.tradeFactValueDanger,
+                ]}
               >
-                {formatNumber(item.quantity)}주 · {formatCurrency(item.price, item.market)}
+                {tradeTypeLabel(item.tradeType)}
               </Text>
             </View>
-            <View style={[styles.metricCell, isNarrow && styles.metricCellNarrow]}>
-              <Text style={styles.metricLabel}>거래금액</Text>
-              <Text
-                adjustsFontSizeToFit
-                minimumFontScale={0.72}
-                numberOfLines={1}
-                style={styles.metricValue}
-              >
-                {formatCurrency(item.quantity * item.price, item.market)}
-              </Text>
+            <View style={styles.tradeFactPill}>
+              <Text style={styles.tradeFactLabel}>수량</Text>
+              <Text style={styles.tradeFactValue}>{formatNumber(item.quantity)}주</Text>
+            </View>
+            <View style={styles.tradeFactPill}>
+              <Text style={styles.tradeFactLabel}>단가</Text>
+              <Text style={styles.tradeFactValue}>{formatCurrency(item.price, item.market)}</Text>
             </View>
           </View>
 
-          <View style={styles.commentCard}>
-            <Text style={styles.comment} numberOfLines={2}>
-              {item.comment ?? '작성된 코멘트가 없습니다.'}
-            </Text>
-          </View>
+          {item.comment ? (
+            <View style={styles.commentCard}>
+              <Text style={styles.comment} numberOfLines={3}>
+                {item.comment}
+              </Text>
+            </View>
+          ) : null}
 
-          <View style={[styles.timelineFooter, isCompact && styles.timelineFooterCompact]}>
-            <View style={styles.reactionRow}>
-              {item.reactions.length > 0 ? (
-                item.reactions.map((reaction) => (
+          {item.reactions.length > 0 || item.commentCount > 0 ? (
+            <View style={[styles.timelineFooter, isCompact && styles.timelineFooterCompact]}>
+              <View style={styles.reactionRow}>
+                {item.reactions.map((reaction) => (
                   <Chip
                     key={`${item.tradeId}-${reaction.emoji}`}
                     label={`${reactionEmojiLabel(reaction.emoji)} ${reaction.count}`}
                   />
-                ))
-              ) : (
-                <Chip label="아직 반응 없음" />
-              )}
-              <Chip label={`댓글 ${item.commentCount}`} tone="brand" />
+                ))}
+                {item.commentCount > 0 ? (
+                  <Chip label={`댓글 ${item.commentCount}`} tone="brand" />
+                ) : null}
+              </View>
             </View>
-          </View>
+          ) : null}
         </Pressable>
       ))}
       {feed.data.hasNext ? (
@@ -601,10 +600,7 @@ export function FeedScreen() {
             timelineCard
           )
         ) : (
-          <>
-            {highlightCard}
-            {timelineCard}
-          </>
+          timelineCard
         )
       )}
     </Page>
@@ -1134,38 +1130,34 @@ const styles = StyleSheet.create({
     textAlign: 'left',
     width: '100%',
   },
-  metricGrid: {
+  tradeFactsRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
   },
-  metricGridNarrow: {
-    flexDirection: 'column',
-  },
-  metricCell: {
+  tradeFactPill: {
     backgroundColor: '#F8FAFC',
-    borderRadius: 16,
+    borderRadius: 999,
     borderWidth: 1,
     borderColor: 'rgba(214, 224, 234, 0.84)',
-    flex: 1,
-    gap: 3,
-    minWidth: 120,
+    flexDirection: 'row',
+    gap: 4,
     paddingHorizontal: 12,
     paddingVertical: 10,
   },
-  metricCellNarrow: {
-    minWidth: 0,
-  },
-  metricLabel: {
+  tradeFactLabel: {
     color: tokens.colors.inkMute,
     fontFamily: tokens.typography.body,
     fontSize: 11,
   },
-  metricValue: {
+  tradeFactValue: {
     color: tokens.colors.navy,
     fontFamily: tokens.typography.heading,
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '700',
+  },
+  tradeFactValueDanger: {
+    color: tokens.colors.danger,
   },
   commentCard: {
     backgroundColor: tokens.colors.surfaceMuted,

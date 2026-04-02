@@ -115,19 +115,18 @@ export function PortfolioScreen() {
   const showPortfolioSupportCard =
     !hasHoldings && (portfolio.loading || portfolio.error !== null);
   const leadHolding = allocationItems[0] ?? null;
-  const secondaryHolding = allocationItems[1] ?? null;
   const overviewNarrative = !leadHolding
     ? '첫 보유 종목이 들어오면 자산 구성과 성과 핵심이 이 위쪽에서 먼저 정리됩니다.'
-    : portfolio.data.cashWeight >= 0.12
-      ? `${leadHolding.label} 비중이 ${formatWeight(leadHolding.ratio)}로 가장 크고, 현금 ${formatWeight(portfolio.data.cashWeight)}가 다음 대응 여지를 남기고 있습니다.`
-      : bestHolding && bestHolding.returnRate > 0
-        ? `${leadHolding.label} 비중이 가장 크고 ${bestHolding.ticker}가 현재 성과 선두입니다. 세부 기여와 배당 흐름은 아래에서 이어집니다.`
-        : secondaryHolding
-          ? `${holdings.length}개 종목 중 ${leadHolding.label}이 가장 크고, 다음은 ${secondaryHolding.label}입니다.`
-          : `${leadHolding.label} 한 종목이 현재 포트폴리오 중심입니다.`;
+    : (portfolio.data.dayReturn ?? 0) > 0
+      ? '오늘 손익은 플러스입니다. 아래에서 어떤 종목과 섹터가 성과를 끌고 있는지 이어서 읽습니다.'
+      : (portfolio.data.dayReturn ?? 0) < 0
+        ? '오늘 손익은 눌리고 있습니다. 자산 구성과 성과 블록에서 어느 구간이 부담을 만드는지 이어서 확인합니다.'
+        : bestHolding && weakestHolding
+          ? `${bestHolding.ticker}와 ${weakestHolding.ticker}가 현재 성과의 양 끝에 있습니다. 구성과 원인은 아래에서 이어서 봅니다.`
+          : `${leadHolding.label} 중심 포지션의 구성과 성과를 아래에서 이어서 읽습니다.`;
 
   const overviewCard = (
-    <SurfaceCard tone="hero">
+    <SurfaceCard>
       <Text style={styles.overviewLabel}>총 평가금액</Text>
       <Text
         adjustsFontSizeToFit
@@ -179,12 +178,12 @@ export function PortfolioScreen() {
       <Text style={styles.overviewNarrative}>{overviewNarrative}</Text>
       <View style={[styles.overviewMetaWrap, isCompact && styles.overviewMetaWrapCompact]}>
         <View style={styles.overviewMetaPill}>
-          <Ionicons color={tokens.colors.brandStrong} name="layers-outline" size={15} />
-          <Text style={styles.overviewMetaText}>보유 {holdings.length}개 종목</Text>
-        </View>
-        <View style={styles.overviewMetaPill}>
-          <Ionicons color={tokens.colors.teal} name="wallet-outline" size={15} />
-          <Text style={styles.overviewMetaText}>현금 비중 {formatWeight(portfolio.data.cashWeight)}</Text>
+          <Ionicons color={tokens.colors.brandStrong} name="time-outline" size={15} />
+          <Text style={styles.overviewMetaText}>
+            {portfolio.data.syncedAt
+              ? `최근 반영 ${formatShortDate(portfolio.data.syncedAt)}`
+              : '아직 반영 시각이 없습니다.'}
+          </Text>
         </View>
       </View>
       <DataStatusCard error={portfolio.error} loading={portfolio.loading} variant="inline" />
@@ -195,11 +194,7 @@ export function PortfolioScreen() {
     <SurfaceCard>
       <SectionHeading
         title="자산 구성"
-        description={
-          isCompact
-            ? '큰 비중과 현금 위치를 먼저 읽습니다.'
-            : '비중, 섹터, 현금 구성을 먼저 읽습니다.'
-        }
+        description="비중, 섹터, 현금을 한 섹션에서 이어서 읽습니다."
       />
       <View style={[styles.allocationBoard, isCompact && styles.allocationBoardCompact]}>
         <AllocationDonutChart
@@ -243,17 +238,8 @@ export function PortfolioScreen() {
           ) : null}
         </View>
       </View>
-    </SurfaceCard>
-  );
-
-  const compositionCard = (
-    <SurfaceCard tone="utility">
-      <SectionHeading
-        title="섹터 / 현금 상세"
-        description="구성 세부는 이 아래에서 이어서 읽습니다."
-        tone="utility"
-      />
-      <View style={styles.analyticsSection}>
+      <View style={[styles.analyticsSection, styles.allocationDetailSection]}>
+        <Text style={styles.analyticsLabel}>섹터 / 현금 상세</Text>
         <View style={styles.allocationBarSection}>
           <AllocationBar items={compositionItems} height={isCompact ? 14 : 18} />
           <AllocationLegendGrid items={compositionItems} columns={isCompact ? 1 : 2} />
@@ -447,7 +433,7 @@ export function PortfolioScreen() {
             pressed && styles.buttonPressed,
           ]}
         >
-          <View style={[styles.holdingHeader, isCompact && styles.holdingHeaderCompact]}>
+          <View style={styles.holdingHeader}>
             <View style={styles.holdingText}>
               <Text ellipsizeMode="tail" numberOfLines={1} style={styles.holdingName}>
                 {holding.name}
@@ -457,70 +443,122 @@ export function PortfolioScreen() {
                 {holding.sectorName ?? assetTypeLabel(holding.assetType)}
               </Text>
             </View>
-            <View style={[styles.holdingWeightCard, isCompact && styles.holdingWeightCardCompact]}>
+            <View style={styles.holdingWeightCard}>
               <Text style={styles.holdingWeightLabel}>비중</Text>
               <Text style={styles.holdingWeightValue}>{formatWeight(holding.weight)}</Text>
             </View>
           </View>
-          <View style={[styles.holdingMetricRail, isNarrow && styles.holdingMetricRailNarrow]}>
-            <View style={[styles.holdingMetricItem, styles.holdingMetricItemPrimary]}>
-              <Text style={styles.holdingStatLabel}>평가금액</Text>
-              <Text
-                adjustsFontSizeToFit
-                minimumFontScale={0.75}
-                numberOfLines={1}
-                style={styles.holdingMetricValuePrimary}
-              >
-                {formatCurrency(holding.totalValue, holding.market)}
-              </Text>
+          {isCompact ? (
+            <View style={styles.holdingCompactMetrics}>
+              <View style={styles.holdingCompactMetricRow}>
+                <View style={styles.holdingCompactMetricBlock}>
+                  <Text style={styles.holdingStatLabel}>평가금액</Text>
+                  <Text
+                    adjustsFontSizeToFit
+                    minimumFontScale={0.75}
+                    numberOfLines={1}
+                    style={styles.holdingMetricValuePrimary}
+                  >
+                    {formatCurrency(holding.totalValue, holding.market)}
+                  </Text>
+                </View>
+                <View
+                  style={[
+                    styles.holdingCompactMetricBlock,
+                    styles.holdingCompactMetricBlockAlignEnd,
+                  ]}
+                >
+                  <Text style={styles.holdingStatLabel}>손익</Text>
+                  <Text
+                    adjustsFontSizeToFit
+                    minimumFontScale={0.72}
+                    numberOfLines={1}
+                    style={[
+                      styles.holdingStatValue,
+                      (holding.returnAmount ?? 0) < 0 && styles.holdingStatValueNegative,
+                    ]}
+                  >
+                    {formatSignedCurrency(holding.returnAmount, holding.market)}
+                  </Text>
+                  <Text
+                    numberOfLines={1}
+                    style={[
+                      styles.holdingStatMeta,
+                      holding.returnRate < 0 && styles.holdingStatMetaNegative,
+                    ]}
+                  >
+                    {formatPercent(holding.returnRate)}
+                  </Text>
+                </View>
+              </View>
+              <View style={styles.holdingCompactMetaRow}>
+                <Text style={styles.holdingCompactMetaLabel}>평균단가</Text>
+                <Text numberOfLines={1} style={styles.holdingCompactMetaValue}>
+                  {formatCurrency(holding.avgPrice, holding.market)}
+                </Text>
+              </View>
             </View>
-            <View
-              style={[
-                styles.holdingMetricItem,
-                styles.holdingMetricDivider,
-                isNarrow && styles.holdingMetricDividerNarrow,
-              ]}
-            >
-              <Text style={styles.holdingStatLabel}>손익</Text>
-              <Text
-                adjustsFontSizeToFit
-                minimumFontScale={0.72}
-                numberOfLines={1}
+          ) : (
+            <View style={[styles.holdingMetricRail, isNarrow && styles.holdingMetricRailNarrow]}>
+              <View style={[styles.holdingMetricItem, styles.holdingMetricItemPrimary]}>
+                <Text style={styles.holdingStatLabel}>평가금액</Text>
+                <Text
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.75}
+                  numberOfLines={1}
+                  style={styles.holdingMetricValuePrimary}
+                >
+                  {formatCurrency(holding.totalValue, holding.market)}
+                </Text>
+              </View>
+              <View
                 style={[
-                  styles.holdingStatValue,
-                  (holding.returnAmount ?? 0) < 0 && styles.holdingStatValueNegative,
+                  styles.holdingMetricItem,
+                  styles.holdingMetricDivider,
+                  isNarrow && styles.holdingMetricDividerNarrow,
                 ]}
               >
-                {formatSignedCurrency(holding.returnAmount, holding.market)}
-              </Text>
-              <Text
-                numberOfLines={1}
+                <Text style={styles.holdingStatLabel}>손익</Text>
+                <Text
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.72}
+                  numberOfLines={1}
+                  style={[
+                    styles.holdingStatValue,
+                    (holding.returnAmount ?? 0) < 0 && styles.holdingStatValueNegative,
+                  ]}
+                >
+                  {formatSignedCurrency(holding.returnAmount, holding.market)}
+                </Text>
+                <Text
+                  numberOfLines={1}
+                  style={[
+                    styles.holdingStatMeta,
+                    holding.returnRate < 0 && styles.holdingStatMetaNegative,
+                  ]}
+                >
+                  {formatPercent(holding.returnRate)}
+                </Text>
+              </View>
+              <View
                 style={[
-                  styles.holdingStatMeta,
-                  holding.returnRate < 0 && styles.holdingStatMetaNegative,
+                  styles.holdingMetricItem,
+                  styles.holdingMetricDivider,
+                  isNarrow && styles.holdingMetricDividerNarrow,
                 ]}
               >
-                {formatPercent(holding.returnRate)}
-              </Text>
+                <Text style={styles.holdingStatLabel}>평균단가</Text>
+                <Text
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.72}
+                  numberOfLines={1}
+                  style={styles.holdingStatValue}
+                >
+                  {formatCurrency(holding.avgPrice, holding.market)}
+                </Text>
+              </View>
             </View>
-            <View
-              style={[
-                styles.holdingMetricItem,
-                styles.holdingMetricDivider,
-                isNarrow && styles.holdingMetricDividerNarrow,
-              ]}
-            >
-              <Text style={styles.holdingStatLabel}>평균단가</Text>
-              <Text
-                adjustsFontSizeToFit
-                minimumFontScale={0.72}
-                numberOfLines={1}
-                style={styles.holdingStatValue}
-              >
-                {formatCurrency(holding.avgPrice, holding.market)}
-              </Text>
-            </View>
-          </View>
+          )}
         </Pressable>
       ))}
     </SurfaceCard>
@@ -686,15 +724,14 @@ export function PortfolioScreen() {
 
       {hasHoldings ? (
         <>
-          {overviewCard}
           {isLarge ? (
             <View style={styles.contentColumns}>
               <View style={styles.mainColumn}>
                 {allocationOverviewCard}
-                {compositionCard}
                 {holdingsCard}
               </View>
               <View style={styles.sideColumn}>
+                {overviewCard}
                 {performanceCard}
                 {routineCard}
                 {managementCard}
@@ -703,8 +740,8 @@ export function PortfolioScreen() {
           ) : (
             <>
               {allocationOverviewCard}
+              {overviewCard}
               {performanceCard}
-              {compositionCard}
               {routineCard}
               {holdingsCard}
               {managementCard}
@@ -1129,6 +1166,11 @@ const styles = StyleSheet.create({
   allocationBarSection: {
     gap: 10,
   },
+  allocationDetailSection: {
+    borderTopColor: 'rgba(214, 224, 234, 0.8)',
+    borderTopWidth: 1,
+    paddingTop: 12,
+  },
   analyticsSection: {
     gap: 12,
   },
@@ -1228,7 +1270,7 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
   holdingCard: {
-    gap: 14,
+    gap: 12,
   },
   holdingHeader: {
     alignItems: 'flex-start',
@@ -1260,9 +1302,9 @@ const styles = StyleSheet.create({
     backgroundColor: tokens.colors.brandSoft,
     borderRadius: 16,
     gap: 2,
-    minWidth: 86,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+    minWidth: 74,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
   },
   holdingWeightCardCompact: {
     alignItems: 'flex-start',
@@ -1283,6 +1325,45 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     flexDirection: 'row',
     overflow: 'hidden',
+  },
+  holdingCompactMetrics: {
+    backgroundColor: tokens.colors.surfaceMuted,
+    borderRadius: 18,
+    gap: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  holdingCompactMetricRow: {
+    alignItems: 'flex-start',
+    flexDirection: 'row',
+    gap: 12,
+  },
+  holdingCompactMetricBlock: {
+    flex: 1,
+    gap: 4,
+    minWidth: 0,
+  },
+  holdingCompactMetricBlockAlignEnd: {
+    alignItems: 'flex-end',
+  },
+  holdingCompactMetaRow: {
+    alignItems: 'center',
+    borderTopColor: 'rgba(214, 224, 234, 0.82)',
+    borderTopWidth: 1,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingTop: 10,
+  },
+  holdingCompactMetaLabel: {
+    color: tokens.colors.inkMute,
+    fontFamily: tokens.typography.body,
+    fontSize: 12,
+  },
+  holdingCompactMetaValue: {
+    color: tokens.colors.navy,
+    fontFamily: tokens.typography.heading,
+    fontSize: 13,
+    fontWeight: '700',
   },
   holdingMetricRailNarrow: {
     flexDirection: 'column',

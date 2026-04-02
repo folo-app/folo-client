@@ -1,6 +1,6 @@
 import { useRoute } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
 import {
   AllocationBar,
@@ -35,14 +35,14 @@ const SECTOR_PALETTE = ['#E11D48', '#F59E0B', '#4F46E5', '#0F766E', '#14B8A6', '
 
 export function PublicPortfolioScreen() {
   const route = useRoute<RouteProp<RootStackParamList, 'PublicPortfolio'>>();
-  const { isCompact } = useResponsiveLayout();
+  const { isCompact, isNarrow } = useResponsiveLayout();
   const portfolio = useUserPortfolioData(route.params.userId);
   const title = route.params.nickname
     ? `${route.params.nickname}님의 포트폴리오`
     : '공개 포트폴리오';
-  const allocationItems = [...portfolio.data.holdings]
-    .sort((left, right) => (right.totalValue ?? 0) - (left.totalValue ?? 0))
-    .map((holding, index) => ({
+  const sortedHoldings = [...portfolio.data.holdings]
+    .sort((left, right) => (right.totalValue ?? 0) - (left.totalValue ?? 0));
+  const allocationItems = sortedHoldings.map((holding, index) => ({
       key: `${holding.holdingId}`,
       label: holding.name,
       ratio: holding.weight,
@@ -78,26 +78,6 @@ export function PublicPortfolioScreen() {
         </SurfaceCard>
       ) : (
         <>
-          <SurfaceCard tone="hero">
-            <Text style={styles.summaryLabel}>총 평가금액</Text>
-            <Text style={styles.summaryValue}>{formatCurrency(portfolio.data.totalValue)}</Text>
-            <Text style={styles.summaryDelta}>
-              {formatPercent(portfolio.data.totalReturnRate)}
-            </Text>
-            <MetricGrid>
-              <MetricBadge
-                label="평가손익"
-                value={formatSignedCurrency(portfolio.data.totalReturn)}
-                tone="positive"
-              />
-              <MetricBadge
-                label="오늘 등락"
-                value={formatSignedCurrency(portfolio.data.dayReturn)}
-                tone="brand"
-              />
-            </MetricGrid>
-          </SurfaceCard>
-
           <SurfaceCard>
             <SectionHeading title="자산 구성" description="보유 종목, 섹터, 예상 배당을 함께 봅니다." />
             <View style={[styles.allocationBoard, isCompact && styles.allocationBoardCompact]}>
@@ -142,32 +122,177 @@ export function PublicPortfolioScreen() {
           </SurfaceCard>
 
           <SurfaceCard>
-            <SectionHeading title="보유 종목" description={`최근 반영 ${portfolio.data.syncedAt ? formatDateLabel(portfolio.data.syncedAt) : '기록 없음'}`} />
-            {portfolio.data.holdings.length === 0 ? (
+            <SectionHeading
+              title="성과 스냅샷"
+              description={`최근 반영 ${portfolio.data.syncedAt ? formatDateLabel(portfolio.data.syncedAt) : '기록 없음'}`}
+            />
+            <Text style={styles.summaryLabel}>총 평가금액</Text>
+            <Text style={styles.summaryValue}>{formatCurrency(portfolio.data.totalValue)}</Text>
+            <Text
+              style={[
+                styles.summaryDelta,
+                portfolio.data.totalReturnRate < 0 && styles.summaryDeltaNegative,
+              ]}
+            >
+              {formatPercent(portfolio.data.totalReturnRate)}
+            </Text>
+            <MetricGrid>
+              <MetricBadge
+                label="평가손익"
+                value={formatSignedCurrency(portfolio.data.totalReturn)}
+                tone={(portfolio.data.totalReturn ?? 0) >= 0 ? 'positive' : 'danger'}
+              />
+              <MetricBadge
+                label="오늘 등락"
+                value={formatSignedCurrency(portfolio.data.dayReturn)}
+                tone={(portfolio.data.dayReturn ?? 0) >= 0 ? 'brand' : 'danger'}
+              />
+            </MetricGrid>
+          </SurfaceCard>
+
+          <SurfaceCard>
+            <SectionHeading
+              title="보유 종목"
+              description="비중, 평가금액, 손익, 평균단가를 같은 규칙으로 정리합니다."
+            />
+            {sortedHoldings.length === 0 ? (
               <Text style={styles.emptyText}>표시할 보유 종목이 없습니다.</Text>
             ) : (
-              portfolio.data.holdings.map((holding, index) => (
-                <Pressable
+              sortedHoldings.map((holding, index) => (
+                <View
                   key={holding.holdingId}
                   style={[
-                    styles.holdingRow,
-                    isCompact && styles.holdingRowCompact,
-                    index < portfolio.data.holdings.length - 1 && styles.divider,
+                    styles.holdingCard,
+                    index < sortedHoldings.length - 1 && styles.divider,
                   ]}
                 >
-                  <View style={styles.holdingText}>
-                    <Text style={styles.holdingTicker}>{holding.ticker}</Text>
-                    <Text style={styles.holdingName}>
-                      {holding.name} · {formatWeight(holding.weight)}
-                    </Text>
+                  <View style={styles.holdingHeader}>
+                    <View style={styles.holdingText}>
+                      <Text ellipsizeMode="tail" numberOfLines={1} style={styles.holdingName}>
+                        {holding.name}
+                      </Text>
+                      <Text ellipsizeMode="tail" numberOfLines={1} style={styles.holdingSubline}>
+                        {holding.ticker} · {holding.market} ·{' '}
+                        {holding.sectorName ?? (holding.assetType === 'ETF' ? 'ETF' : '주식')}
+                      </Text>
+                    </View>
+                    <View style={styles.holdingWeightCard}>
+                      <Text style={styles.holdingWeightLabel}>비중</Text>
+                      <Text style={styles.holdingWeightValue}>{formatWeight(holding.weight)}</Text>
+                    </View>
                   </View>
-                  <View style={styles.holdingMetrics}>
-                    <Text style={styles.holdingReturn}>{formatPercent(holding.returnRate)}</Text>
-                    <Text style={styles.holdingValue}>
-                      {formatCurrency(holding.totalValue, holding.market)}
-                    </Text>
-                  </View>
-                </Pressable>
+                  {isCompact ? (
+                    <View style={styles.holdingCompactMetrics}>
+                      <View style={styles.holdingCompactMetricRow}>
+                        <View style={styles.holdingCompactMetricBlock}>
+                          <Text style={styles.holdingStatLabel}>평가금액</Text>
+                          <Text
+                            adjustsFontSizeToFit
+                            minimumFontScale={0.75}
+                            numberOfLines={1}
+                            style={styles.holdingMetricValuePrimary}
+                          >
+                            {formatCurrency(holding.totalValue, holding.market)}
+                          </Text>
+                        </View>
+                        <View
+                          style={[
+                            styles.holdingCompactMetricBlock,
+                            styles.holdingCompactMetricBlockAlignEnd,
+                          ]}
+                        >
+                          <Text style={styles.holdingStatLabel}>손익</Text>
+                          <Text
+                            adjustsFontSizeToFit
+                            minimumFontScale={0.72}
+                            numberOfLines={1}
+                            style={[
+                              styles.holdingStatValue,
+                              (holding.returnAmount ?? 0) < 0 && styles.holdingStatValueNegative,
+                            ]}
+                          >
+                            {formatSignedCurrency(holding.returnAmount, holding.market)}
+                          </Text>
+                          <Text
+                            numberOfLines={1}
+                            style={[
+                              styles.holdingStatMeta,
+                              holding.returnRate < 0 && styles.holdingStatMetaNegative,
+                            ]}
+                          >
+                            {formatPercent(holding.returnRate)}
+                          </Text>
+                        </View>
+                      </View>
+                      <View style={styles.holdingCompactMetaRow}>
+                        <Text style={styles.holdingCompactMetaLabel}>평균단가</Text>
+                        <Text numberOfLines={1} style={styles.holdingCompactMetaValue}>
+                          {formatCurrency(holding.avgPrice, holding.market)}
+                        </Text>
+                      </View>
+                    </View>
+                  ) : (
+                    <View style={[styles.holdingMetricRail, isNarrow && styles.holdingMetricRailNarrow]}>
+                      <View style={[styles.holdingMetricItem, styles.holdingMetricItemPrimary]}>
+                        <Text style={styles.holdingStatLabel}>평가금액</Text>
+                        <Text
+                          adjustsFontSizeToFit
+                          minimumFontScale={0.75}
+                          numberOfLines={1}
+                          style={styles.holdingMetricValuePrimary}
+                        >
+                          {formatCurrency(holding.totalValue, holding.market)}
+                        </Text>
+                      </View>
+                      <View
+                        style={[
+                          styles.holdingMetricItem,
+                          styles.holdingMetricDivider,
+                          isNarrow && styles.holdingMetricDividerNarrow,
+                        ]}
+                      >
+                        <Text style={styles.holdingStatLabel}>손익</Text>
+                        <Text
+                          adjustsFontSizeToFit
+                          minimumFontScale={0.72}
+                          numberOfLines={1}
+                          style={[
+                            styles.holdingStatValue,
+                            (holding.returnAmount ?? 0) < 0 && styles.holdingStatValueNegative,
+                          ]}
+                        >
+                          {formatSignedCurrency(holding.returnAmount, holding.market)}
+                        </Text>
+                        <Text
+                          numberOfLines={1}
+                          style={[
+                            styles.holdingStatMeta,
+                            holding.returnRate < 0 && styles.holdingStatMetaNegative,
+                          ]}
+                        >
+                          {formatPercent(holding.returnRate)}
+                        </Text>
+                      </View>
+                      <View
+                        style={[
+                          styles.holdingMetricItem,
+                          styles.holdingMetricDivider,
+                          isNarrow && styles.holdingMetricDividerNarrow,
+                        ]}
+                      >
+                        <Text style={styles.holdingStatLabel}>평균단가</Text>
+                        <Text
+                          adjustsFontSizeToFit
+                          minimumFontScale={0.72}
+                          numberOfLines={1}
+                          style={styles.holdingStatValue}
+                        >
+                          {formatCurrency(holding.avgPrice, holding.market)}
+                        </Text>
+                      </View>
+                    </View>
+                  )}
+                </View>
               ))
             )}
           </SurfaceCard>
@@ -194,6 +319,9 @@ const styles = StyleSheet.create({
     color: tokens.colors.positive,
     fontFamily: tokens.typography.heading,
     fontWeight: '700',
+  },
+  summaryDeltaNegative: {
+    color: tokens.colors.danger,
   },
   allocationBoard: {
     alignItems: 'center',
@@ -231,14 +359,8 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 20,
   },
-  holdingRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: 16,
-  },
-  holdingRowCompact: {
-    alignItems: 'flex-start',
-    flexDirection: 'column',
+  holdingCard: {
+    gap: 12,
   },
   divider: {
     borderBottomWidth: 1,
@@ -246,35 +368,142 @@ const styles = StyleSheet.create({
     paddingBottom: 16,
     marginBottom: 16,
   },
-  holdingText: {
-    gap: 6,
-    flex: 1,
+  holdingHeader: {
+    alignItems: 'flex-start',
+    flexDirection: 'row',
+    gap: 12,
+    justifyContent: 'space-between',
   },
-  holdingTicker: {
-    fontSize: 17,
-    color: tokens.colors.navy,
-    fontFamily: tokens.typography.heading,
-    fontWeight: '800',
+  holdingText: {
+    gap: 4,
+    flex: 1,
+    minWidth: 0,
   },
   holdingName: {
-    fontSize: 13,
-    color: tokens.colors.inkSoft,
-    fontFamily: tokens.typography.body,
-  },
-  holdingMetrics: {
-    alignItems: 'flex-end',
-    gap: 6,
-  },
-  holdingReturn: {
-    fontSize: 16,
-    color: tokens.colors.positive,
+    color: tokens.colors.navy,
     fontFamily: tokens.typography.heading,
+    fontSize: 16,
+    fontWeight: '800',
+  },
+  holdingSubline: {
+    color: tokens.colors.inkMute,
+    fontFamily: tokens.typography.body,
+    fontSize: 12,
+  },
+  holdingWeightCard: {
+    alignItems: 'flex-end',
+    backgroundColor: tokens.colors.brandSoft,
+    borderRadius: 16,
+    gap: 2,
+    minWidth: 74,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+  },
+  holdingWeightLabel: {
+    color: tokens.colors.inkMute,
+    fontFamily: tokens.typography.body,
+    fontSize: 11,
+  },
+  holdingWeightValue: {
+    color: tokens.colors.navy,
+    fontFamily: tokens.typography.heading,
+    fontSize: 15,
     fontWeight: '700',
   },
-  holdingValue: {
-    fontSize: 13,
+  holdingCompactMetrics: {
+    backgroundColor: tokens.colors.surfaceMuted,
+    borderRadius: 18,
+    gap: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  holdingCompactMetricRow: {
+    alignItems: 'flex-start',
+    flexDirection: 'row',
+    gap: 12,
+  },
+  holdingCompactMetricBlock: {
+    flex: 1,
+    gap: 4,
+    minWidth: 0,
+  },
+  holdingCompactMetricBlockAlignEnd: {
+    alignItems: 'flex-end',
+  },
+  holdingCompactMetaRow: {
+    alignItems: 'center',
+    borderTopColor: 'rgba(214, 224, 234, 0.82)',
+    borderTopWidth: 1,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingTop: 10,
+  },
+  holdingCompactMetaLabel: {
     color: tokens.colors.inkSoft,
     fontFamily: tokens.typography.body,
+    fontSize: 12,
+  },
+  holdingCompactMetaValue: {
+    color: tokens.colors.navy,
+    fontFamily: tokens.typography.heading,
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  holdingMetricRail: {
+    backgroundColor: tokens.colors.surfaceMuted,
+    borderRadius: 18,
+    flexDirection: 'row',
+    overflow: 'hidden',
+  },
+  holdingMetricRailNarrow: {
+    flexDirection: 'column',
+  },
+  holdingMetricItem: {
+    flex: 1,
+    gap: 4,
+    minWidth: 0,
+    paddingHorizontal: 14,
+    paddingVertical: 14,
+  },
+  holdingMetricItemPrimary: {
+    flex: 1.2,
+  },
+  holdingMetricDivider: {
+    borderLeftColor: 'rgba(214, 224, 234, 0.82)',
+    borderLeftWidth: 1,
+  },
+  holdingMetricDividerNarrow: {
+    borderLeftWidth: 0,
+    borderTopColor: 'rgba(214, 224, 234, 0.82)',
+    borderTopWidth: 1,
+  },
+  holdingStatLabel: {
+    color: tokens.colors.inkMute,
+    fontFamily: tokens.typography.body,
+    fontSize: 12,
+  },
+  holdingMetricValuePrimary: {
+    color: tokens.colors.navy,
+    fontFamily: tokens.typography.heading,
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  holdingStatValue: {
+    color: tokens.colors.navy,
+    fontFamily: tokens.typography.heading,
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  holdingStatValueNegative: {
+    color: tokens.colors.danger,
+  },
+  holdingStatMeta: {
+    color: tokens.colors.positive,
+    fontFamily: tokens.typography.body,
+    fontSize: 12,
+  },
+  holdingStatMetaNegative: {
+    color: tokens.colors.danger,
   },
   emptyText: {
     fontSize: 14,
