@@ -38,11 +38,13 @@ export function formatCompactCurrency(
     return '-';
   }
 
+  const currency = currencyForMarket(market);
+
   return new Intl.NumberFormat('ko-KR', {
     style: 'currency',
-    currency: currencyForMarket(market),
+    currency,
     notation: 'compact',
-    maximumFractionDigits: 1,
+    maximumFractionDigits: currency === 'KRW' ? 0 : 1,
   }).format(value);
 }
 
