@@ -12,7 +12,6 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { foloApiConfig } from '../api/config';
 import type { StockSearchItem } from '../api/contracts';
 import { StockIdentityBadge } from '../components/StockIdentityBadge';
 import {
@@ -26,6 +25,7 @@ import {
   useStockDiscoverData,
   useStockSearchData,
 } from '../hooks/useFoloData';
+import { resolveAssetUrl } from '../lib/resolveAssetUrl';
 import { useResponsiveLayout } from '../hooks/useResponsiveLayout';
 import { formatCurrency } from '../lib/format';
 import type {
@@ -54,18 +54,6 @@ type StockTileItem = PortfolioSetupSelection & {
 
 function selectionKey(item: Pick<PortfolioSetupSelection, 'market' | 'ticker'>) {
   return `${item.market}:${item.ticker}`;
-}
-
-function resolveLogoUrl(logoUrl?: string | null) {
-  if (!logoUrl) {
-    return null;
-  }
-
-  if (logoUrl.startsWith('http://') || logoUrl.startsWith('https://')) {
-    return logoUrl;
-  }
-
-  return `${foloApiConfig.baseUrl}${logoUrl.startsWith('/') ? '' : '/'}${logoUrl}`;
 }
 
 export function AddTradeScreen() {
@@ -164,7 +152,7 @@ export function AddTradeScreen() {
   function renderTile(item: StockTileItem) {
     const key = selectionKey(item);
     const isSelected = selectedItem ? selectionKey(selectedItem) === key : false;
-    const logoUrl = resolveLogoUrl(item.logoUrl);
+    const logoUrl = resolveAssetUrl(item.logoUrl);
 
     return (
       <Pressable

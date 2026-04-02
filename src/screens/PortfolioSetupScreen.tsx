@@ -12,13 +12,13 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { foloApiConfig } from '../api/config';
 import type { StockSearchItem } from '../api/contracts';
 import { StockIdentityBadge } from '../components/StockIdentityBadge';
 import { BottomActionBar, Chip } from '../components/ui';
 import { useResponsiveLayout } from '../hooks/useResponsiveLayout';
 import { useStockDiscoverData, useStockSearchData } from '../hooks/useFoloData';
 import { formatCurrency } from '../lib/format';
+import { resolveAssetUrl } from '../lib/resolveAssetUrl';
 import type {
   PortfolioSetupSelection,
   RootStackParamList,
@@ -35,18 +35,6 @@ const marketFilterOptions: Array<{ label: string; value: MarketFilter }> = [
 
 function selectionKey(item: Pick<PortfolioSetupSelection, 'market' | 'ticker'>) {
   return `${item.market}:${item.ticker}`;
-}
-
-function resolveLogoUrl(logoUrl?: string | null) {
-  if (!logoUrl) {
-    return null;
-  }
-
-  if (logoUrl.startsWith('http://') || logoUrl.startsWith('https://')) {
-    return logoUrl;
-  }
-
-  return `${foloApiConfig.baseUrl}${logoUrl.startsWith('/') ? '' : '/'}${logoUrl}`;
 }
 
 type StockSection = {
@@ -112,7 +100,7 @@ export function PortfolioSetupScreen() {
   function renderTile(item: StockTileItem) {
     const key = selectionKey(item);
     const isSelected = selectedItems.some((entry) => selectionKey(entry) === key);
-    const logoUrl = resolveLogoUrl(item.logoUrl);
+    const logoUrl = resolveAssetUrl(item.logoUrl);
 
     return (
       <Pressable
