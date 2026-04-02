@@ -54,7 +54,7 @@ export function ProfileScreen() {
       eyebrow="Profile"
       title="내 기록과 공개 범위"
     >
-      <DataStatusCard error={combinedError} loading={combinedLoading} />
+      <DataStatusCard error={combinedError} loading={combinedLoading} variant="inline" />
 
       <SurfaceCard tone="hero">
         <View style={[styles.profileHeader, isCompact && styles.profileHeaderCompact]}>
@@ -66,7 +66,11 @@ export function ProfileScreen() {
           />
           <View style={styles.profileText}>
             <Text style={styles.name}>{profile.data.nickname || session?.nickname || '내 계정'}</Text>
-            {session?.email ? <Text style={styles.handle}>{session.email}</Text> : null}
+            {session?.email ? (
+              <Text ellipsizeMode="middle" numberOfLines={1} style={styles.handle}>
+                {session.email}
+              </Text>
+            ) : null}
             <Text style={styles.joinedAt}>가입일 {formatRelativeDate(profile.data.createdAt)}</Text>
             <Text style={styles.bio}>{profile.data.bio ?? '바이오가 아직 없습니다.'}</Text>
           </View>
@@ -74,6 +78,7 @@ export function ProfileScreen() {
         <View style={styles.metaRow}>
           <Chip active label={`팔로워 ${profile.data.followerCount}`} tone="brand" />
           <Chip label={`팔로잉 ${profile.data.followingCount}`} />
+          <Chip label={`기록 ${myTrades.data.totalCount}`} />
           <Chip label={visibilityLabel(profile.data.portfolioVisibility)} />
         </View>
         <View style={styles.profileActions}>
@@ -82,17 +87,14 @@ export function ProfileScreen() {
             onPress={() => navigation.navigate('ProfileEdit')}
             variant="secondary"
           />
-          <PrimaryButton
-            disabled={logoutPending}
-            label={logoutPending ? '로그아웃 중...' : '로그아웃'}
-            onPress={handleLogout}
-            variant="secondary"
-          />
         </View>
       </SurfaceCard>
 
       <SurfaceCard>
-        <SectionHeading title="계정 상태" />
+        <SectionHeading
+          title="공개 범위와 연결"
+          description="내 프로필이 어떻게 보이고 있는지 빠르게 확인합니다."
+        />
         <DetailRow
           label="포트폴리오 공개 범위"
           value={visibilityLabel(profile.data.portfolioVisibility)}
@@ -102,6 +104,7 @@ export function ProfileScreen() {
           value={visibilityLabel(profile.data.returnVisibility)}
         />
         <DetailRow label="알림 미확인 수" value={`${notifications.data.unreadCount}개`} />
+        <DetailRow label="활성 리마인더" value={`${reminders.data.reminders.length}개`} />
         <View style={styles.actionStack}>
           <PrimaryButton
             label="사람 찾기"
@@ -114,6 +117,34 @@ export function ProfileScreen() {
             variant="secondary"
           />
         </View>
+      </SurfaceCard>
+
+      <SurfaceCard>
+        <SectionHeading
+          title="내 최근 거래"
+          description={`총 ${myTrades.data.totalCount}건`}
+        />
+        {myTrades.data.trades.length === 0 ? (
+          <Text style={styles.emptyText}>아직 등록된 거래가 없습니다.</Text>
+        ) : (
+          myTrades.data.trades.slice(0, 3).map((trade, index) => (
+            <Pressable
+              key={trade.tradeId}
+              onPress={() => navigation.navigate('TradeDetail', { tradeId: trade.tradeId })}
+              style={[
+                styles.listRow,
+                index < Math.min(2, myTrades.data.trades.length - 1) && styles.divider,
+              ]}
+            >
+              <Text style={styles.listTitle}>
+                {trade.ticker} · {tradeTypeLabel(trade.tradeType)}
+              </Text>
+              <Text style={styles.listMeta}>
+                {formatNumber(trade.totalAmount)} · {formatRelativeDate(trade.tradedAt)}
+              </Text>
+            </Pressable>
+          ))
+        )}
       </SurfaceCard>
 
       <SurfaceCard>
@@ -175,30 +206,15 @@ export function ProfileScreen() {
 
       <SurfaceCard>
         <SectionHeading
-          title="내 최근 거래"
-          description={`총 ${myTrades.data.totalCount}건`}
+          title="계정 관리"
+          description="세션과 연결 상태를 마지막에 정리합니다."
         />
-        {myTrades.data.trades.length === 0 ? (
-          <Text style={styles.emptyText}>아직 등록된 거래가 없습니다.</Text>
-        ) : (
-          myTrades.data.trades.slice(0, 3).map((trade, index) => (
-            <Pressable
-              key={trade.tradeId}
-              onPress={() => navigation.navigate('TradeDetail', { tradeId: trade.tradeId })}
-              style={[
-                styles.listRow,
-                index < Math.min(2, myTrades.data.trades.length - 1) && styles.divider,
-              ]}
-            >
-              <Text style={styles.listTitle}>
-                {trade.ticker} · {tradeTypeLabel(trade.tradeType)}
-              </Text>
-              <Text style={styles.listMeta}>
-                {formatNumber(trade.totalAmount)} · {formatRelativeDate(trade.tradedAt)}
-              </Text>
-            </Pressable>
-          ))
-        )}
+        <PrimaryButton
+          disabled={logoutPending}
+          label={logoutPending ? '로그아웃 중...' : '로그아웃'}
+          onPress={handleLogout}
+          variant="secondary"
+        />
       </SurfaceCard>
     </Page>
   );
@@ -242,6 +258,7 @@ const styles = StyleSheet.create({
   },
   profileActions: {
     gap: 10,
+    alignItems: 'flex-start',
   },
   actionStack: {
     gap: 10,
