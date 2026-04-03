@@ -11,9 +11,12 @@ import java.util.TimeZone
 
 internal const val WIDGET_SNAPSHOT_PREFERENCES_NAME = "folo_widget_snapshot_store"
 internal const val GROWTH_WIDGET_SNAPSHOT_KEY = "growth_widget_snapshot"
+internal const val NEXT_ROUTINE_WIDGET_SNAPSHOT_KEY = "next_routine_widget_snapshot"
 internal const val GROWTH_WIDGET_CELL_COUNT = 35
 internal const val DEFAULT_GROWTH_WIDGET_DEEP_LINK_URL =
   "folo://widget/growth-streak?source=widget-growth"
+internal const val DEFAULT_NEXT_ROUTINE_WIDGET_DEEP_LINK_URL =
+  "folo://widget/next-routine?source=widget-routine"
 
 internal object GrowthWidgetStorage {
   fun sharedPreferences(context: Context) =
@@ -33,6 +36,21 @@ internal class GrowthWidgetStateRepository {
       parseSnapshot(rawSnapshot, referenceDate)
     }.getOrElse {
       GrowthWidgetSnapshot.placeholder(referenceDate)
+    }
+  }
+
+  fun loadNextRoutineSnapshot(context: Context): NextRoutineWidgetSnapshot {
+    val referenceDate = Date()
+    val rawSnapshot =
+      GrowthWidgetStorage
+        .sharedPreferences(context)
+        .getString(NEXT_ROUTINE_WIDGET_SNAPSHOT_KEY, null)
+        ?: return NextRoutineWidgetSnapshot.placeholder(referenceDate)
+
+    return runCatching {
+      parseNextRoutineSnapshot(rawSnapshot, referenceDate)
+    }.getOrElse {
+      NextRoutineWidgetSnapshot.placeholder(referenceDate)
     }
   }
 
@@ -100,6 +118,50 @@ internal class GrowthWidgetStateRepository {
         }
 
     return dateFormatter.format(calendar.time)
+  }
+
+  private fun parseNextRoutineSnapshot(
+    rawSnapshot: String,
+    referenceDate: Date,
+  ): NextRoutineWidgetSnapshot {
+    val json = JSONObject(rawSnapshot)
+    val status =
+      NextRoutineWidgetStatus.fromStorage(
+        if (json.isNull("status")) null else json.optString("status"),
+      )
+    val snapshot =
+      NextRoutineWidgetSnapshot(
+        schemaVersion = json.optInt("schemaVersion", 0),
+        generatedAt = json.optString("generatedAt", iso8601Formatter.format(referenceDate)),
+        deepLinkUrl =
+          json.optString(
+            "deepLinkUrl",
+            DEFAULT_NEXT_ROUTINE_WIDGET_DEEP_LINK_URL,
+          ),
+        title = json.optString("title", "Next Routine"),
+        status = status,
+        headline = json.optString("headline", "루틴을 등록하세요"),
+        subheadline =
+          json.optString(
+            "subheadline",
+            "Creation Hub에서 일정과 금액을 정합니다",
+          ),
+        amountLabel =
+          json.optString(
+            "amountLabel",
+            "다음 루틴이 위젯에 표시됩니다",
+          ),
+        footerCopy = json.optString("footerCopy", defaultRoutineFooterCopy(status)),
+        activeCount = json.optInt("activeCount", 0).coerceAtLeast(0),
+        dayOfMonth =
+          if (json.isNull("dayOfMonth")) {
+            null
+          } else {
+            json.optInt("dayOfMonth", 0).takeIf { it in 1..31 }
+          },
+      )
+
+    return if (snapshot.isRenderable) snapshot else NextRoutineWidgetSnapshot.placeholder(referenceDate)
   }
 }
 
@@ -177,11 +239,64 @@ internal data class GrowthWidgetSnapshot(
   }
 }
 
+internal enum class NextRoutineWidgetStatus {
+  ACTIVE,
+  PAUSED,
+  SETUP,
+  ;
+
+  companion object {
+    fun fromStorage(value: String?): NextRoutineWidgetStatus =
+      values().firstOrNull { it.name == value } ?: SETUP
+  }
+}
+
+internal data class NextRoutineWidgetSnapshot(
+  val schemaVersion: Int,
+  val generatedAt: String,
+  val deepLinkUrl: String,
+  val title: String,
+  val status: NextRoutineWidgetStatus,
+  val headline: String,
+  val subheadline: String,
+  val amountLabel: String,
+  val footerCopy: String,
+  val activeCount: Int,
+  val dayOfMonth: Int?,
+) {
+  val isRenderable: Boolean
+    get() = schemaVersion == 1
+
+  companion object {
+    fun placeholder(referenceDate: Date = Date()): NextRoutineWidgetSnapshot =
+      NextRoutineWidgetSnapshot(
+        schemaVersion = 1,
+        generatedAt = iso8601Formatter.format(referenceDate),
+        deepLinkUrl = DEFAULT_NEXT_ROUTINE_WIDGET_DEEP_LINK_URL,
+        title = "Next Routine",
+        status = NextRoutineWidgetStatus.SETUP,
+        headline = "루틴을 등록하세요",
+        subheadline = "Creation Hub에서 일정과 금액을 정합니다",
+        amountLabel = "다음 루틴이 위젯에 표시됩니다",
+        footerCopy = defaultRoutineFooterCopy(NextRoutineWidgetStatus.SETUP),
+        activeCount = 0,
+        dayOfMonth = null,
+      )
+  }
+}
+
 internal fun defaultFooterCopy(status: GrowthWidgetStatus): String =
   when (status) {
     GrowthWidgetStatus.ACTIVE -> "Keep growing"
     GrowthWidgetStatus.IDLE -> "Jump back in"
     GrowthWidgetStatus.SETUP -> "Start your streak"
+  }
+
+internal fun defaultRoutineFooterCopy(status: NextRoutineWidgetStatus): String =
+  when (status) {
+    NextRoutineWidgetStatus.ACTIVE -> "다음 루틴을 확인하세요"
+    NextRoutineWidgetStatus.PAUSED -> "루틴을 다시 켜 두세요"
+    NextRoutineWidgetStatus.SETUP -> "First-class routine"
   }
 
 private val monthFormatter =

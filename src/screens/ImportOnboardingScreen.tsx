@@ -12,6 +12,7 @@ import type {
 } from '../api/contracts';
 import { foloApi } from '../api/services';
 import { Page, PageBackButton, PrimaryButton, SectionHeading, SurfaceCard } from '../components/ui';
+import { syncAllWidgetsInBackground } from '../features/widgets';
 import { useResponsiveLayout } from '../hooks/useResponsiveLayout';
 import { formatCurrency, tradeTypeLabel } from '../lib/format';
 import type { RootStackParamList } from '../navigation/types';
@@ -119,6 +120,7 @@ export function ImportOnboardingScreen() {
 
     try {
       const result = await foloApi.confirmPortfolioImport({ importResultIds });
+      syncAllWidgetsInBackground();
       setMessage(`${result.savedTrades}건의 거래를 저장했습니다.`);
       navigation.reset({
         index: 0,

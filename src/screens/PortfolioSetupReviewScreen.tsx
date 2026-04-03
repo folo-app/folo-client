@@ -14,10 +14,12 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import type { TradeVisibility } from '../api/contracts';
 import { foloApi } from '../api/services';
-import { BottomActionBar, PrimaryButton } from '../components/ui';
-import { syncGrowthWidgetSnapshotInBackground } from '../features/widgets';
+import { BottomActionBar, Chip, PrimaryButton } from '../components/ui';
+import { syncAllWidgetsInBackground } from '../features/widgets';
 import { useResponsiveLayout } from '../hooks/useResponsiveLayout';
+import { formatDateInputValue, isValidDateInput, toIsoDateInput } from '../lib/dateInput';
 import { formatCurrency } from '../lib/format';
 import type { PortfolioSetupSelection, RootStackParamList } from '../navigation/types';
 import { tokens } from '../theme/tokens';
@@ -25,7 +27,16 @@ import { tokens } from '../theme/tokens';
 type DraftItem = PortfolioSetupSelection & {
   quantity: string;
   avgPrice: string;
+  tradedOn: string;
+  comment: string;
+  visibility: TradeVisibility;
 };
+
+const visibilityOptions: Array<{ label: string; value: TradeVisibility }> = [
+  { label: '전체 공개', value: 'PUBLIC' },
+  { label: '친구만', value: 'FRIENDS_ONLY' },
+  { label: '비공개', value: 'PRIVATE' },
+];
 
 function selectionKey(item: Pick<PortfolioSetupSelection, 'market' | 'ticker'>) {
   return `${item.market}:${item.ticker}`;
@@ -41,6 +52,9 @@ export function PortfolioSetupReviewScreen() {
       ...item,
       quantity: '1',
       avgPrice: item.currentPrice > 0 ? String(item.currentPrice) : '',
+      tradedOn: formatDateInputValue(),
+      comment: '',
+      visibility: 'PRIVATE',
     })),
   );
   const [submitting, setSubmitting] = useState(false);
@@ -50,14 +64,17 @@ export function PortfolioSetupReviewScreen() {
     () =>
       items.length === 0 ||
       items.some(
-        (item) => (Number(item.quantity) || 0) <= 0 || (Number(item.avgPrice) || 0) <= 0,
+        (item) =>
+          (Number(item.quantity) || 0) <= 0 ||
+          (Number(item.avgPrice) || 0) <= 0 ||
+          !isValidDateInput(item.tradedOn),
       ),
     [items],
   );
 
   function updateItem(
     key: string,
-    field: 'quantity' | 'avgPrice',
+    field: keyof Pick<DraftItem, 'quantity' | 'avgPrice' | 'tradedOn' | 'comment' | 'visibility'>,
     value: string,
   ) {
     setItems((current) =>
@@ -73,29 +90,35 @@ export function PortfolioSetupReviewScreen() {
 
   async function handleSubmit() {
     if (disabled) {
-      setMessage('수량과 평균 매수가를 모두 입력해 주세요.');
+      setMessage('수량, 평균 매수가, 거래일을 모두 올바르게 입력해 주세요.');
       return;
     }
 
     setSubmitting(true);
     setMessage(null);
-    const tradedAt = new Date().toISOString();
 
     try {
       for (const item of items) {
+        const tradedAt = toIsoDateInput(item.tradedOn);
+
+        if (!tradedAt) {
+          setMessage('모든 거래일을 YYYY-MM-DD 형식으로 입력해 주세요.');
+          return;
+        }
+
         await foloApi.createTrade({
           ticker: item.ticker,
           market: item.market,
           tradeType: 'BUY',
           quantity: Number(item.quantity),
           price: Number(item.avgPrice),
-          comment: null,
-          visibility: 'PRIVATE',
+          comment: item.comment.trim() || null,
+          visibility: item.visibility,
           tradedAt,
         });
       }
 
-      syncGrowthWidgetSnapshotInBackground();
+      syncAllWidgetsInBackground();
       navigation.reset({
         index: 0,
         routes: [{ name: 'MainTabs', params: { screen: 'Portfolio' } }],
@@ -128,8 +151,8 @@ export function PortfolioSetupReviewScreen() {
             <View style={styles.header}>
               <Text style={styles.title}>보유 수량과 평균 매수가 입력</Text>
               <Text style={styles.subtitle}>
-                초기 포트폴리오는 각 종목을 대표 거래 1건으로 저장합니다. 나중에
-                개별 매수·매도 기록으로 세밀하게 보정할 수 있습니다.
+                초기 포트폴리오는 각 종목을 대표 거래 1건으로 저장합니다. 거래일,
+                메모, 공개 범위를 같이 남기면 나중에 보정할 때도 맥락이 유지됩니다.
               </Text>
             </View>
 
@@ -174,6 +197,46 @@ export function PortfolioSetupReviewScreen() {
                         style={styles.input}
                         value={item.avgPrice}
                       />
+                    </View>
+                  </View>
+
+                  <View style={styles.inputGroup}>
+                    <Text style={styles.label}>거래일</Text>
+                    <TextInput
+                      autoCapitalize="none"
+                      autoCorrect={false}
+                      onChangeText={(value) => updateItem(key, 'tradedOn', value)}
+                      placeholder="YYYY-MM-DD"
+                      placeholderTextColor={tokens.colors.inkMute}
+                      style={styles.input}
+                      value={item.tradedOn}
+                    />
+                    <Text style={styles.helperText}>예: 2026-04-03</Text>
+                  </View>
+
+                  <View style={styles.inputGroup}>
+                    <Text style={styles.label}>한 줄 메모</Text>
+                    <TextInput
+                      multiline
+                      onChangeText={(value) => updateItem(key, 'comment', value)}
+                      placeholder="처음 산 이유나 메모가 있으면 남겨 주세요."
+                      placeholderTextColor={tokens.colors.inkMute}
+                      style={[styles.input, styles.textArea]}
+                      value={item.comment}
+                    />
+                  </View>
+
+                  <View style={styles.visibilitySection}>
+                    <Text style={styles.label}>공개 범위</Text>
+                    <View style={styles.visibilityRow}>
+                      {visibilityOptions.map((option) => (
+                        <Chip
+                          key={`${key}-${option.value}`}
+                          active={item.visibility === option.value}
+                          label={option.label}
+                          onPress={() => updateItem(key, 'visibility', option.value)}
+                        />
+                      ))}
                     </View>
                   </View>
                 </View>
@@ -312,6 +375,24 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: tokens.colors.navy,
     fontFamily: tokens.typography.body,
+  },
+  helperText: {
+    fontSize: 12,
+    lineHeight: 18,
+    color: tokens.colors.inkMute,
+    fontFamily: tokens.typography.body,
+  },
+  textArea: {
+    minHeight: 96,
+    textAlignVertical: 'top',
+  },
+  visibilitySection: {
+    gap: 10,
+  },
+  visibilityRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
   },
   secondaryActions: {
     alignItems: 'center',

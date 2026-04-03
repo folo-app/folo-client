@@ -1,19 +1,38 @@
+import { useNavigation, useRoute } from '@react-navigation/native';
+import type { RouteProp } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { foloApi } from '../api/services';
 import { DataStatusCard } from '../components/DataStatusCard';
-import { Chip, Page, PageBackButton, SectionHeading, SurfaceCard } from '../components/ui';
-import { syncGrowthWidgetSnapshotInBackground } from '../features/widgets';
+import {
+  Chip,
+  Page,
+  PageBackButton,
+  PrimaryButton,
+  SectionHeading,
+  SurfaceCard,
+} from '../components/ui';
+import { syncAllWidgetsInBackground } from '../features/widgets';
 import { useRemindersData } from '../hooks/useFoloData';
 import { formatCurrency } from '../lib/format';
+import type { RootStackParamList } from '../navigation/types';
 import { tokens } from '../theme/tokens';
 
 export function RemindersScreen() {
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const route = useRoute<RouteProp<RootStackParamList, 'Reminders'>>();
   const reminders = useRemindersData();
   const [actionError, setActionError] = useState<string | null>(null);
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
   const [pendingId, setPendingId] = useState<number | null>(null);
+  const sourceLabel =
+    route.params?.source === 'widget-routine'
+      ? '위젯에서 바로 다음 루틴을 열었습니다.'
+      : route.params?.source === 'notification'
+        ? '알림에서 바로 이어서 들어왔습니다.'
+        : null;
 
   async function handleToggle(reminderId: number) {
     const reminder = reminders.data.reminders.find((item) => item.reminderId === reminderId);
@@ -32,7 +51,7 @@ export function RemindersScreen() {
         dayOfMonth: reminder.dayOfMonth,
         isActive: !reminder.isActive,
       });
-      syncGrowthWidgetSnapshotInBackground();
+      syncAllWidgetsInBackground();
       reminders.refresh();
       setActionSuccess('리마인더를 업데이트했습니다.');
     } catch (error) {
@@ -51,7 +70,7 @@ export function RemindersScreen() {
 
     try {
       await foloApi.deleteReminder(reminderId);
-      syncGrowthWidgetSnapshotInBackground();
+      syncAllWidgetsInBackground();
       reminders.refresh();
       setActionSuccess('리마인더를 삭제했습니다.');
     } catch (error) {
@@ -68,18 +87,32 @@ export function RemindersScreen() {
       eyebrow="Reminders"
       title="리마인더"
       leading={<PageBackButton />}
+      action={
+        <PrimaryButton
+          label="루틴 등록"
+          onPress={() => navigation.navigate('ReminderCreate')}
+          variant="secondary"
+        />
+      }
     >
       <DataStatusCard
         error={reminders.error ?? actionError}
         loading={reminders.loading || pendingId !== null}
       />
 
+      {sourceLabel ? <Text style={styles.feedback}>{sourceLabel}</Text> : null}
       {actionSuccess ? <Text style={styles.feedback}>{actionSuccess}</Text> : null}
 
       <SurfaceCard>
         <SectionHeading title="활성 리마인더" description={`총 ${reminders.data.reminders.length}개`} />
         {reminders.data.reminders.length === 0 ? (
-          <Text style={styles.emptyText}>등록된 리마인더가 없습니다.</Text>
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyText}>등록된 리마인더가 없습니다.</Text>
+            <PrimaryButton
+              label="첫 루틴 등록"
+              onPress={() => navigation.navigate('ReminderCreate')}
+            />
+          </View>
         ) : (
           reminders.data.reminders.map((reminder, index) => (
             <View
@@ -161,6 +194,9 @@ const styles = StyleSheet.create({
     lineHeight: 22,
     color: tokens.colors.inkSoft,
     fontFamily: tokens.typography.body,
+  },
+  emptyState: {
+    gap: 14,
   },
   feedback: {
     fontSize: 13,

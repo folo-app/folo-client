@@ -1,10 +1,13 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
-import { useState } from 'react';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import type { RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import type { FeedTradeItem } from '../api/contracts';
+import { useAuth } from '../auth/AuthProvider';
+import { foloApi } from '../api/services';
 import { Avatar } from '../components/Avatar';
 import { DataStatusCard } from '../components/DataStatusCard';
 import {
@@ -16,7 +19,7 @@ import {
   SectionHeading,
   SurfaceCard,
 } from '../components/ui';
-import { useFeedData } from '../hooks/useFoloData';
+import { useFeedData, useMyProfileData } from '../hooks/useFoloData';
 import { useResponsiveLayout } from '../hooks/useResponsiveLayout';
 import {
   formatCurrency,
@@ -25,7 +28,8 @@ import {
   reactionEmojiLabel,
   tradeTypeLabel,
 } from '../lib/format';
-import type { RootStackParamList } from '../navigation/types';
+import { shareProfile } from '../lib/profileShare';
+import type { MainTabParamList, RootStackParamList } from '../navigation/types';
 import { tokens } from '../theme/tokens';
 
 const FILTER_OPTIONS = [
@@ -40,14 +44,34 @@ type FeedFilter = (typeof FILTER_OPTIONS)[number]['key'];
 
 export function FeedScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const route = useRoute<RouteProp<MainTabParamList, 'Feed'>>();
+  const { session } = useAuth();
   const { isCompact, isLarge, isNarrow } = useResponsiveLayout();
   const feed = useFeedData();
+  const profile = useMyProfileData();
   const [query, setQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState<FeedFilter>('all');
+  const [loadedTrades, setLoadedTrades] = useState<FeedTradeItem[]>([]);
+  const [nextCursor, setNextCursor] = useState<number | null>(null);
+  const [hasNext, setHasNext] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [paginationError, setPaginationError] = useState<string | null>(null);
+  const autoLoadMoreTriggeredRef = useRef(false);
+
+  useEffect(() => {
+    setLoadedTrades(feed.data.trades);
+    setNextCursor(feed.data.nextCursor);
+    setHasNext(feed.data.hasNext);
+    setPaginationError(null);
+  }, [feed.data.hasNext, feed.data.nextCursor, feed.data.trades]);
 
   const normalizedQuery = query.trim().toLowerCase();
-  const filteredTrades = feed.data.trades.filter(
-    (item) => matchesFilter(item, activeFilter) && matchesQuery(item, normalizedQuery),
+  const filteredTrades = useMemo(
+    () =>
+      loadedTrades.filter(
+        (item) => matchesFilter(item, activeFilter) && matchesQuery(item, normalizedQuery),
+      ),
+    [activeFilter, loadedTrades, normalizedQuery],
   );
   const highlightTrade =
     filteredTrades.length > 0
@@ -90,10 +114,69 @@ export function FeedScreen() {
   const notablePeople = summarizeActivePeople(filteredTrades).slice(0, 3);
   const showDesktopEngagementSummary = isLarge && filteredTrades.length >= 4;
   const showDesktopPeopleSummary = isLarge && notablePeople.length >= 2;
-  const showFeedSupportState = !feed.loading && feed.error !== null && feed.data.trades.length === 0;
-  const showEmptyState = !feed.loading && !feed.error && feed.data.trades.length === 0;
+  const showFeedSupportState = !feed.loading && feed.error !== null && loadedTrades.length === 0;
+  const showEmptyState = !feed.loading && !feed.error && loadedTrades.length === 0;
   const showFilteredEmptyState =
-    !feed.loading && feed.data.trades.length > 0 && filteredTrades.length === 0;
+    !feed.loading && loadedTrades.length > 0 && filteredTrades.length === 0;
+
+  async function handleShareProfile() {
+    if (profile.data.userId <= 0) {
+      return;
+    }
+
+    await shareProfile({
+      userId: profile.data.userId,
+      nickname: profile.data.nickname || session?.nickname || 'Folo 사용자',
+    });
+  }
+
+  async function handleLoadMore() {
+    if (loadingMore || !hasNext || nextCursor === null) {
+      return;
+    }
+
+    setLoadingMore(true);
+    setPaginationError(null);
+
+    try {
+      const nextPage = await foloApi.getFeed(nextCursor);
+      setLoadedTrades((current) => {
+        const seenTradeIds = new Set(current.map((item) => item.tradeId));
+        const nextTrades = nextPage.trades.filter((item) => !seenTradeIds.has(item.tradeId));
+        return [...current, ...nextTrades];
+      });
+      setNextCursor(nextPage.nextCursor);
+      setHasNext(nextPage.hasNext);
+    } catch (error) {
+      setPaginationError(
+        error instanceof Error ? error.message : '다음 페이지를 불러오지 못했습니다.',
+      );
+    } finally {
+      setLoadingMore(false);
+    }
+  }
+
+  useEffect(() => {
+    if (
+      !route.params?.qaAutoLoadMore ||
+      autoLoadMoreTriggeredRef.current ||
+      feed.loading ||
+      loadingMore ||
+      !hasNext ||
+      nextCursor === null
+    ) {
+      return;
+    }
+
+    autoLoadMoreTriggeredRef.current = true;
+    void handleLoadMore();
+  }, [
+    feed.loading,
+    hasNext,
+    loadingMore,
+    nextCursor,
+    route.params?.qaAutoLoadMore,
+  ]);
 
   const highlightCard = highlightTrade ? (
     isLarge ? (
@@ -430,10 +513,16 @@ export function FeedScreen() {
           ) : null}
         </Pressable>
       ))}
-      {feed.data.hasNext ? (
-        <Text style={styles.paginationHint}>
-          더 많은 거래는 다음 페이지 연결이 추가되면 이어서 볼 수 있습니다.
-        </Text>
+      {paginationError ? <Text style={styles.paginationHint}>{paginationError}</Text> : null}
+      {hasNext ? (
+        <PrimaryButton
+          disabled={loadingMore}
+          label={loadingMore ? '불러오는 중...' : '더 보기'}
+          onPress={() => {
+            void handleLoadMore();
+          }}
+          variant="secondary"
+        />
       ) : null}
     </SurfaceCard>
   );
@@ -549,7 +638,9 @@ export function FeedScreen() {
             <View style={styles.emptyActionGroup}>
               <PrimaryButton
                 label="내 프로필 공유하기"
-                onPress={() => navigation.navigate('MainTabs', { screen: 'Profile' })}
+                onPress={() => {
+                  void handleShareProfile();
+                }}
                 variant="secondary"
               />
               <Text style={styles.emptyActionHint}>
@@ -600,7 +691,10 @@ export function FeedScreen() {
             timelineCard
           )
         ) : (
-          timelineCard
+          <View style={styles.mobileStack}>
+            {highlightCard}
+            {timelineCard}
+          </View>
         )
       )}
     </Page>
@@ -1196,6 +1290,9 @@ const styles = StyleSheet.create({
     fontFamily: tokens.typography.body,
     fontSize: 12,
     lineHeight: 18,
+  },
+  mobileStack: {
+    gap: 16,
   },
   buttonPressed: {
     opacity: 0.86,

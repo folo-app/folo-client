@@ -1,6 +1,9 @@
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import type { NotificationItem } from '../api/contracts';
 import { foloApi } from '../api/services';
 import { DataStatusCard } from '../components/DataStatusCard';
 import {
@@ -14,9 +17,12 @@ import {
 import { useResponsiveLayout } from '../hooks/useResponsiveLayout';
 import { useNotificationsData } from '../hooks/useFoloData';
 import { formatDateLabel, notificationLabel } from '../lib/format';
+import { resolveNotificationTarget } from '../navigation/notificationTargets';
+import type { RootStackParamList } from '../navigation/types';
 import { tokens } from '../theme/tokens';
 
 export function NotificationsScreen() {
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const notifications = useNotificationsData();
   const { isCompact } = useResponsiveLayout();
   const [actionError, setActionError] = useState<string | null>(null);
@@ -42,14 +48,35 @@ export function NotificationsScreen() {
     }
   }
 
-  async function handleMarkRead(notificationId: number) {
-    setPendingId(notificationId);
+  async function handleOpen(item: NotificationItem) {
+    setPendingId(item.notificationId);
     setActionError(null);
     setActionSuccess(null);
 
     try {
-      await foloApi.markNotificationRead(notificationId);
-      notifications.refresh();
+      if (!item.isRead) {
+        await foloApi.markNotificationRead(item.notificationId);
+        notifications.refresh();
+      }
+
+      const target = resolveNotificationTarget(item);
+      switch (target.name) {
+        case 'MainTabs':
+          navigation.navigate('MainTabs', target.params);
+          break;
+        case 'TradeDetail':
+          navigation.navigate('TradeDetail', target.params);
+          break;
+        case 'Reminders':
+          navigation.navigate('Reminders', target.params);
+          break;
+        case 'People':
+          navigation.navigate('People');
+          break;
+        case 'UserProfile':
+          navigation.navigate('UserProfile', target.params);
+          break;
+      }
     } catch (error) {
       setActionError(
         error instanceof Error ? error.message : '알림 읽음 처리에 실패했습니다.',
@@ -95,12 +122,8 @@ export function NotificationsScreen() {
           notifications.data.notifications.map((item, index) => (
             <Pressable
               key={item.notificationId}
-              disabled={item.isRead || pendingId === item.notificationId}
-              onPress={() => {
-                if (!item.isRead) {
-                  handleMarkRead(item.notificationId);
-                }
-              }}
+              disabled={pendingId === item.notificationId}
+              onPress={() => void handleOpen(item)}
               style={[
                 styles.item,
                 isCompact && styles.itemCompact,
@@ -123,6 +146,9 @@ export function NotificationsScreen() {
               </View>
               <Text style={styles.message}>{item.message}</Text>
               <Text style={styles.time}>{formatDateLabel(item.createdAt)}</Text>
+              <Text style={styles.ctaLabel}>
+                {pendingId === item.notificationId ? '이동 중...' : '열기'}
+              </Text>
             </Pressable>
           ))
         )}
@@ -187,6 +213,12 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: tokens.colors.inkMute,
     fontFamily: tokens.typography.body,
+  },
+  ctaLabel: {
+    fontSize: 12,
+    color: tokens.colors.brandStrong,
+    fontFamily: tokens.typography.heading,
+    fontWeight: '700',
   },
   emptyText: {
     fontSize: 14,

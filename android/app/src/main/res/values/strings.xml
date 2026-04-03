@@ -3,4 +3,6 @@
   <string name="expo_system_ui_user_interface_style" translatable="false">light</string>
   <string name="growth_widget_name">Growth Streak</string>
   <string name="growth_widget_description">Recent trading streak heatmap and summary</string>
+  <string name="next_routine_widget_name">Next Routine</string>
+  <string name="next_routine_widget_description">Your next investing routine and schedule</string>
 </resources>

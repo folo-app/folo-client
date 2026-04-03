@@ -5,5 +5,6 @@ import WidgetKit
 struct FoloGrowthWidgetBundle: WidgetBundle {
   var body: some Widget {
     FoloGrowthWidget()
+    NextRoutineWidget()
   }
 }

@@ -4,9 +4,9 @@ import WidgetKit
 
 @objc(WidgetSnapshotBridge)
 final class WidgetSnapshotBridge: NSObject {
-  private let growthWidgetKind = "FoloGrowthWidget"
   private let appGroupIdentifier = "group.com.godten.folo"
   private let growthSnapshotKey = "growth_widget_snapshot"
+  private let nextRoutineSnapshotKey = "next_routine_widget_snapshot"
 
   @objc
   static func requiresMainQueueSetup() -> Bool {
@@ -63,6 +63,56 @@ final class WidgetSnapshotBridge: NSObject {
     resolve(nil)
   }
 
+  @objc(saveNextRoutineSnapshot:resolver:rejecter:)
+  func saveNextRoutineSnapshot(
+    _ snapshotJson: String,
+    resolver resolve: RCTPromiseResolveBlock,
+    rejecter reject: RCTPromiseRejectBlock
+  ) {
+    do {
+      try validateSnapshotJson(snapshotJson)
+      guard let sharedDefaults = UserDefaults(suiteName: appGroupIdentifier) else {
+        reject(
+          "E_APP_GROUP_UNAVAILABLE",
+          "Unable to access the App Group container for widget snapshots.",
+          nil
+        )
+        return
+      }
+
+      sharedDefaults.set(snapshotJson, forKey: nextRoutineSnapshotKey)
+      sharedDefaults.synchronize()
+      reloadWidgets()
+      resolve(nil)
+    } catch {
+      reject(
+        "E_WIDGET_SNAPSHOT_SAVE_FAILED",
+        "Failed to save the next routine widget snapshot.",
+        error
+      )
+    }
+  }
+
+  @objc(clearNextRoutineSnapshot:rejecter:)
+  func clearNextRoutineSnapshot(
+    _ resolve: RCTPromiseResolveBlock,
+    rejecter reject: RCTPromiseRejectBlock
+  ) {
+    guard let sharedDefaults = UserDefaults(suiteName: appGroupIdentifier) else {
+      reject(
+        "E_APP_GROUP_UNAVAILABLE",
+        "Unable to access the App Group container for widget snapshots.",
+        nil
+      )
+      return
+    }
+
+    sharedDefaults.removeObject(forKey: nextRoutineSnapshotKey)
+    sharedDefaults.synchronize()
+    reloadWidgets()
+    resolve(nil)
+  }
+
   private func validateSnapshotJson(_ snapshotJson: String) throws {
     let data = Data(snapshotJson.utf8)
     _ = try JSONSerialization.jsonObject(with: data)
@@ -70,7 +120,7 @@ final class WidgetSnapshotBridge: NSObject {
 
   private func reloadWidgets() {
     if #available(iOS 14.0, *) {
-      WidgetCenter.shared.reloadTimelines(ofKind: growthWidgetKind)
+      WidgetCenter.shared.reloadAllTimelines()
     }
   }
 }
