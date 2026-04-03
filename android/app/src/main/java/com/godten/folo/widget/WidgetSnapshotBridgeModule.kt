@@ -56,6 +56,45 @@ class WidgetSnapshotBridgeModule(
     }
   }
 
+  @ReactMethod
+  fun saveNextRoutineSnapshot(snapshotJson: String, promise: Promise) {
+    try {
+      validateSnapshotJson(snapshotJson)
+      sharedPreferences()
+        .edit()
+        .putString(NEXT_ROUTINE_WIDGET_SNAPSHOT_KEY, snapshotJson)
+        .apply()
+
+      requestWidgetReload(reactContext)
+      promise.resolve(null)
+    } catch (exception: Exception) {
+      promise.reject(
+        "E_WIDGET_SNAPSHOT_SAVE_FAILED",
+        "Failed to save the next routine widget snapshot.",
+        exception,
+      )
+    }
+  }
+
+  @ReactMethod
+  fun clearNextRoutineSnapshot(promise: Promise) {
+    try {
+      sharedPreferences()
+        .edit()
+        .remove(NEXT_ROUTINE_WIDGET_SNAPSHOT_KEY)
+        .apply()
+
+      requestWidgetReload(reactContext)
+      promise.resolve(null)
+    } catch (exception: Exception) {
+      promise.reject(
+        "E_WIDGET_SNAPSHOT_CLEAR_FAILED",
+        "Failed to clear the next routine widget snapshot.",
+        exception,
+      )
+    }
+  }
+
   private fun sharedPreferences() =
     GrowthWidgetStorage.sharedPreferences(reactContext)
 

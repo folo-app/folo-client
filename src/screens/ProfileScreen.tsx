@@ -1,6 +1,7 @@
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import type { RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { useAuth } from '../auth/AuthProvider';
@@ -22,11 +23,13 @@ import {
   tradeTypeLabel,
   visibilityLabel,
 } from '../lib/format';
-import type { RootStackParamList } from '../navigation/types';
+import { shareProfile } from '../lib/profileShare';
+import type { MainTabParamList, RootStackParamList } from '../navigation/types';
 import { tokens } from '../theme/tokens';
 
 export function ProfileScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const route = useRoute<RouteProp<MainTabParamList, 'Profile'>>();
   const { session, signOut } = useAuth();
   const { isCompact } = useResponsiveLayout();
   const profile = useMyProfileData();
@@ -34,6 +37,7 @@ export function ProfileScreen() {
   const reminders = useRemindersData();
   const myTrades = useMyTradesData();
   const [logoutPending, setLogoutPending] = useState(false);
+  const shareOnOpenTriggeredRef = useRef(false);
   const combinedError =
     profile.error ?? reminders.error ?? notifications.error ?? myTrades.error;
   const combinedLoading =
@@ -48,6 +52,30 @@ export function ProfileScreen() {
       setLogoutPending(false);
     }
   }
+
+  async function handleShareProfile() {
+    if (profile.data.userId <= 0) {
+      return;
+    }
+
+    await shareProfile({
+      userId: profile.data.userId,
+      nickname: profile.data.nickname || session?.nickname || 'Folo 사용자',
+    });
+  }
+
+  useEffect(() => {
+    if (
+      !route.params?.qaShareOnOpen ||
+      shareOnOpenTriggeredRef.current ||
+      profile.data.userId <= 0
+    ) {
+      return;
+    }
+
+    shareOnOpenTriggeredRef.current = true;
+    void handleShareProfile();
+  }, [profile.data.nickname, profile.data.userId, route.params?.qaShareOnOpen, session?.nickname]);
 
   return (
     <Page
@@ -82,6 +110,12 @@ export function ProfileScreen() {
           <Chip label={visibilityLabel(profile.data.portfolioVisibility)} />
         </View>
         <View style={styles.profileActions}>
+          <PrimaryButton
+            label="프로필 공유"
+            onPress={() => {
+              void handleShareProfile();
+            }}
+          />
           <PrimaryButton
             label="프로필 편집"
             onPress={() => navigation.navigate('ProfileEdit')}
@@ -259,6 +293,8 @@ const styles = StyleSheet.create({
   profileActions: {
     gap: 10,
     alignItems: 'flex-start',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
   },
   actionStack: {
     gap: 10,

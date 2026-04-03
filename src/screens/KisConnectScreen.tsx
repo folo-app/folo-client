@@ -23,7 +23,7 @@ import {
   SectionHeading,
   SurfaceCard,
 } from '../components/ui';
-import { syncGrowthWidgetSnapshotInBackground } from '../features/widgets';
+import { syncAllWidgetsInBackground } from '../features/widgets';
 import { useMutation, useQuery } from '../hooks/query';
 import { formatDateLabel } from '../lib/format';
 import type { RootStackParamList } from '../navigation/types';
@@ -151,7 +151,7 @@ export function KisConnectScreen() {
   async function handleSync() {
     try {
       const result = await syncMutation.mutate(undefined);
-      syncGrowthWidgetSnapshotInBackground();
+      syncAllWidgetsInBackground();
       setDeepLinkMessage(
         `동기화 완료: 보유 ${result.syncedHoldings}개, 거래 ${result.syncedTrades}건`,
       );

@@ -22,8 +22,9 @@ import {
   PrimaryButton,
   SurfaceCard,
 } from '../components/ui';
-import { syncGrowthWidgetSnapshotInBackground } from '../features/widgets';
+import { syncAllWidgetsInBackground } from '../features/widgets';
 import { useResponsiveLayout } from '../hooks/useResponsiveLayout';
+import { formatDateInputValue, isValidDateInput, toIsoDateInput } from '../lib/dateInput';
 import { formatCurrency } from '../lib/format';
 import type { RootStackParamList } from '../navigation/types';
 import { tokens } from '../theme/tokens';
@@ -49,19 +50,23 @@ export function AddTradeReviewScreen() {
   const [avgPrice, setAvgPrice] = useState(
     selection.currentPrice > 0 ? String(selection.currentPrice) : '',
   );
+  const [tradedOn, setTradedOn] = useState(() => formatDateInputValue());
   const [comment, setComment] = useState('');
   const [visibility, setVisibility] = useState<TradeVisibility>('FRIENDS_ONLY');
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
   const disabled = useMemo(
-    () => (Number(quantity) || 0) <= 0 || (Number(avgPrice) || 0) <= 0,
-    [avgPrice, quantity],
+    () =>
+      (Number(quantity) || 0) <= 0 ||
+      (Number(avgPrice) || 0) <= 0 ||
+      !isValidDateInput(tradedOn),
+    [avgPrice, quantity, tradedOn],
   );
 
   async function handleSubmit() {
     if (disabled) {
-      setMessage('수량과 평균 매수가를 모두 입력해 주세요.');
+      setMessage('수량, 평균 매수가, 거래일을 모두 올바르게 입력해 주세요.');
       return;
     }
 
@@ -69,6 +74,13 @@ export function AddTradeReviewScreen() {
     setMessage(null);
 
     try {
+      const tradedAt = toIsoDateInput(tradedOn);
+
+      if (!tradedAt) {
+        setMessage('거래일을 YYYY-MM-DD 형식으로 입력해 주세요.');
+        return;
+      }
+
       const trade = await foloApi.createTrade({
         ticker: selection.ticker,
         market: selection.market,
@@ -77,10 +89,10 @@ export function AddTradeReviewScreen() {
         price: Number(avgPrice),
         comment: comment.trim() || null,
         visibility,
-        tradedAt: new Date().toISOString(),
+        tradedAt,
       });
 
-      syncGrowthWidgetSnapshotInBackground();
+      syncAllWidgetsInBackground();
       navigation.replace('TradeDetail', { tradeId: trade.tradeId });
     } catch (error) {
       setMessage(
@@ -112,8 +124,8 @@ export function AddTradeReviewScreen() {
             <View style={styles.header}>
               <Text style={styles.title}>수량과 평균 매수가 입력</Text>
               <Text style={styles.subtitle}>
-                선택한 종목 기준으로 매수 또는 매도 기록을 남깁니다. 공개 범위와
-                한 줄 메모는 선택 사항입니다.
+                선택한 종목 기준으로 거래일, 메모, 공개 범위를 함께 남겨 실제
+                거래 기록처럼 보존합니다.
               </Text>
             </View>
 
@@ -165,6 +177,20 @@ export function AddTradeReviewScreen() {
                     value={avgPrice}
                   />
                 </View>
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>거래일</Text>
+                <TextInput
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  onChangeText={setTradedOn}
+                  placeholder="YYYY-MM-DD"
+                  placeholderTextColor={tokens.colors.inkMute}
+                  style={styles.input}
+                  value={tradedOn}
+                />
+                <Text style={styles.helperText}>예: 2026-04-03</Text>
               </View>
 
               <View style={styles.inputGroup}>
@@ -295,6 +321,12 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     fontSize: 16,
     color: tokens.colors.navy,
+    fontFamily: tokens.typography.body,
+  },
+  helperText: {
+    fontSize: 12,
+    lineHeight: 18,
+    color: tokens.colors.inkMute,
     fontFamily: tokens.typography.body,
   },
   textArea: {

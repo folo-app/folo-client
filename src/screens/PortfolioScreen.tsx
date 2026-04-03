@@ -73,6 +73,11 @@ export function PortfolioScreen() {
   const hasDividendProjection = monthlyDividendItems.some((item) => item.amount > 0);
   const dividendTotal = monthlyDividendItems.reduce((sum, item) => sum + item.amount, 0);
   const dividendMonths = monthlyDividendItems.filter((item) => item.amount > 0).length;
+  const peakDividendMonth = hasDividendProjection
+    ? monthlyDividendItems.reduce((currentPeak, item) =>
+        item.amount > currentPeak.amount ? item : currentPeak,
+      )
+    : null;
   const bestHolding =
     holdings.length > 0
       ? [...holdings].sort((left, right) => right.returnRate - left.returnRate)[0]
@@ -115,6 +120,7 @@ export function PortfolioScreen() {
   const showPortfolioSupportCard =
     !hasHoldings && (portfolio.loading || portfolio.error !== null);
   const leadHolding = allocationItems[0] ?? null;
+  const nextReminder = activeReminders[0] ?? null;
   const overviewNarrative = !leadHolding
     ? '첫 보유 종목이 들어오면 자산 구성과 성과 핵심이 이 위쪽에서 먼저 정리됩니다.'
     : (portfolio.data.dayReturn ?? 0) > 0
@@ -254,88 +260,134 @@ export function PortfolioScreen() {
         title="성과 디테일"
         description="수익 기여 종목과 배당 흐름을 깊게 봅니다."
       />
-      <MetricGrid>
-        <MetricBadge
-          label="총 수익률"
-          value={formatPercent(portfolio.data.totalReturnRate)}
-          tone={portfolio.data.totalReturnRate >= 0 ? 'positive' : 'danger'}
-        />
-        <MetricBadge
-          label="오늘 등락"
-          value={formatSignedCurrency(portfolio.data.dayReturn)}
-          tone={(portfolio.data.dayReturn ?? 0) >= 0 ? 'brand' : 'danger'}
-        />
-        <MetricBadge
-          label="투자원금"
-          value={formatCurrency(portfolio.data.totalInvested)}
-        />
-        <MetricBadge
-          label="예상 배당"
-          value={formatCurrency(dividendTotal)}
-          tone={hasDividendProjection ? 'brand' : 'default'}
-        />
-      </MetricGrid>
-      <Text style={styles.sideNote}>지급 월 {dividendMonths}개월 · 총 평가금액 {formatCurrency(portfolio.data.totalValue)}</Text>
-
       <View
         style={[
-          styles.performanceInsightGrid,
-          isCompact && styles.performanceInsightGridCompact,
+          styles.performanceBoard,
+          isCompact && styles.performanceBoardCompact,
         ]}
       >
-        <View style={styles.performanceInsightCard}>
-          <Text style={styles.performanceLabel}>성과 선두</Text>
-          <Text style={styles.performanceTicker}>
-            {bestHolding ? bestHolding.ticker : '데이터 없음'}
-          </Text>
-          <Text
+        <View style={styles.performancePrimaryColumn}>
+          <View style={styles.performanceMetricGrid}>
+            <View style={styles.performanceMetricItem}>
+              <MetricBadge
+                label="총 수익률"
+                value={formatPercent(portfolio.data.totalReturnRate)}
+                tone={portfolio.data.totalReturnRate >= 0 ? 'positive' : 'danger'}
+              />
+            </View>
+            <View style={styles.performanceMetricItem}>
+              <MetricBadge
+                label="오늘 등락"
+                value={formatSignedCurrency(portfolio.data.dayReturn)}
+                tone={(portfolio.data.dayReturn ?? 0) >= 0 ? 'brand' : 'danger'}
+              />
+            </View>
+            <View style={styles.performanceMetricItem}>
+              <MetricBadge
+                label="투자원금"
+                value={formatCurrency(portfolio.data.totalInvested)}
+              />
+            </View>
+            <View style={styles.performanceMetricItem}>
+              <MetricBadge
+                label="예상 배당"
+                value={formatCurrency(dividendTotal)}
+                tone={hasDividendProjection ? 'brand' : 'default'}
+              />
+            </View>
+          </View>
+          <View
             style={[
-              styles.performanceValue,
-              bestHolding && bestHolding.returnRate < 0 && styles.performanceValueNegative,
+              styles.performanceSummaryGrid,
+              isCompact && styles.performanceSummaryGridCompact,
             ]}
           >
-            {bestHolding
-              ? `${formatPercent(bestHolding.returnRate)} · ${formatSignedCurrency(
-                  bestHolding.returnAmount,
-                  bestHolding.market,
-                )}`
-              : '-'}
-          </Text>
-          <Text style={styles.performanceMeta}>
-            {bestHolding
-              ? `${bestHolding.name} · ${bestHolding.sectorName ?? assetTypeLabel(bestHolding.assetType)}`
-              : '표시할 보유 종목이 없습니다.'}
-          </Text>
+            <View style={styles.performanceSummaryCard}>
+              <Text style={styles.performanceSummaryLabel}>성과 맥락</Text>
+              <Text style={styles.performanceSummaryValue}>
+                지급 월 {dividendMonths}개월
+              </Text>
+              <Text style={styles.performanceSummaryMeta}>
+                총 평가금액 {formatCurrency(portfolio.data.totalValue)}
+              </Text>
+            </View>
+            <View style={styles.performanceSummaryCard}>
+              <Text style={styles.performanceSummaryLabel}>배당 집중월</Text>
+              <Text style={styles.performanceSummaryValue}>
+                {peakDividendMonth ? peakDividendMonth.label : '준비 중'}
+              </Text>
+              <Text style={styles.performanceSummaryMeta}>
+                {peakDividendMonth
+                  ? formatCurrency(peakDividendMonth.amount)
+                  : '배당 데이터가 쌓이면 가장 두꺼운 달을 보여줍니다.'}
+              </Text>
+            </View>
+          </View>
         </View>
 
-        <View style={styles.performanceInsightCard}>
-          <Text style={styles.performanceLabel}>주의 종목</Text>
-          <Text style={styles.performanceTicker}>
-            {weakestHolding ? weakestHolding.ticker : '데이터 없음'}
-          </Text>
-          <Text
-            style={[
-              styles.performanceValue,
-              weakestHolding && weakestHolding.returnRate < 0
-                ? styles.performanceValueNegative
-                : styles.performanceValuePositive,
-            ]}
-          >
-            {weakestHolding
-              ? `${formatPercent(weakestHolding.returnRate)} · ${formatSignedCurrency(
-                  weakestHolding.returnAmount,
-                  weakestHolding.market,
-                )}`
-              : '-'}
-          </Text>
-          <Text style={styles.performanceMeta}>
-            {weakestHolding
-              ? `${weakestHolding.name} · ${weakestHolding.sectorName ?? assetTypeLabel(weakestHolding.assetType)}`
-              : '표시할 보유 종목이 없습니다.'}
-          </Text>
+        <View
+          style={[
+            styles.performanceInsightRail,
+            isCompact && styles.performanceInsightRailCompact,
+          ]}
+        >
+          <View style={styles.performanceInsightCard}>
+            <Text style={styles.performanceLabel}>성과 선두</Text>
+            <Text style={styles.performanceTicker}>
+              {bestHolding ? bestHolding.ticker : '데이터 없음'}
+            </Text>
+            <Text
+              style={[
+                styles.performanceValue,
+                bestHolding && bestHolding.returnRate < 0 && styles.performanceValueNegative,
+              ]}
+            >
+              {bestHolding
+                ? `${formatPercent(bestHolding.returnRate)} · ${formatSignedCurrency(
+                    bestHolding.returnAmount,
+                    bestHolding.market,
+                  )}`
+                : '-'}
+            </Text>
+            <Text style={styles.performanceMeta}>
+              {bestHolding
+                ? `${bestHolding.name} · ${bestHolding.sectorName ?? assetTypeLabel(bestHolding.assetType)}`
+                : '표시할 보유 종목이 없습니다.'}
+            </Text>
+          </View>
+
+          <View style={styles.performanceInsightCard}>
+            <Text style={styles.performanceLabel}>주의 종목</Text>
+            <Text style={styles.performanceTicker}>
+              {weakestHolding ? weakestHolding.ticker : '데이터 없음'}
+            </Text>
+            <Text
+              style={[
+                styles.performanceValue,
+                weakestHolding && weakestHolding.returnRate < 0
+                  ? styles.performanceValueNegative
+                  : styles.performanceValuePositive,
+              ]}
+            >
+              {weakestHolding
+                ? `${formatPercent(weakestHolding.returnRate)} · ${formatSignedCurrency(
+                    weakestHolding.returnAmount,
+                    weakestHolding.market,
+                  )}`
+                : '-'}
+            </Text>
+            <Text style={styles.performanceMeta}>
+              {weakestHolding
+                ? `${weakestHolding.name} · ${weakestHolding.sectorName ?? assetTypeLabel(weakestHolding.assetType)}`
+                : '표시할 보유 종목이 없습니다.'}
+            </Text>
+          </View>
         </View>
       </View>
 
+      <Text style={styles.sideNote}>
+        오늘 손익과 총 수익률은 위에서 먼저 읽고, 선두/주의 종목과 배당 흐름으로 바로 이어집니다.
+      </Text>
       <View style={styles.analyticsSection}>
         <Text style={styles.analyticsLabel}>월별 배당 흐름</Text>
         {hasDividendProjection ? (
@@ -362,55 +414,81 @@ export function PortfolioScreen() {
         onActionPress={() => navigation.navigate('Reminders')}
       />
       <DataStatusCard error={routineError} loading={routineLoading} variant="inline" />
-      <View style={styles.analyticsSection}>
-        <Text style={styles.analyticsLabel}>최근 12주 거래 잔디</Text>
-        {hasTradeHeatmap ? (
-          <>
-            <Heatmap
-              cellSize={isCompact ? 12 : 14}
-              gap={isCompact ? 4 : 6}
-              weeks={tradeHeatmapWeeks}
-            />
-            <Text style={styles.helperText}>
-              진한 칸일수록 같은 날 거래 기록이 많습니다. 이번 달 {monthlyTradeCount}건,
-              활동일 {monthlyTradeDays}일입니다.
-            </Text>
-          </>
-        ) : (
-          <Text style={styles.helperText}>
-            거래를 기록하면 GitHub 잔디처럼 날짜별 활동이 이곳에 쌓입니다.
-          </Text>
-        )}
-      </View>
+      <View style={[styles.routineBoard, isCompact && styles.routineBoardCompact]}>
+        <View style={styles.routineHeatmapColumn}>
+          <View style={styles.analyticsSection}>
+            <Text style={styles.analyticsLabel}>최근 12주 거래 잔디</Text>
+            {hasTradeHeatmap ? (
+              <>
+                <Heatmap
+                  cellSize={isCompact ? 12 : 14}
+                  gap={isCompact ? 4 : 6}
+                  weeks={tradeHeatmapWeeks}
+                />
+                <Text style={styles.helperText}>
+                  진한 칸일수록 같은 날 거래 기록이 많습니다. 이번 달 {monthlyTradeCount}건,
+                  활동일 {monthlyTradeDays}일입니다.
+                </Text>
+              </>
+            ) : (
+              <Text style={styles.helperText}>
+                거래를 기록하면 GitHub 잔디처럼 날짜별 활동이 이곳에 쌓입니다.
+              </Text>
+            )}
+          </View>
+        </View>
 
-      <View style={[styles.routineSnapshotGrid, isCompact && styles.routineSnapshotGridCompact]}>
-        <View style={styles.routineSnapshotCard}>
-          <Text style={styles.routineSnapshotLabel}>연속 기록</Text>
-          <Text style={styles.routineSnapshotValue}>{dayStreak}일</Text>
-          <Text style={styles.routineSnapshotMeta}>
-            {dayStreak > 0 ? '오늘까지 기록 흐름이 이어지고 있습니다.' : '오늘부터 다시 잔디를 채울 수 있습니다.'}
-          </Text>
-        </View>
-        <View style={styles.routineSnapshotCard}>
-          <Text style={styles.routineSnapshotLabel}>이번 달 활동일</Text>
-          <Text style={styles.routineSnapshotValue}>{monthlyTradeDays}일</Text>
-          <Text style={styles.routineSnapshotMeta}>총 거래 {monthlyTradeCount}건이 기록되었습니다.</Text>
-        </View>
-        <View style={styles.routineSnapshotCard}>
-          <Text style={styles.routineSnapshotLabel}>목표 달성률</Text>
-          <Text style={styles.routineSnapshotValue}>{goalProgressRate}%</Text>
-          <Text style={styles.routineSnapshotMeta}>월 {activityGoalDays}일 기록 목표 기준입니다.</Text>
-        </View>
-        <View style={styles.routineSnapshotCard}>
-          <Text style={styles.routineSnapshotLabel}>다음 루틴</Text>
-          <Text style={styles.routineSnapshotValue}>
-            {activeReminders[0] ? formatShortDate(activeReminders[0].nextReminderDate) : '미설정'}
-          </Text>
-          <Text style={styles.routineSnapshotMeta}>
-            {activeReminders[0]
-              ? `${activeReminders[0].ticker} · ${formatCurrency(activeReminders[0].amount)}`
-              : '반복 투자 루틴을 만들면 다음 일정이 여기에 잡힙니다.'}
-          </Text>
+        <View style={[styles.routineRail, isCompact && styles.routineRailCompact]}>
+          <View style={styles.routineLeadCard}>
+            <Text style={styles.routineSnapshotLabel}>다음 루틴</Text>
+            <Text style={styles.routineLeadValue}>
+              {nextReminder ? formatShortDate(nextReminder.nextReminderDate) : '미설정'}
+            </Text>
+            <Text style={styles.routineLeadMeta}>
+              {nextReminder
+                ? `${nextReminder.ticker} · ${formatCurrency(nextReminder.amount)}`
+                : '반복 투자 루틴을 만들면 다음 일정이 여기에 잡힙니다.'}
+            </Text>
+          </View>
+          <View
+            style={[
+              styles.routineSnapshotGrid,
+              isCompact && styles.routineSnapshotGridCompact,
+            ]}
+          >
+            <View style={[styles.routineSnapshotCard, isCompact && styles.routineSnapshotCardCompact]}>
+              <Text style={styles.routineSnapshotLabel}>연속 기록</Text>
+              <Text style={styles.routineSnapshotValue}>{dayStreak}일</Text>
+              <Text style={styles.routineSnapshotMeta}>
+                {dayStreak > 0
+                  ? '오늘까지 기록 흐름이 이어지고 있습니다.'
+                  : '오늘부터 다시 잔디를 채울 수 있습니다.'}
+              </Text>
+            </View>
+            <View style={[styles.routineSnapshotCard, isCompact && styles.routineSnapshotCardCompact]}>
+              <Text style={styles.routineSnapshotLabel}>이번 달 활동일</Text>
+              <Text style={styles.routineSnapshotValue}>{monthlyTradeDays}일</Text>
+              <Text style={styles.routineSnapshotMeta}>
+                총 거래 {monthlyTradeCount}건이 기록되었습니다.
+              </Text>
+            </View>
+            <View style={[styles.routineSnapshotCard, isCompact && styles.routineSnapshotCardCompact]}>
+              <Text style={styles.routineSnapshotLabel}>목표 달성률</Text>
+              <Text style={styles.routineSnapshotValue}>{goalProgressRate}%</Text>
+              <Text style={styles.routineSnapshotMeta}>
+                월 {activityGoalDays}일 기록 목표 기준입니다.
+              </Text>
+            </View>
+            <View style={[styles.routineSnapshotCard, isCompact && styles.routineSnapshotCardCompact]}>
+              <Text style={styles.routineSnapshotLabel}>활성 루틴</Text>
+              <Text style={styles.routineSnapshotValue}>{activeReminders.length}개</Text>
+              <Text style={styles.routineSnapshotMeta}>
+                {nextReminder
+                  ? `${nextReminder.dayOfMonth}일 정기 투자 흐름이 이어집니다.`
+                  : '첫 루틴을 만들면 위젯과 함께 다시 부를 수 있습니다.'}
+              </Text>
+            </View>
+          </View>
         </View>
       </View>
     </SurfaceCard>
@@ -952,10 +1030,10 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   sideColumn: {
-    flex: 1,
+    flex: 1.05,
     gap: 18,
-    maxWidth: 360,
-    minWidth: 280,
+    maxWidth: 420,
+    minWidth: 300,
   },
   emptyPreviewGrid: {
     flexDirection: 'row',
@@ -1191,17 +1269,73 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 18,
   },
-  performanceInsightGrid: {
+  performanceBoard: {
     flexDirection: 'row',
     gap: 12,
   },
-  performanceInsightGridCompact: {
+  performanceBoardCompact: {
     flexDirection: 'column',
+  },
+  performancePrimaryColumn: {
+    flex: 1.2,
+    gap: 12,
+    minWidth: 0,
+  },
+  performanceMetricGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  performanceMetricItem: {
+    minWidth: 0,
+    width: '48%',
+  },
+  performanceSummaryGrid: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  performanceSummaryGridCompact: {
+    flexDirection: 'column',
+  },
+  performanceSummaryCard: {
+    backgroundColor: 'rgba(255,255,255,0.76)',
+    borderColor: 'rgba(214, 224, 234, 0.88)',
+    borderRadius: 18,
+    borderWidth: 1,
+    flex: 1,
+    gap: 4,
+    minWidth: 0,
+    paddingHorizontal: 14,
+    paddingVertical: 14,
+  },
+  performanceSummaryLabel: {
+    color: tokens.colors.inkMute,
+    fontFamily: tokens.typography.body,
+    fontSize: 12,
+  },
+  performanceSummaryValue: {
+    color: tokens.colors.navy,
+    fontFamily: tokens.typography.heading,
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  performanceSummaryMeta: {
+    color: tokens.colors.inkSoft,
+    fontFamily: tokens.typography.body,
+    fontSize: 12,
+    lineHeight: 18,
+  },
+  performanceInsightRail: {
+    gap: 12,
+    minWidth: 0,
+    width: 180,
+  },
+  performanceInsightRailCompact: {
+    width: '100%',
   },
   performanceInsightCard: {
     backgroundColor: tokens.colors.surfaceMuted,
     borderRadius: 20,
-    flex: 1,
     gap: 6,
     minWidth: 0,
     paddingHorizontal: 16,
@@ -1236,8 +1370,49 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 20,
   },
+  routineBoard: {
+    flexDirection: 'row',
+    gap: 16,
+  },
+  routineBoardCompact: {
+    flexDirection: 'column',
+  },
+  routineHeatmapColumn: {
+    flex: 1,
+    minWidth: 0,
+  },
+  routineRail: {
+    gap: 12,
+    minWidth: 0,
+    width: 208,
+  },
+  routineRailCompact: {
+    width: '100%',
+  },
+  routineLeadCard: {
+    backgroundColor: tokens.colors.brandSoft,
+    borderColor: 'rgba(37, 99, 235, 0.12)',
+    borderRadius: 18,
+    borderWidth: 1,
+    gap: 4,
+    paddingHorizontal: 14,
+    paddingVertical: 14,
+  },
+  routineLeadValue: {
+    color: tokens.colors.navy,
+    fontFamily: tokens.typography.heading,
+    fontSize: 22,
+    fontWeight: '800',
+  },
+  routineLeadMeta: {
+    color: tokens.colors.inkSoft,
+    fontFamily: tokens.typography.body,
+    fontSize: 12,
+    lineHeight: 18,
+  },
   routineSnapshotGrid: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 12,
   },
   routineSnapshotGridCompact: {
@@ -1246,11 +1421,14 @@ const styles = StyleSheet.create({
   routineSnapshotCard: {
     backgroundColor: tokens.colors.surfaceMuted,
     borderRadius: 18,
-    flex: 1,
     gap: 4,
     minWidth: 0,
+    width: '47%',
     paddingHorizontal: 14,
     paddingVertical: 14,
+  },
+  routineSnapshotCardCompact: {
+    width: '100%',
   },
   routineSnapshotLabel: {
     color: tokens.colors.inkMute,

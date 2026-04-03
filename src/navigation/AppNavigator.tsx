@@ -11,6 +11,7 @@ import { useAuth } from '../auth/AuthProvider';
 import { BottomNav } from '../components/BottomNav';
 import { AddTradeScreen } from '../screens/AddTradeScreen';
 import { AddTradeReviewScreen } from '../screens/AddTradeReviewScreen';
+import { CreationHubScreen } from '../screens/CreationHubScreen';
 import { EmailVerificationScreen } from '../screens/EmailVerificationScreen';
 import { FeedScreen } from '../screens/FeedScreen';
 import { HoldingDetailScreen } from '../screens/HoldingDetailScreen';
@@ -26,7 +27,9 @@ import { PortfolioSetupScreen } from '../screens/PortfolioSetupScreen';
 import { PublicPortfolioScreen } from '../screens/PublicPortfolioScreen';
 import { ProfileEditScreen } from '../screens/ProfileEditScreen';
 import { ProfileScreen } from '../screens/ProfileScreen';
+import { QaHarnessScreen } from '../screens/QaHarnessScreen';
 import { RecoverLoginIdScreen } from '../screens/RecoverLoginIdScreen';
+import { ReminderCreateScreen } from '../screens/ReminderCreateScreen';
 import { RemindersScreen } from '../screens/RemindersScreen';
 import { PeopleScreen } from '../screens/PeopleScreen';
 import { SignupScreen } from '../screens/SignupScreen';
@@ -78,7 +81,7 @@ function MainTabsNavigator() {
           activeTab={routeToTab[state.routeNames[state.index] as keyof typeof routeToTab]}
           onChange={(tab) => {
             if (tab === 'add') {
-              navigation.getParent()?.navigate('AddTrade');
+              navigation.getParent()?.navigate('CreationHub');
               return;
             }
 
@@ -114,6 +117,9 @@ function RootNavigator() {
             component={PortfolioSetupReviewScreen}
             name="PortfolioSetupReview"
           />
+          <Stack.Screen component={CreationHubScreen} name="CreationHub" />
+          <Stack.Screen component={QaHarnessScreen} name="QaHarness" />
+          <Stack.Screen component={ReminderCreateScreen} name="ReminderCreate" />
           <Stack.Screen component={AddTradeScreen} name="AddTrade" />
           <Stack.Screen component={AddTradeReviewScreen} name="AddTradeReview" />
           <Stack.Screen component={MainTabsNavigator} name="MainTabs" />

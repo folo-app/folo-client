@@ -1,4 +1,4 @@
-import type { TradeSummaryItem } from '../../api/contracts';
+import type { ReminderItem, TradeSummaryItem } from '../../api/contracts';
 
 export const GROWTH_WIDGET_HEATMAP_DAYS = 35;
 export const GROWTH_WIDGET_STREAK_LOOKBACK_DAYS = 365;
@@ -30,4 +30,29 @@ export type GrowthWidgetSourceTrade = Pick<TradeSummaryItem, 'tradeId' | 'traded
 
 export type GrowthWidgetSourceData = {
   trades: GrowthWidgetSourceTrade[];
+};
+
+export type NextRoutineWidgetStatus = 'ACTIVE' | 'PAUSED' | 'SETUP';
+
+export type NextRoutineWidgetSnapshot = {
+  schemaVersion: 1;
+  generatedAt: string;
+  deepLinkUrl: string;
+  title: string;
+  status: NextRoutineWidgetStatus;
+  headline: string;
+  subheadline: string;
+  amountLabel: string;
+  footerCopy: string;
+  activeCount: number;
+  dayOfMonth: number | null;
+};
+
+export type NextRoutineWidgetSourceReminder = Pick<
+  ReminderItem,
+  'reminderId' | 'ticker' | 'name' | 'amount' | 'dayOfMonth' | 'isActive' | 'nextReminderDate'
+>;
+
+export type NextRoutineWidgetSourceData = {
+  reminders: NextRoutineWidgetSourceReminder[];
 };

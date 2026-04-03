@@ -6,6 +6,11 @@ struct GrowthWidgetEntry: TimelineEntry {
   let snapshot: GrowthWidgetSnapshot
 }
 
+struct NextRoutineWidgetEntry: TimelineEntry {
+  let date: Date
+  let snapshot: NextRoutineWidgetSnapshot
+}
+
 enum GrowthWidgetStatus: String, Decodable {
   case active = "ACTIVE"
   case idle = "IDLE"
@@ -95,3 +100,47 @@ private let iso8601Formatter: ISO8601DateFormatter = {
   formatter.formatOptions = [.withInternetDateTime]
   return formatter
 }()
+
+enum NextRoutineWidgetStatus: String, Decodable {
+  case active = "ACTIVE"
+  case paused = "PAUSED"
+  case setup = "SETUP"
+}
+
+struct NextRoutineWidgetSnapshot: Decodable {
+  let schemaVersion: Int
+  let generatedAt: String
+  let deepLinkUrl: String
+  let title: String
+  let status: NextRoutineWidgetStatus
+  let headline: String
+  let subheadline: String
+  let amountLabel: String
+  let footerCopy: String
+  let activeCount: Int
+  let dayOfMonth: Int?
+
+  var deepLink: URL? {
+    URL(string: deepLinkUrl)
+  }
+
+  var isRenderable: Bool {
+    schemaVersion == 1
+  }
+
+  static func placeholder(referenceDate: Date) -> NextRoutineWidgetSnapshot {
+    NextRoutineWidgetSnapshot(
+      schemaVersion: 1,
+      generatedAt: iso8601Formatter.string(from: referenceDate),
+      deepLinkUrl: "folo://widget/next-routine?source=widget-routine",
+      title: "Next Routine",
+      status: .setup,
+      headline: "루틴을 등록하세요",
+      subheadline: "Creation Hub에서 일정과 금액을 정합니다",
+      amountLabel: "다음 루틴이 위젯에 표시됩니다",
+      footerCopy: "First-class routine",
+      activeCount: 0,
+      dayOfMonth: nil
+    )
+  }
+}

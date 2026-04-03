@@ -1,10 +1,12 @@
 import { NativeModules, Platform } from 'react-native';
 
-import type { GrowthWidgetSnapshot } from '../types';
+import type { GrowthWidgetSnapshot, NextRoutineWidgetSnapshot } from '../types';
 
 type NativeWidgetSnapshotBridge = {
   saveGrowthSnapshot(snapshotJson: string): Promise<void>;
   clearGrowthSnapshot(): Promise<void>;
+  saveNextRoutineSnapshot(snapshotJson: string): Promise<void>;
+  clearNextRoutineSnapshot(): Promise<void>;
 };
 
 const nativeBridge = NativeModules.WidgetSnapshotBridge as
@@ -45,7 +47,31 @@ export async function clearGrowthWidgetSnapshot() {
   await bridge.clearGrowthSnapshot();
 }
 
+export async function saveNextRoutineWidgetSnapshot(
+  snapshot: NextRoutineWidgetSnapshot,
+) {
+  const bridge = getNativeBridge();
+
+  if (!bridge) {
+    return;
+  }
+
+  await bridge.saveNextRoutineSnapshot(JSON.stringify(snapshot));
+}
+
+export async function clearNextRoutineWidgetSnapshot() {
+  const bridge = getNativeBridge();
+
+  if (!bridge) {
+    return;
+  }
+
+  await bridge.clearNextRoutineSnapshot();
+}
+
 export const widgetSnapshotBridge = {
   saveGrowthSnapshot: saveGrowthWidgetSnapshot,
   clearGrowthSnapshot: clearGrowthWidgetSnapshot,
+  saveNextRoutineSnapshot: saveNextRoutineWidgetSnapshot,
+  clearNextRoutineSnapshot: clearNextRoutineWidgetSnapshot,
 };

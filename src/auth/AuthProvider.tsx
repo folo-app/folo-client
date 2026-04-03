@@ -19,8 +19,8 @@ import type {
 } from '../api/contracts';
 import { foloApi } from '../api/services';
 import {
-  clearGrowthWidgetSnapshotInBackground,
-  syncGrowthWidgetSnapshotInBackground,
+  clearAllWidgetsInBackground,
+  syncAllWidgetsInBackground,
 } from '../features/widgets';
 
 type AuthStatus = 'booting' | 'signed_out' | 'authenticated';
@@ -190,12 +190,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (status === 'authenticated') {
-      syncGrowthWidgetSnapshotInBackground();
+      syncAllWidgetsInBackground();
       return;
     }
 
     if (status === 'signed_out') {
-      clearGrowthWidgetSnapshotInBackground();
+      clearAllWidgetsInBackground();
     }
   }, [session?.accessToken, status]);
 
@@ -215,7 +215,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         nextState === 'active';
 
       if (becameActive) {
-        syncGrowthWidgetSnapshotInBackground();
+        syncAllWidgetsInBackground();
       }
     });
 

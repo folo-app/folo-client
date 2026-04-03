@@ -1,5 +1,6 @@
 import type { NavigatorScreenParams } from '@react-navigation/native';
 import type { MarketType } from '../api/contracts';
+import type { QaHarnessScenario } from './qa';
 
 export type PortfolioSetupSelection = {
   ticker: string;
@@ -10,13 +11,21 @@ export type PortfolioSetupSelection = {
 
 export type MainTabParamList = {
   Home: undefined;
-  Feed: undefined;
+  Feed:
+    | {
+        qaAutoLoadMore?: boolean;
+      }
+    | undefined;
   Portfolio:
     | {
         source?: 'widget-growth';
       }
     | undefined;
-  Profile: undefined;
+  Profile:
+    | {
+        qaShareOnOpen?: boolean;
+      }
+    | undefined;
 };
 
 export type RootStackParamList = {
@@ -44,20 +53,33 @@ export type RootStackParamList = {
   PortfolioSetupReview: {
     selections: PortfolioSetupSelection[];
   };
+  CreationHub: undefined;
+  QaHarness: {
+    scenario: QaHarnessScenario;
+  };
+  ReminderCreate: undefined;
   AddTrade: undefined;
   AddTradeReview: {
     selection: PortfolioSetupSelection;
   };
   MainTabs: NavigatorScreenParams<MainTabParamList> | undefined;
-  TradeDetail: { tradeId: number };
+  TradeDetail: {
+    tradeId: number;
+    source?: 'notification';
+  };
   HoldingDetail: { holdingId: number };
   Notifications: undefined;
-  Reminders: undefined;
+  Reminders:
+    | {
+        source?: 'notification' | 'widget-routine';
+      }
+    | undefined;
   ProfileEdit: undefined;
   People: undefined;
   UserProfile: {
     userId: number;
     nickname?: string;
+    source?: 'notification' | 'profile-share';
   };
   UserFeed: {
     userId: number;
