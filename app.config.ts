@@ -15,6 +15,7 @@ const config: FoloExpoConfig = {
   ios: {
     supportsTablet: true,
     bundleIdentifier: 'com.godten.folo',
+    usesAppleSignIn: true,
     entitlements: {
       'com.apple.security.application-groups': ['group.com.godten.folo'],
     },
