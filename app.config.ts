@@ -8,11 +8,13 @@ const config: FoloExpoConfig = {
   name: 'Folo',
   slug: 'folo-client',
   version: '1.0.0',
+  icon: './assets/branding/app-icon-1024.png',
   orientation: 'portrait',
   scheme: 'folo',
   userInterfaceStyle: 'light',
   newArchEnabled: true,
   ios: {
+    icon: './assets/branding/app-icon-1024.png',
     supportsTablet: true,
     bundleIdentifier: 'com.godten.folo',
     usesAppleSignIn: true,
@@ -23,9 +25,14 @@ const config: FoloExpoConfig = {
   android: {
     predictiveBackGestureEnabled: false,
     package: 'com.godten.folo',
+    adaptiveIcon: {
+      foregroundImage: './assets/branding/android-adaptive-foreground.png',
+      backgroundColor: '#FAFCFF',
+    },
   },
   web: {
     bundler: 'metro',
+    favicon: './assets/branding/favicon.png',
     output: 'single',
   },
 };

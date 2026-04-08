@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Folo Logo 3 No Arrow Contrast Study</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --canvas: #f4f7fb;
+        --surface: rgba(255, 255, 255, 0.92);
+        --line: #d6e0ea;
+        --ink: #0f172a;
+        --ink-soft: #556377;
+      }
+
+      * { box-sizing: border-box; }
+
+      body {
+        margin: 0;
+        font-family: "Avenir Next", "Pretendard", "Apple SD Gothic Neo", sans-serif;
+        background:
+          radial-gradient(circle at top left, #ffffff 0%, rgba(255, 255, 255, 0) 34%),
+          linear-gradient(180deg, #edf4fb 0%, var(--canvas) 100%);
+        color: var(--ink);
+      }
+
+      main {
+        max-width: 1160px;
+        margin: 0 auto;
+        padding: 48px 24px 72px;
+      }
+
+      h1 {
+        margin: 0 0 12px;
+        font-size: clamp(34px, 5vw, 54px);
+        line-height: 1.04;
+      }
+
+      .intro {
+        max-width: 760px;
+        margin: 0 0 28px;
+        color: var(--ink-soft);
+        font-size: 17px;
+        line-height: 1.6;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 20px;
+      }
+
+      .card {
+        padding: 22px;
+        border-radius: 30px;
+        border: 1px solid rgba(214, 224, 234, 0.85);
+        background: var(--surface);
+        box-shadow: 0 18px 44px rgba(15, 23, 42, 0.06);
+      }
+
+      .card h2 {
+        margin: 0 0 6px;
+        font-size: 24px;
+      }
+
+      .card p {
+        margin: 0 0 18px;
+        color: var(--ink-soft);
+        line-height: 1.55;
+      }
+
+      .artboard {
+        display: grid;
+        place-items: center;
+        min-height: 320px;
+        padding: 18px;
+        border-radius: 24px;
+        border: 1px solid var(--line);
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.88), rgba(236, 242, 248, 0.94));
+      }
+
+      .artboard img {
+        width: min(100%, 280px);
+        height: auto;
+        display: block;
+      }
+
+      .sizes {
+        display: flex;
+        gap: 12px;
+        margin-top: 16px;
+      }
+
+      .size {
+        flex: 1;
+        text-align: center;
+        padding: 12px 8px;
+        border-radius: 18px;
+        border: 1px solid var(--line);
+        background: #fbfdff;
+      }
+
+      .size img {
+        display: block;
+        margin: 0 auto 8px;
+        border-radius: 22%;
+      }
+
+      .size span {
+        color: var(--ink-soft);
+        font-size: 12px;
+        font-weight: 600;
+      }
+
+      @media (max-width: 860px) {
+        .grid { grid-template-columns: 1fr; }
+      }
+
+      @media (max-width: 720px) {
+        main { padding: 28px 16px 40px; }
+        .card { padding: 18px; border-radius: 24px; }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>3안 화살표 제거, 막대 위치/대비 비교</h1>
+      <p class="intro">
+        화살표 제거 방향은 유지하고, 가로 막대가 카드 배경과 너무 비슷해 보이던 문제를 따로 비교할 수 있게 만들었습니다.
+        오른쪽 버전은 구조는 그대로 두고 막대를 조금 위로 올려 `F` 읽힘을 강화하고, 대비는 한 단계만 낮춘 버전입니다.
+      </p>
+
+      <section class="grid">
+        <article class="card">
+          <h2>화살표 제거본</h2>
+          <p>구조는 단정하지만 가로 막대가 카드 배경과 비슷해서 분리감이 약한 버전.</p>
+          <div class="artboard">
+            <img src="./logo-precision-3-ledger-tile-no-arrow.svg" alt="Ledger tile without arrow" />
+          </div>
+          <div class="sizes">
+            <div class="size">
+              <img src="./logo-precision-3-ledger-tile-no-arrow.svg" alt="" width="64" height="64" />
+              <span>64px</span>
+            </div>
+            <div class="size">
+              <img src="./logo-precision-3-ledger-tile-no-arrow.svg" alt="" width="32" height="32" />
+              <span>32px</span>
+            </div>
+          </div>
+        </article>
+
+        <article class="card">
+          <h2>막대 대비 보정본</h2>
+          <p>화살표는 제거한 채, 막대를 약간 위로 올리고 톤은 배경 쪽으로 조금 되돌려 더 자연스럽게 읽히게 만든 버전.</p>
+          <div class="artboard">
+            <img src="./logo-precision-3-ledger-tile-no-arrow-contrast.svg" alt="Ledger tile without arrow with stronger bar contrast" />
+          </div>
+          <div class="sizes">
+            <div class="size">
+              <img src="./logo-precision-3-ledger-tile-no-arrow-contrast.svg" alt="" width="64" height="64" />
+              <span>64px</span>
+            </div>
+            <div class="size">
+              <img src="./logo-precision-3-ledger-tile-no-arrow-contrast.svg" alt="" width="32" height="32" />
+              <span>32px</span>
+            </div>
+          </div>
+        </article>
+      </section>
+    </main>
+  </body>
+</html>

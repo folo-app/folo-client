@@ -15,6 +15,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { FoloLogoMark } from './FoloLogoMark';
 import { tokens } from '../theme/tokens';
 
 type AuthScreenLayoutProps = {
@@ -104,11 +105,7 @@ export function AuthScreenLayout({
                 ]}
               >
                 <View style={styles.brandBar}>
-                  <View style={[styles.brandMark, heroVariant === 'compact' && styles.brandMarkCompact]}>
-                    <Text style={[styles.brandMarkText, heroVariant === 'compact' && styles.brandMarkTextCompact]}>
-                      Fo
-                    </Text>
-                  </View>
+                  <FoloLogoMark size={heroVariant === 'compact' ? 46 : 64} />
                   <View style={styles.brandMeta}>
                     <Text style={styles.badge}>{badge}</Text>
                     <Text style={[styles.brandName, heroVariant === 'compact' && styles.brandNameCompact]}>
@@ -535,28 +532,6 @@ const styles = StyleSheet.create({
     paddingTop: 8,
     marginHorizontal: -18,
     transform: [{ translateX: 12 }],
-  },
-  brandMark: {
-    width: 64,
-    height: 64,
-    borderRadius: 22,
-    backgroundColor: tokens.colors.navy,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  brandMarkCompact: {
-    width: 46,
-    height: 46,
-    borderRadius: 16,
-  },
-  brandMarkText: {
-    color: tokens.colors.surface,
-    fontSize: 28,
-    fontFamily: tokens.typography.heading,
-    fontWeight: '800',
-  },
-  brandMarkTextCompact: {
-    fontSize: 22,
   },
   brandMeta: {
     gap: 4,

@@ -1,0 +1,31 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="178" y1="118" x2="860" y2="904" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#F6FAFF"/>
+      <stop offset="1" stop-color="#E4F6F4"/>
+    </linearGradient>
+    <linearGradient id="loop" x1="264" y1="222" x2="772" y2="820" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#2563EB"/>
+      <stop offset="0.52" stop-color="#0F5CB4"/>
+      <stop offset="1" stop-color="#0F766E"/>
+    </linearGradient>
+    <filter id="shadow" x="178" y="148" width="668" height="734" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feFlood flood-opacity="0" result="BackgroundImageFix"/>
+      <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+      <feOffset dy="28"/>
+      <feGaussianBlur stdDeviation="26"/>
+      <feColorMatrix type="matrix" values="0 0 0 0 0.0588235 0 0 0 0 0.0901961 0 0 0 0 0.164706 0 0 0 0.14 0"/>
+      <feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_2_1"/>
+      <feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_2_1" result="shape"/>
+    </filter>
+  </defs>
+  <rect x="96" y="96" width="832" height="832" rx="220" fill="url(#bg)"/>
+  <circle cx="286" cy="312" r="54" fill="#DCE8FF"/>
+  <circle cx="752" cy="752" r="72" fill="#D6F5F1"/>
+  <g filter="url(#shadow)">
+    <path d="M676 270C744 270 800 326 800 394C800 456 754 507 693 517H478C412 517 358 571 358 638C358 704 412 758 478 758C544 758 598 704 598 638V310C598 243 544 190 478 190C411 190 358 243 358 310C358 340 369 369 389 390" stroke="url(#loop)" stroke-width="118" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M402 408H674" stroke="#F4F7FB" stroke-width="54" stroke-linecap="round"/>
+  </g>
+  <path d="M702 266L764 328" stroke="#0F766E" stroke-width="28" stroke-linecap="round"/>
+  <path d="M356 796L424 728" stroke="#2563EB" stroke-width="24" stroke-linecap="round" opacity="0.48"/>
+</svg>

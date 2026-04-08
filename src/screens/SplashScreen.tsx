@@ -1,6 +1,7 @@
 import { ActivityIndicator, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { FoloLogoMark } from '../components/FoloLogoMark';
 import { tokens } from '../theme/tokens';
 
 const bootSteps = ['보안 세션 확인', '포트폴리오 복원', '피드 상태 동기화'] as const;
@@ -26,9 +27,7 @@ export function SplashScreen() {
         <View style={styles.glowBottom} />
 
         <View style={[styles.brandBlock, compact && styles.brandBlockCompact]}>
-          <View style={[styles.brandMark, compact && styles.brandMarkCompact]}>
-            <Text style={[styles.brandMarkText, compact && styles.brandMarkTextCompact]}>Fo</Text>
-          </View>
+          <FoloLogoMark size={compact ? 68 : 78} />
           <Text style={[styles.brandName, compact && styles.brandNameCompact]}>FOLO</Text>
           <Text style={[styles.tagline, compact && styles.taglineCompact]}>
             밝고 빠른 투자 기록 흐름을 준비합니다
@@ -101,35 +100,6 @@ const styles = StyleSheet.create({
   },
   brandBlockCompact: {
     gap: 8,
-  },
-  brandMark: {
-    width: 78,
-    height: 78,
-    borderRadius: 28,
-    backgroundColor: 'rgba(255,255,255,0.92)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(214, 224, 234, 0.9)',
-    shadowColor: '#0F172A',
-    shadowOpacity: 0.06,
-    shadowRadius: 16,
-    shadowOffset: { width: 0, height: 10 },
-    elevation: 4,
-  },
-  brandMarkCompact: {
-    width: 68,
-    height: 68,
-    borderRadius: 24,
-  },
-  brandMarkText: {
-    color: tokens.colors.navy,
-    fontSize: 32,
-    fontFamily: tokens.typography.heading,
-    fontWeight: '800',
-  },
-  brandMarkTextCompact: {
-    fontSize: 28,
   },
   brandName: {
     color: tokens.colors.navy,
