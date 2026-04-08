@@ -1,5 +1,6 @@
 import { apiRequest } from './client';
 import type {
+  AppleNativeAuthRequest,
   AuthResponse,
   ChangeMyPasswordRequest,
   CommentListResponse,
@@ -34,6 +35,13 @@ import type {
   RefreshRequest,
   ReminderItem,
   ReminderListResponse,
+  SocialAuthCompleteProfileRequest,
+  SocialAuthExchangeRequest,
+  SocialAuthExchangeResponse,
+  SocialAuthLinkRequest,
+  SocialAuthProvider,
+  SocialAuthStartRequest,
+  SocialAuthStartResponse,
   SignupRequest,
   SignupResponse,
   StockPriceResponse,
@@ -105,6 +113,40 @@ export const foloApi = {
       method: 'POST',
       body,
       requiresAuth: false,
+    });
+  },
+  startSocialAuth(provider: SocialAuthProvider, body: SocialAuthStartRequest) {
+    return apiRequest<SocialAuthStartResponse>(`/auth/social/${provider.toLowerCase()}/start`, {
+      method: 'POST',
+      body,
+      requiresAuth: false,
+    });
+  },
+  verifyAppleNativeAuth(body: AppleNativeAuthRequest) {
+    return apiRequest<SocialAuthExchangeResponse>('/auth/social/apple/verify', {
+      method: 'POST',
+      body,
+      requiresAuth: false,
+    });
+  },
+  exchangeSocialAuth(body: SocialAuthExchangeRequest) {
+    return apiRequest<SocialAuthExchangeResponse>('/auth/social/exchange', {
+      method: 'POST',
+      body,
+      requiresAuth: false,
+    });
+  },
+  completeSocialAuthProfile(body: SocialAuthCompleteProfileRequest) {
+    return apiRequest<AuthResponse>('/auth/social/complete-profile', {
+      method: 'POST',
+      body,
+      requiresAuth: false,
+    });
+  },
+  linkSocialAuth(body: SocialAuthLinkRequest) {
+    return apiRequest<AuthResponse>('/auth/social/link', {
+      method: 'POST',
+      body,
     });
   },
   recoverLoginId(body: RecoverLoginIdRequest) {
