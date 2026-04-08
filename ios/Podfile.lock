@@ -177,6 +177,8 @@ PODS:
     - ReactCommon/turbomodule/core
     - ReactNativeDependencies
     - Yoga
+  - ExpoAppleAuthentication (55.0.12):
+    - ExpoModulesCore
   - ExpoAsset (55.0.9):
     - ExpoModulesCore
   - ExpoDocumentPicker (55.0.9):
@@ -2201,6 +2203,7 @@ DEPENDENCIES:
   - expo-dev-launcher (from `../node_modules/expo-dev-launcher`)
   - expo-dev-menu (from `../node_modules/expo-dev-menu`)
   - expo-dev-menu-interface (from `../node_modules/expo-dev-menu-interface/ios`)
+  - ExpoAppleAuthentication (from `../node_modules/expo-apple-authentication/ios`)
   - ExpoAsset (from `../node_modules/expo/node_modules/expo-asset/ios`)
   - ExpoDocumentPicker (from `../node_modules/expo-document-picker/ios`)
   - "ExpoDomWebView (from `../node_modules/@expo/dom-webview/ios`)"
@@ -2309,6 +2312,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/expo-dev-menu"
   expo-dev-menu-interface:
     :path: "../node_modules/expo-dev-menu-interface/ios"
+  ExpoAppleAuthentication:
+    :path: "../node_modules/expo-apple-authentication/ios"
   ExpoAsset:
     :path: "../node_modules/expo/node_modules/expo-asset/ios"
   ExpoDocumentPicker:
@@ -2498,6 +2503,7 @@ SPEC CHECKSUMS:
   expo-dev-launcher: b5462737a64d7823b3a839ad63b69941e5647397
   expo-dev-menu: 46f293beccc20051731d85d84359226fe4ebeb9d
   expo-dev-menu-interface: bf6f816d29b45bec038080790963c635e8d588c2
+  ExpoAppleAuthentication: b79e329642b0a18b97b824e20607aeb72f9c2412
   ExpoAsset: 9cadcbc3582e7df664f490ebefbed12fc4e5ec78
   ExpoDocumentPicker: 27adca9e8272af64a4bc0d5460bffd64b406c878
   ExpoDomWebView: f101fb3db4b6eec4163fca51f7507189b7e48661
