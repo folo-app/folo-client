@@ -1,0 +1,311 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Folo Logo Comparison</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --canvas: #f4f7fb;
+        --surface: rgba(255, 255, 255, 0.9);
+        --line: #d6e0ea;
+        --ink: #0f172a;
+        --ink-soft: #556377;
+        --brand: #2563eb;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: "Avenir Next", "Pretendard", "Apple SD Gothic Neo", sans-serif;
+        background:
+          radial-gradient(circle at top left, #ffffff 0%, rgba(255, 255, 255, 0) 32%),
+          linear-gradient(180deg, #eef4fb 0%, var(--canvas) 100%);
+        color: var(--ink);
+      }
+
+      main {
+        max-width: 1320px;
+        margin: 0 auto;
+        padding: 48px 24px 72px;
+      }
+
+      h1 {
+        margin: 0 0 14px;
+        font-size: clamp(34px, 5vw, 54px);
+        line-height: 1.04;
+      }
+
+      .intro {
+        max-width: 820px;
+        margin: 0 0 30px;
+        color: var(--ink-soft);
+        font-size: 17px;
+        line-height: 1.6;
+      }
+
+      .section {
+        margin-top: 22px;
+        padding: 22px;
+        border: 1px solid rgba(214, 224, 234, 0.85);
+        border-radius: 30px;
+        background: var(--surface);
+        box-shadow: 0 18px 44px rgba(15, 23, 42, 0.06);
+      }
+
+      .section-head {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 18px;
+      }
+
+      .section-head h2 {
+        margin: 0;
+        font-size: 26px;
+      }
+
+      .section-head p {
+        margin: 6px 0 0;
+        color: var(--ink-soft);
+      }
+
+      .diff {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 18px;
+      }
+
+      .panel {
+        padding: 18px;
+        border-radius: 24px;
+        border: 1px solid var(--line);
+        background: #fff;
+      }
+
+      .panel strong {
+        display: inline-block;
+        margin-bottom: 14px;
+        font-size: 14px;
+        letter-spacing: 0.03em;
+        text-transform: uppercase;
+      }
+
+      .artboard {
+        display: grid;
+        place-items: center;
+        min-height: 340px;
+        padding: 18px;
+        border-radius: 24px;
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.88), rgba(236, 242, 248, 0.92));
+      }
+
+      .artboard img {
+        width: min(100%, 280px);
+        height: auto;
+        display: block;
+      }
+
+      .mini {
+        display: flex;
+        gap: 12px;
+        margin-top: 16px;
+      }
+
+      .mini-box {
+        flex: 1;
+        padding: 10px 8px;
+        border-radius: 18px;
+        border: 1px solid var(--line);
+        background: #fbfdff;
+        text-align: center;
+      }
+
+      .mini-box img {
+        display: block;
+        margin: 0 auto 8px;
+        border-radius: 22%;
+      }
+
+      .mini-box span {
+        color: var(--ink-soft);
+        font-size: 12px;
+        font-weight: 600;
+      }
+
+      .delta {
+        margin-top: 16px;
+        color: var(--ink-soft);
+        font-size: 14px;
+        line-height: 1.55;
+      }
+
+      .delta strong {
+        color: var(--ink);
+      }
+
+      @media (max-width: 900px) {
+        .diff {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      @media (max-width: 720px) {
+        main {
+          padding: 28px 16px 40px;
+        }
+
+        .section {
+          padding: 18px;
+          border-radius: 24px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Folo 로고 원본 vs 수정본</h1>
+      <p class="intro">
+        수정본은 세 가지 원칙으로 손봤습니다. 도형이 맞닿는 접선 구간을 줄이고, 화살표를 본체 안으로 끌어오고,
+        그림자를 약하게 해서 축소 시 흐트러짐이 덜 보이게 했습니다.
+      </p>
+
+      <section class="section">
+        <div class="section-head">
+          <div>
+            <h2>1안, Stacked F</h2>
+            <p>화이트 카드와 컬러 블록의 간격을 다시 잡아 레이어가 더 또렷하게 보이게 수정.</p>
+          </div>
+        </div>
+        <div class="diff">
+          <div class="panel">
+            <strong>Original</strong>
+            <div class="artboard">
+              <img src="./logo-option-1-stacked-f.svg" alt="Original stacked F logo" />
+            </div>
+            <div class="mini">
+              <div class="mini-box">
+                <img src="./logo-option-1-stacked-f.svg" alt="" width="64" height="64" />
+                <span>64px</span>
+              </div>
+              <div class="mini-box">
+                <img src="./logo-option-1-stacked-f.svg" alt="" width="32" height="32" />
+                <span>32px</span>
+              </div>
+            </div>
+          </div>
+          <div class="panel">
+            <strong>Revised v2</strong>
+            <div class="artboard">
+              <img src="./logo-option-1-stacked-f-v2.svg" alt="Revised stacked F logo" />
+            </div>
+            <div class="mini">
+              <div class="mini-box">
+                <img src="./logo-option-1-stacked-f-v2.svg" alt="" width="64" height="64" />
+                <span>64px</span>
+              </div>
+              <div class="mini-box">
+                <img src="./logo-option-1-stacked-f-v2.svg" alt="" width="32" height="32" />
+                <span>32px</span>
+              </div>
+            </div>
+            <div class="delta"><strong>변경점</strong> 화이트 카드 위치를 정리하고 화살표를 안쪽으로 당겨 결속감을 높였습니다.</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-head">
+          <div>
+            <h2>2안, Loop Link</h2>
+            <p>과하게 무거운 스트로크와 떠 있는 포인트를 정리해서 루프가 더 하나의 기호처럼 보이게 수정.</p>
+          </div>
+        </div>
+        <div class="diff">
+          <div class="panel">
+            <strong>Original</strong>
+            <div class="artboard">
+              <img src="./logo-option-2-loop-link.svg" alt="Original loop link logo" />
+            </div>
+            <div class="mini">
+              <div class="mini-box">
+                <img src="./logo-option-2-loop-link.svg" alt="" width="64" height="64" />
+                <span>64px</span>
+              </div>
+              <div class="mini-box">
+                <img src="./logo-option-2-loop-link.svg" alt="" width="32" height="32" />
+                <span>32px</span>
+              </div>
+            </div>
+          </div>
+          <div class="panel">
+            <strong>Revised v2</strong>
+            <div class="artboard">
+              <img src="./logo-option-2-loop-link-v2.svg" alt="Revised loop link logo" />
+            </div>
+            <div class="mini">
+              <div class="mini-box">
+                <img src="./logo-option-2-loop-link-v2.svg" alt="" width="64" height="64" />
+                <span>64px</span>
+              </div>
+              <div class="mini-box">
+                <img src="./logo-option-2-loop-link-v2.svg" alt="" width="32" height="32" />
+                <span>32px</span>
+              </div>
+            </div>
+            <div class="delta"><strong>변경점</strong> 루프 두께를 줄이고 불필요한 보조 스트로크를 제거해 작은 크기에서 덜 퍼지게 했습니다.</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-head">
+          <div>
+            <h2>3안, Ledger Tile</h2>
+            <p>패널과 바가 정확히 맞닿던 문제를 풀고, 초록 블록과 화살표 위치를 다시 잡아 깨짐처럼 보이던 인상을 줄였습니다.</p>
+          </div>
+        </div>
+        <div class="diff">
+          <div class="panel">
+            <strong>Original</strong>
+            <div class="artboard">
+              <img src="./logo-option-3-ledger-tile.svg" alt="Original ledger tile logo" />
+            </div>
+            <div class="mini">
+              <div class="mini-box">
+                <img src="./logo-option-3-ledger-tile.svg" alt="" width="64" height="64" />
+                <span>64px</span>
+              </div>
+              <div class="mini-box">
+                <img src="./logo-option-3-ledger-tile.svg" alt="" width="32" height="32" />
+                <span>32px</span>
+              </div>
+            </div>
+          </div>
+          <div class="panel">
+            <strong>Revised v2</strong>
+            <div class="artboard">
+              <img src="./logo-option-3-ledger-tile-v2.svg" alt="Revised ledger tile logo" />
+            </div>
+            <div class="mini">
+              <div class="mini-box">
+                <img src="./logo-option-3-ledger-tile-v2.svg" alt="" width="64" height="64" />
+                <span>64px</span>
+              </div>
+              <div class="mini-box">
+                <img src="./logo-option-3-ledger-tile-v2.svg" alt="" width="32" height="32" />
+                <span>32px</span>
+              </div>
+            </div>
+            <div class="delta"><strong>변경점</strong> 접선 충돌을 없애고 내부 간격을 키워서 구조가 더 정돈돼 보이게 만들었습니다.</div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

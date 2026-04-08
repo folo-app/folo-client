@@ -24,6 +24,7 @@ import {
 import { useMutation } from '../hooks/query';
 import { useResponsiveLayout } from '../hooks/useResponsiveLayout';
 import {
+  currencyLabel,
   formatCurrency,
   formatPercent,
   formatRelativeDate,
@@ -150,7 +151,10 @@ export function UserProfileScreen() {
                   tone="positive"
                 />
                 <Chip
-                  label={`평가금액 ${formatCurrency(portfolio.data.totalValue)}`}
+                  label={`평가금액 ${formatCurrency(
+                    portfolio.data.totalValue,
+                    portfolio.data.displayCurrency,
+                  )}`}
                   tone="brand"
                 />
               </View>
@@ -169,11 +173,19 @@ export function UserProfileScreen() {
                       {holding.ticker} · {holding.name}
                     </Text>
                     <Text style={styles.rowMeta}>
-                      {formatPercent(holding.returnRate)} · {formatCurrency(holding.totalValue, holding.market)}
+                      {formatPercent(holding.returnRate)} ·{' '}
+                      {formatCurrency(
+                        holding.displayTotalValue ?? holding.totalValue,
+                        portfolio.data.displayCurrency,
+                      )}
                     </Text>
                   </View>
                 ))
               )}
+              <Text style={styles.statusText}>
+                기준 통화 {currencyLabel(portfolio.data.displayCurrency)}
+                {portfolio.data.fxStale ? ' · 환율 갱신 필요' : ''}
+              </Text>
               <PrimaryButton
                 label="공개 포트폴리오 전체 보기"
                 onPress={() =>

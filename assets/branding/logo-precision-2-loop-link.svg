@@ -1,0 +1,33 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="160" y1="120" x2="864" y2="904" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FAFCFF"/>
+      <stop offset="1" stop-color="#ECF5F4"/>
+    </linearGradient>
+    <linearGradient id="loop" x1="304" y1="248" x2="760" y2="760" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#2563EB"/>
+      <stop offset="0.54" stop-color="#1755C8"/>
+      <stop offset="1" stop-color="#0F766E"/>
+    </linearGradient>
+    <filter id="loopShadow" x="180" y="172" width="676" height="696" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feFlood flood-opacity="0" result="BackgroundImageFix"/>
+      <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+      <feOffset dy="24"/>
+      <feGaussianBlur stdDeviation="20"/>
+      <feColorMatrix type="matrix" values="0 0 0 0 0.0588235 0 0 0 0 0.0901961 0 0 0 0 0.164706 0 0 0 0.11 0"/>
+      <feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_22_1"/>
+      <feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_22_1" result="shape"/>
+    </filter>
+  </defs>
+
+  <rect x="96" y="96" width="832" height="832" rx="224" fill="url(#bg)"/>
+
+  <g filter="url(#loopShadow)">
+    <rect x="208" y="208" width="608" height="608" rx="152" fill="#FFFFFF"/>
+    <path d="M648 296C706 296 752 342 752 400C752 456 708 500 652 500H476C432 500 396 536 396 580C396 636 442 680 498 680C554 680 600 636 600 580V336C600 272 548 220 484 220C420 220 368 272 368 336C368 364 378 390 396 410" stroke="url(#loop)" stroke-width="96" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M412 400H644" stroke="#F7FAFE" stroke-width="52" stroke-linecap="round"/>
+  </g>
+
+  <path d="M648 296L716 364" stroke="#2E7E79" stroke-width="24" stroke-linecap="round"/>
+  <path d="M632 364H740" stroke="#2E7E79" stroke-width="24" stroke-linecap="round"/>
+</svg>

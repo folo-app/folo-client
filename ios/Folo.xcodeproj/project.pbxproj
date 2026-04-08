@@ -138,29 +138,6 @@
 			name = ExpoModulesProviders;
 			sourceTree = "<group>";
 		};
-		C10700000000000000000001 /* FoloGrowthWidgetExtension */ = {
-			isa = PBXGroup;
-			children = (
-				C10200000000000000000002 /* FoloGrowthWidgetBundle.swift */,
-				C10200000000000000000003 /* FoloGrowthWidget.swift */,
-				C10200000000000000000004 /* GrowthWidgetEntry.swift */,
-				C10200000000000000000005 /* GrowthWidgetSnapshotStore.swift */,
-				C10700000000000000000002 /* GrowthWidgetViews */,
-				C10200000000000000000006 /* Info.plist */,
-				C10200000000000000000007 /* FoloGrowthWidgetExtension.entitlements */,
-			);
-			path = FoloGrowthWidgetExtension;
-			sourceTree = "<group>";
-		};
-		C10700000000000000000002 /* GrowthWidgetViews */ = {
-			isa = PBXGroup;
-			children = (
-				C10200000000000000000008 /* GrowthWidgetSmallView.swift */,
-				C10200000000000000000009 /* GrowthWidgetMediumView.swift */,
-			);
-			path = GrowthWidgetViews;
-			sourceTree = "<group>";
-		};
 		832341AE1AAA6A7D00B99B32 /* Libraries */ = {
 			isa = PBXGroup;
 			children = (
@@ -200,6 +177,29 @@
 			);
 			name = Supporting;
 			path = Folo/Supporting;
+			sourceTree = "<group>";
+		};
+		C10700000000000000000001 /* FoloGrowthWidgetExtension */ = {
+			isa = PBXGroup;
+			children = (
+				C10200000000000000000002 /* FoloGrowthWidgetBundle.swift */,
+				C10200000000000000000003 /* FoloGrowthWidget.swift */,
+				C10200000000000000000004 /* GrowthWidgetEntry.swift */,
+				C10200000000000000000005 /* GrowthWidgetSnapshotStore.swift */,
+				C10700000000000000000002 /* GrowthWidgetViews */,
+				C10200000000000000000006 /* Info.plist */,
+				C10200000000000000000007 /* FoloGrowthWidgetExtension.entitlements */,
+			);
+			path = FoloGrowthWidgetExtension;
+			sourceTree = "<group>";
+		};
+		C10700000000000000000002 /* GrowthWidgetViews */ = {
+			isa = PBXGroup;
+			children = (
+				C10200000000000000000008 /* GrowthWidgetSmallView.swift */,
+				C10200000000000000000009 /* GrowthWidgetMediumView.swift */,
+			);
+			path = GrowthWidgetViews;
 			sourceTree = "<group>";
 		};
 		CF10A92AF6FF7FB6C06E5737 /* Folo */ = {

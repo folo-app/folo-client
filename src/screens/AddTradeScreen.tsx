@@ -69,7 +69,9 @@ export function AddTradeScreen() {
   const discover = useStockDiscoverData(12);
   const ownedItems = useMemo<StockTileItem[]>(() => {
     const holdings = [...portfolio.data.holdings].sort(
-      (left, right) => (right.totalValue ?? 0) - (left.totalValue ?? 0),
+      (left, right) =>
+        (right.displayTotalValue ?? right.totalValue ?? 0) -
+        (left.displayTotalValue ?? left.totalValue ?? 0),
     );
 
     return holdings

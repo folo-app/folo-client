@@ -35,6 +35,7 @@ import {
 } from '../hooks/useFoloData';
 import { useResponsiveLayout } from '../hooks/useResponsiveLayout';
 import {
+  currencyLabel,
   formatCurrency,
   formatNumber,
   formatRelativeDate,
@@ -160,6 +161,7 @@ export function ProfileScreen() {
   const socialAuthProviders = getSocialAuthProvidersForPlatform().filter(
     (provider) => provider !== 'APPLE' || appleAuthAvailable,
   );
+  const canManagePassword = session?.authProvider === 'EMAIL';
 
   useEffect(() => {
     aliveRef.current = true;
@@ -588,6 +590,30 @@ export function ProfileScreen() {
         </Text>
       </SurfaceCard>
 
+      {canManagePassword ? (
+        <SurfaceCard>
+          <SectionHeading
+            title="계정 보안"
+            description="이메일 로그인 계정만 비밀번호 변경과 기본 보안 점검을 관리합니다."
+          />
+          <DetailRow label="로그인 보호 방식" value="이메일 + 비밀번호" />
+          <DetailRow
+            label="보안 확인 이메일"
+            value={session?.email ?? '등록된 이메일을 확인해 주세요.'}
+          />
+          <Text style={styles.securityHint}>
+            현재 비밀번호를 확인한 뒤 새 비밀번호로 바꿀 수 있습니다. 비밀번호 변경 UI는 프로필 편집 화면에서 이어집니다.
+          </Text>
+          <View style={styles.actionStack}>
+            <PrimaryButton
+              label="비밀번호 변경"
+              onPress={() => navigation.navigate('ProfileEdit')}
+              variant="secondary"
+            />
+          </View>
+        </SurfaceCard>
+      ) : null}
+
       <SurfaceCard>
         <SectionHeading
           title="공개 범위와 연결"
@@ -600,6 +626,10 @@ export function ProfileScreen() {
         <DetailRow
           label="수익 공개 범위"
           value={visibilityLabel(profile.data.returnVisibility)}
+        />
+        <DetailRow
+          label="평가 기준 통화"
+          value={currencyLabel(profile.data.displayCurrency)}
         />
         <DetailRow label="알림 미확인 수" value={`${notifications.data.unreadCount}개`} />
         <DetailRow label="활성 리마인더" value={`${reminders.data.reminders.length}개`} />
@@ -875,6 +905,12 @@ const styles = StyleSheet.create({
     color: tokens.colors.inkMute,
     fontSize: 12,
     lineHeight: 18,
+    fontFamily: tokens.typography.body,
+  },
+  securityHint: {
+    color: tokens.colors.inkSoft,
+    fontSize: 13,
+    lineHeight: 20,
     fontFamily: tokens.typography.body,
   },
   listRow: {

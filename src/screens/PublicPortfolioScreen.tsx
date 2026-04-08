@@ -2,6 +2,7 @@ import { useRoute } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
 import { StyleSheet, Text, View } from 'react-native';
 
+import type { PortfolioHoldingItem } from '../api/contracts';
 import {
   AllocationBar,
   AllocationDonutChart,
@@ -20,6 +21,7 @@ import {
 import { useUserPortfolioData } from '../hooks/useFoloData';
 import { useResponsiveLayout } from '../hooks/useResponsiveLayout';
 import {
+  currencyLabel,
   formatCompactCurrency,
   formatCurrency,
   formatDateLabel,
@@ -41,12 +43,14 @@ export function PublicPortfolioScreen() {
     ? `${route.params.nickname}님의 포트폴리오`
     : '공개 포트폴리오';
   const sortedHoldings = [...portfolio.data.holdings]
-    .sort((left, right) => (right.totalValue ?? 0) - (left.totalValue ?? 0));
+    .sort(
+      (left, right) => (holdingDisplayTotalValue(right) ?? 0) - (holdingDisplayTotalValue(left) ?? 0),
+    );
   const allocationItems = sortedHoldings.map((holding, index) => ({
       key: `${holding.holdingId}`,
       label: holding.name,
       ratio: holding.weight,
-      value: formatCurrency(holding.totalValue, holding.market),
+      value: formatCurrency(holdingDisplayTotalValue(holding), portfolio.data.displayCurrency),
       meta: `${holding.ticker} · ${holding.market}`,
       color: HOLDING_PALETTE[index % HOLDING_PALETTE.length],
     }));
@@ -54,7 +58,7 @@ export function PublicPortfolioScreen() {
     key: item.key,
     label: item.label,
     ratio: item.weight,
-    value: item.value !== null ? formatCurrency(item.value) : undefined,
+    value: item.value !== null ? formatCurrency(item.value, portfolio.data.displayCurrency) : undefined,
     color: SECTOR_PALETTE[index % SECTOR_PALETTE.length],
   }));
   const monthlyDividendItems = portfolio.data.monthlyDividendForecasts.map((item) => ({
@@ -85,8 +89,8 @@ export function PublicPortfolioScreen() {
                 items={allocationItems}
                 centerLabel={
                   isCompact
-                    ? formatCompactCurrency(portfolio.data.totalValue)
-                    : formatCurrency(portfolio.data.totalValue)
+                    ? formatCompactCurrency(portfolio.data.totalValue, portfolio.data.displayCurrency)
+                    : formatCurrency(portfolio.data.totalValue, portfolio.data.displayCurrency)
                 }
                 centerSubLabel="공개 자산"
                 size={isCompact ? 148 : 220}
@@ -126,8 +130,12 @@ export function PublicPortfolioScreen() {
               title="성과 스냅샷"
               description={`최근 반영 ${portfolio.data.syncedAt ? formatDateLabel(portfolio.data.syncedAt) : '기록 없음'}`}
             />
-            <Text style={styles.summaryLabel}>총 평가금액</Text>
-            <Text style={styles.summaryValue}>{formatCurrency(portfolio.data.totalValue)}</Text>
+            <Text style={styles.summaryLabel}>
+              총 평가금액 · {currencyLabel(portfolio.data.displayCurrency)}
+            </Text>
+            <Text style={styles.summaryValue}>
+              {formatCurrency(portfolio.data.totalValue, portfolio.data.displayCurrency)}
+            </Text>
             <Text
               style={[
                 styles.summaryDelta,
@@ -139,12 +147,12 @@ export function PublicPortfolioScreen() {
             <MetricGrid>
               <MetricBadge
                 label="평가손익"
-                value={formatSignedCurrency(portfolio.data.totalReturn)}
+                value={formatSignedCurrency(portfolio.data.totalReturn, portfolio.data.displayCurrency)}
                 tone={(portfolio.data.totalReturn ?? 0) >= 0 ? 'positive' : 'danger'}
               />
               <MetricBadge
                 label="오늘 등락"
-                value={formatSignedCurrency(portfolio.data.dayReturn)}
+                value={formatSignedCurrency(portfolio.data.dayReturn, portfolio.data.displayCurrency)}
                 tone={(portfolio.data.dayReturn ?? 0) >= 0 ? 'brand' : 'danger'}
               />
             </MetricGrid>
@@ -192,7 +200,10 @@ export function PublicPortfolioScreen() {
                             numberOfLines={1}
                             style={styles.holdingMetricValuePrimary}
                           >
-                            {formatCurrency(holding.totalValue, holding.market)}
+                            {formatCurrency(
+                              holdingDisplayTotalValue(holding),
+                              portfolio.data.displayCurrency,
+                            )}
                           </Text>
                         </View>
                         <View
@@ -211,7 +222,10 @@ export function PublicPortfolioScreen() {
                               (holding.returnAmount ?? 0) < 0 && styles.holdingStatValueNegative,
                             ]}
                           >
-                            {formatSignedCurrency(holding.returnAmount, holding.market)}
+                            {formatSignedCurrency(
+                              holdingDisplayReturnAmount(holding),
+                              portfolio.data.displayCurrency,
+                            )}
                           </Text>
                           <Text
                             numberOfLines={1}
@@ -241,7 +255,10 @@ export function PublicPortfolioScreen() {
                           numberOfLines={1}
                           style={styles.holdingMetricValuePrimary}
                         >
-                          {formatCurrency(holding.totalValue, holding.market)}
+                          {formatCurrency(
+                            holdingDisplayTotalValue(holding),
+                            portfolio.data.displayCurrency,
+                          )}
                         </Text>
                       </View>
                       <View
@@ -261,7 +278,10 @@ export function PublicPortfolioScreen() {
                             (holding.returnAmount ?? 0) < 0 && styles.holdingStatValueNegative,
                           ]}
                         >
-                          {formatSignedCurrency(holding.returnAmount, holding.market)}
+                          {formatSignedCurrency(
+                            holdingDisplayReturnAmount(holding),
+                            portfolio.data.displayCurrency,
+                          )}
                         </Text>
                         <Text
                           numberOfLines={1}
@@ -300,6 +320,14 @@ export function PublicPortfolioScreen() {
       )}
     </Page>
   );
+}
+
+function holdingDisplayTotalValue(holding: PortfolioHoldingItem) {
+  return holding.displayTotalValue ?? holding.totalValue;
+}
+
+function holdingDisplayReturnAmount(holding: PortfolioHoldingItem) {
+  return holding.displayReturnAmount ?? holding.returnAmount;
 }
 
 const styles = StyleSheet.create({
