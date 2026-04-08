@@ -3,7 +3,7 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import type { FeedTradeItem } from '../api/contracts';
+import type { FeedTradeItem, PortfolioHoldingItem } from '../api/contracts';
 import {
   AllocationBar,
 } from '../components/portfolio-visuals';
@@ -22,6 +22,7 @@ import {
   useRemindersData,
 } from '../hooks/useFoloData';
 import {
+  currencyLabel,
   formatCurrency,
   formatDateLabel,
   formatPercent,
@@ -49,13 +50,15 @@ export function HomeScreen() {
   const reminderSummary = reminders.data.reminders[0];
   const allocationPalette = ['#2563EB', '#0F766E', '#7C3AED', '#F59E0B', '#E11D48', '#14B8A6'];
   const topAllocationItems = [...portfolio.data.holdings]
-    .sort((left, right) => (right.totalValue ?? 0) - (left.totalValue ?? 0))
+    .sort(
+      (left, right) => (holdingDisplayTotalValue(right) ?? 0) - (holdingDisplayTotalValue(left) ?? 0),
+    )
     .slice(0, 3)
     .map((holding, index) => ({
       key: `${holding.holdingId}`,
       label: holding.name,
       ratio: holding.weight,
-      value: formatCurrency(holding.totalValue, holding.market),
+      value: formatCurrency(holdingDisplayTotalValue(holding), portfolio.data.displayCurrency),
       meta: `${holding.ticker} · ${holding.market}`,
       color: allocationPalette[index % allocationPalette.length],
     }));
@@ -70,10 +73,10 @@ export function HomeScreen() {
   const showHeroPlaceholderValues = !portfolioReady && (portfolio.loading || portfolio.error !== null);
   const summaryTotalValue = showHeroPlaceholderValues
     ? '-'
-    : formatCurrency(portfolio.data.totalValue);
+    : formatCurrency(portfolio.data.totalValue, portfolio.data.displayCurrency);
   const summaryDayReturn = showHeroPlaceholderValues
     ? '-'
-    : formatSignedCurrency(portfolio.data.dayReturn);
+    : formatSignedCurrency(portfolio.data.dayReturn, portfolio.data.displayCurrency);
   const summaryReturnRate = showHeroPlaceholderValues
     ? '-'
     : formatPercent(portfolio.data.totalReturnRate);
@@ -234,6 +237,13 @@ export function HomeScreen() {
                 : portfolio.data.syncedAt
                 ? `최근 반영 ${formatDateLabel(portfolio.data.syncedAt)}`
                 : '아직 반영된 자산 데이터가 없습니다.'}
+            </Text>
+          </View>
+          <View style={styles.summaryMetaPill}>
+            <Ionicons color={tokens.colors.teal} name="cash-outline" size={15} />
+            <Text style={styles.summaryMeta}>
+              기준 통화 {currencyLabel(portfolio.data.displayCurrency)}
+              {portfolio.data.fxStale ? ' · 환율 갱신 필요' : ''}
             </Text>
           </View>
         </View>
@@ -454,6 +464,10 @@ export function HomeScreen() {
       ) : null}
     </Page>
   );
+}
+
+function holdingDisplayTotalValue(holding: PortfolioHoldingItem) {
+  return holding.displayTotalValue ?? holding.totalValue;
 }
 
 function resolveHomeHeroState({

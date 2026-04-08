@@ -1,4 +1,5 @@
 import type {
+  CurrencyCode,
   MarketType,
   NotificationType,
   PortfolioVisibility,
@@ -17,12 +18,19 @@ function numberFormatter(currency: 'KRW' | 'USD') {
 }
 
 export function currencyForMarket(market: string | MarketType) {
+  if (market === 'KRW' || market === 'USD') {
+    return market;
+  }
   return market === 'KRX' ? 'KRW' : 'USD';
+}
+
+export function currencyLabel(currency: CurrencyCode) {
+  return currency === 'KRW' ? '원화' : '달러';
 }
 
 export function formatCurrency(
   value: number | null | undefined,
-  market: string | MarketType = 'KRX',
+  market: string | MarketType | CurrencyCode = 'KRX',
 ) {
   if (value === null || value === undefined) {
     return '-';
@@ -32,7 +40,7 @@ export function formatCurrency(
 
 export function formatCompactCurrency(
   value: number | null | undefined,
-  market: string | MarketType = 'KRX',
+  market: string | MarketType | CurrencyCode = 'KRX',
 ) {
   if (value === null || value === undefined) {
     return '-';
@@ -67,7 +75,7 @@ export function formatPercent(value: number | null | undefined) {
 
 export function formatSignedCurrency(
   value: number | null | undefined,
-  market: string | MarketType = 'KRX',
+  market: string | MarketType | CurrencyCode = 'KRX',
 ) {
   if (value === null || value === undefined) {
     return '-';

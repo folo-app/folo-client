@@ -26,12 +26,14 @@ import {
 } from '../hooks/useFoloData';
 import { useResponsiveLayout } from '../hooks/useResponsiveLayout';
 import {
+  currencyLabel,
   formatCompactCurrency,
   formatCurrency,
   formatPercent,
   formatSignedCurrency,
   formatWeight,
 } from '../lib/format';
+import type { CurrencyCode, PortfolioHoldingItem } from '../api/contracts';
 import type { RootStackParamList } from '../navigation/types';
 import { tokens } from '../theme/tokens';
 
@@ -46,7 +48,8 @@ export function PortfolioScreen() {
   const myTrades = useMyTradesData();
 
   const holdings = [...portfolio.data.holdings].sort(
-    (left, right) => (right.totalValue ?? 0) - (left.totalValue ?? 0),
+    (left, right) =>
+      (holdingDisplayTotalValue(right) ?? 0) - (holdingDisplayTotalValue(left) ?? 0),
   );
   const hasHoldings = holdings.length > 0;
   const showEmptyState = !portfolio.loading && !portfolio.error && !hasHoldings;
@@ -54,7 +57,7 @@ export function PortfolioScreen() {
     key: `${holding.holdingId}`,
     label: holding.name,
     ratio: holding.weight,
-    value: formatCurrency(holding.totalValue, holding.market),
+    value: formatCurrency(holdingDisplayTotalValue(holding), portfolio.data.displayCurrency),
     meta: `${holding.ticker} · ${holding.market}`,
     color: ALLOCATION_PALETTE[index % ALLOCATION_PALETTE.length],
   }));
@@ -64,6 +67,7 @@ export function PortfolioScreen() {
     sectorAllocations: portfolio.data.sectorAllocations,
     cashValue: portfolio.data.cashValue,
     cashWeight: portfolio.data.cashWeight,
+    displayCurrency: portfolio.data.displayCurrency,
   });
   const monthlyDividendItems = portfolio.data.monthlyDividendForecasts.map((item) => ({
     key: `month-${item.month}`,
@@ -141,8 +145,8 @@ export function PortfolioScreen() {
         style={[styles.overviewValue, isNarrow && styles.overviewValueNarrow]}
       >
         {isCompact
-          ? formatCompactCurrency(portfolio.data.totalValue)
-          : formatCurrency(portfolio.data.totalValue)}
+          ? formatCompactCurrency(portfolio.data.totalValue, portfolio.data.displayCurrency)
+          : formatCurrency(portfolio.data.totalValue, portfolio.data.displayCurrency)}
       </Text>
       <View style={[styles.overviewHighlightGrid, isCompact && styles.overviewHighlightGridCompact]}>
         <View
@@ -163,7 +167,7 @@ export function PortfolioScreen() {
               (portfolio.data.dayReturn ?? 0) < 0 && styles.overviewHighlightValueNegative,
             ]}
           >
-            {formatSignedCurrency(portfolio.data.dayReturn)}
+            {formatSignedCurrency(portfolio.data.dayReturn, portfolio.data.displayCurrency)}
           </Text>
         </View>
         <View style={styles.overviewHighlightCard}>
@@ -191,6 +195,14 @@ export function PortfolioScreen() {
               : '아직 반영 시각이 없습니다.'}
           </Text>
         </View>
+        <View style={styles.overviewMetaPill}>
+          <Ionicons color={tokens.colors.teal} name="cash-outline" size={15} />
+          <Text style={styles.overviewMetaText}>
+            기준 통화 {currencyLabel(portfolio.data.displayCurrency)}
+            {portfolio.data.fxAsOf ? ` · 환율 ${formatShortDate(portfolio.data.fxAsOf)}` : ''}
+            {portfolio.data.fxStale ? ' · 갱신 필요' : ''}
+          </Text>
+        </View>
       </View>
       <DataStatusCard error={portfolio.error} loading={portfolio.loading} variant="inline" />
     </SurfaceCard>
@@ -207,8 +219,8 @@ export function PortfolioScreen() {
           items={allocationItems}
           centerLabel={
             isCompact
-              ? formatCompactCurrency(portfolio.data.totalValue)
-              : formatCurrency(portfolio.data.totalValue)
+              ? formatCompactCurrency(portfolio.data.totalValue, portfolio.data.displayCurrency)
+              : formatCurrency(portfolio.data.totalValue, portfolio.data.displayCurrency)
           }
           centerSubLabel="총 평가금액"
           size={isCompact ? 148 : 216}
@@ -278,20 +290,20 @@ export function PortfolioScreen() {
             <View style={styles.performanceMetricItem}>
               <MetricBadge
                 label="오늘 등락"
-                value={formatSignedCurrency(portfolio.data.dayReturn)}
+                value={formatSignedCurrency(portfolio.data.dayReturn, portfolio.data.displayCurrency)}
                 tone={(portfolio.data.dayReturn ?? 0) >= 0 ? 'brand' : 'danger'}
               />
             </View>
             <View style={styles.performanceMetricItem}>
               <MetricBadge
                 label="투자원금"
-                value={formatCurrency(portfolio.data.totalInvested)}
+                value={formatCurrency(portfolio.data.totalInvested, portfolio.data.displayCurrency)}
               />
             </View>
             <View style={styles.performanceMetricItem}>
               <MetricBadge
                 label="예상 배당"
-                value={formatCurrency(dividendTotal)}
+                value={formatCurrency(dividendTotal, portfolio.data.displayCurrency)}
                 tone={hasDividendProjection ? 'brand' : 'default'}
               />
             </View>
@@ -308,7 +320,7 @@ export function PortfolioScreen() {
                 지급 월 {dividendMonths}개월
               </Text>
               <Text style={styles.performanceSummaryMeta}>
-                총 평가금액 {formatCurrency(portfolio.data.totalValue)}
+                총 평가금액 {formatCurrency(portfolio.data.totalValue, portfolio.data.displayCurrency)}
               </Text>
             </View>
             <View style={styles.performanceSummaryCard}>
@@ -318,7 +330,7 @@ export function PortfolioScreen() {
               </Text>
               <Text style={styles.performanceSummaryMeta}>
                 {peakDividendMonth
-                  ? formatCurrency(peakDividendMonth.amount)
+                  ? formatCurrency(peakDividendMonth.amount, portfolio.data.displayCurrency)
                   : '배당 데이터가 쌓이면 가장 두꺼운 달을 보여줍니다.'}
               </Text>
             </View>
@@ -344,8 +356,8 @@ export function PortfolioScreen() {
             >
               {bestHolding
                 ? `${formatPercent(bestHolding.returnRate)} · ${formatSignedCurrency(
-                    bestHolding.returnAmount,
-                    bestHolding.market,
+                    holdingDisplayReturnAmount(bestHolding),
+                    portfolio.data.displayCurrency,
                   )}`
                 : '-'}
             </Text>
@@ -371,8 +383,8 @@ export function PortfolioScreen() {
             >
               {weakestHolding
                 ? `${formatPercent(weakestHolding.returnRate)} · ${formatSignedCurrency(
-                    weakestHolding.returnAmount,
-                    weakestHolding.market,
+                    holdingDisplayReturnAmount(weakestHolding),
+                    portfolio.data.displayCurrency,
                   )}`
                 : '-'}
             </Text>
@@ -537,7 +549,7 @@ export function PortfolioScreen() {
                     numberOfLines={1}
                     style={styles.holdingMetricValuePrimary}
                   >
-                    {formatCurrency(holding.totalValue, holding.market)}
+                    {formatCurrency(holdingDisplayTotalValue(holding), portfolio.data.displayCurrency)}
                   </Text>
                 </View>
                 <View
@@ -556,7 +568,10 @@ export function PortfolioScreen() {
                       (holding.returnAmount ?? 0) < 0 && styles.holdingStatValueNegative,
                     ]}
                   >
-                    {formatSignedCurrency(holding.returnAmount, holding.market)}
+                    {formatSignedCurrency(
+                      holdingDisplayReturnAmount(holding),
+                      portfolio.data.displayCurrency,
+                    )}
                   </Text>
                   <Text
                     numberOfLines={1}
@@ -586,7 +601,7 @@ export function PortfolioScreen() {
                   numberOfLines={1}
                   style={styles.holdingMetricValuePrimary}
                 >
-                  {formatCurrency(holding.totalValue, holding.market)}
+                  {formatCurrency(holdingDisplayTotalValue(holding), portfolio.data.displayCurrency)}
                 </Text>
               </View>
               <View
@@ -606,7 +621,10 @@ export function PortfolioScreen() {
                     (holding.returnAmount ?? 0) < 0 && styles.holdingStatValueNegative,
                   ]}
                 >
-                  {formatSignedCurrency(holding.returnAmount, holding.market)}
+                  {formatSignedCurrency(
+                    holdingDisplayReturnAmount(holding),
+                    portfolio.data.displayCurrency,
+                  )}
                 </Text>
                 <Text
                   numberOfLines={1}
@@ -831,10 +849,19 @@ export function PortfolioScreen() {
   );
 }
 
+function holdingDisplayTotalValue(holding: PortfolioHoldingItem) {
+  return holding.displayTotalValue ?? holding.totalValue;
+}
+
+function holdingDisplayReturnAmount(holding: PortfolioHoldingItem) {
+  return holding.displayReturnAmount ?? holding.returnAmount;
+}
+
 function buildCompositionItems({
   sectorAllocations,
   cashValue,
   cashWeight,
+  displayCurrency,
 }: {
   sectorAllocations: {
     key: string;
@@ -844,12 +871,13 @@ function buildCompositionItems({
   }[];
   cashValue: number | null;
   cashWeight: number;
+  displayCurrency: CurrencyCode;
 }): AllocationVisualItem[] {
   const items = sectorAllocations.map((item, index) => ({
     key: item.key,
     label: item.label,
     ratio: item.weight,
-    value: item.value !== null ? formatCurrency(item.value) : undefined,
+    value: item.value !== null ? formatCurrency(item.value, displayCurrency) : undefined,
     color: SECTOR_PALETTE[index % SECTOR_PALETTE.length],
   }));
   const hasCashItem = items.some(
@@ -862,7 +890,7 @@ function buildCompositionItems({
       key: 'cash',
       label: '현금',
       ratio: cashWeight,
-      value: formatCurrency(cashValue),
+      value: formatCurrency(cashValue, displayCurrency),
       color: '#94A3B8',
     });
   }

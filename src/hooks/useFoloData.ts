@@ -37,6 +37,9 @@ const emptyPortfolioResponse: PortfolioResponse = {
   cashValue: 0,
   cashWeight: 0,
   syncedAt: null,
+  displayCurrency: 'KRW',
+  fxAsOf: null,
+  fxStale: false,
   isFullyVisible: true,
 };
 
@@ -76,6 +79,7 @@ const emptyMyProfile: MyProfileResponse = {
   followingCount: 0,
   portfolioVisibility: 'FRIENDS_ONLY',
   returnVisibility: 'RATE_ONLY',
+  displayCurrency: 'KRW',
   createdAt: '',
 };
 

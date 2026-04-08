@@ -1,4 +1,5 @@
 export type MarketType = 'KRX' | 'NASDAQ' | 'NYSE' | 'AMEX';
+export type CurrencyCode = 'KRW' | 'USD';
 export type TradeType = 'BUY' | 'SELL';
 export type TradeVisibility = 'PUBLIC' | 'FRIENDS_ONLY' | 'PRIVATE';
 export type PortfolioVisibility = 'PUBLIC' | 'FRIENDS_ONLY' | 'PRIVATE';
@@ -134,7 +135,6 @@ export type AppleNativeAuthRequest = {
   deviceId?: string | null;
   deviceName?: string | null;
 };
-
 export type FeedTradeUser = {
   userId: number;
   nickname: string;
@@ -181,11 +181,15 @@ export type PortfolioHoldingItem = {
   returnAmount: number | null;
   returnRate: number;
   weight: number;
+  sectorCode: string | null;
   sectorName: string | null;
   assetType: 'STOCK' | 'ETF';
   currencyCode: string | null;
   annualDividendYield: number | null;
   dividendMonths: number[];
+  displayTotalInvested: number | null;
+  displayTotalValue: number | null;
+  displayReturnAmount: number | null;
 };
 
 export type PortfolioAllocationItem = {
@@ -215,6 +219,9 @@ export type PortfolioResponse = {
   cashValue: number | null;
   cashWeight: number;
   syncedAt: string | null;
+  displayCurrency: CurrencyCode;
+  fxAsOf: string | null;
+  fxStale: boolean;
   isFullyVisible: boolean;
 };
 
@@ -303,6 +310,7 @@ export type MyProfileResponse = {
   followingCount: number;
   portfolioVisibility: PortfolioVisibility;
   returnVisibility: ReturnVisibility;
+  displayCurrency: CurrencyCode;
   createdAt: string;
 };
 
@@ -468,6 +476,7 @@ export type UpdateMyProfileRequest = {
   bio: string | null;
   portfolioVisibility: PortfolioVisibility;
   returnVisibility: ReturnVisibility;
+  displayCurrency: CurrencyCode;
 };
 
 export type ChangeMyPasswordRequest = {

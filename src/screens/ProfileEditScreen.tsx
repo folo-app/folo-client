@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { StyleSheet, Text, TextInput, View } from 'react-native';
 
-import type { PortfolioVisibility, ReturnVisibility } from '../api/contracts';
+import type { CurrencyCode, PortfolioVisibility, ReturnVisibility } from '../api/contracts';
+import { useAuth } from '../auth/AuthProvider';
 import { foloApi } from '../api/services';
 import { DataStatusCard } from '../components/DataStatusCard';
 import { ProfileImageField } from '../components/ProfileImageField';
@@ -28,7 +29,13 @@ const returnVisibilityOptions: Array<{ label: string; value: ReturnVisibility }>
   { label: '비공개', value: 'PRIVATE' },
 ];
 
+const displayCurrencyOptions: Array<{ label: string; value: CurrencyCode }> = [
+  { label: '원화 기준', value: 'KRW' },
+  { label: '달러 기준', value: 'USD' },
+];
+
 export function ProfileEditScreen() {
+  const { session } = useAuth();
   const profile = useMyProfileData();
   const [nickname, setNickname] = useState(profile.data.nickname);
   const [profileImage, setProfileImage] = useState<string | null>(
@@ -41,6 +48,9 @@ export function ProfileEditScreen() {
   const [returnVisibility, setReturnVisibility] = useState<ReturnVisibility>(
     profile.data.returnVisibility,
   );
+  const [displayCurrency, setDisplayCurrency] = useState<CurrencyCode>(
+    profile.data.displayCurrency,
+  );
   const [submitMessage, setSubmitMessage] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [currentPassword, setCurrentPassword] = useState('');
@@ -48,6 +58,7 @@ export function ProfileEditScreen() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [passwordMessage, setPasswordMessage] = useState<string | null>(null);
   const [changingPassword, setChangingPassword] = useState(false);
+  const canManagePassword = session?.authProvider === 'EMAIL';
 
   useEffect(() => {
     setNickname(profile.data.nickname);
@@ -55,6 +66,7 @@ export function ProfileEditScreen() {
     setBio(profile.data.bio ?? '');
     setPortfolioVisibility(profile.data.portfolioVisibility);
     setReturnVisibility(profile.data.returnVisibility);
+    setDisplayCurrency(profile.data.displayCurrency);
   }, [profile.data]);
 
   async function handleSave() {
@@ -68,6 +80,7 @@ export function ProfileEditScreen() {
         bio,
         portfolioVisibility,
         returnVisibility,
+        displayCurrency,
       });
       profile.refresh();
       setSubmitMessage('프로필이 저장되었습니다.');
@@ -167,6 +180,17 @@ export function ProfileEditScreen() {
             />
           ))}
         </View>
+        <Text style={styles.label}>평가 통화</Text>
+        <View style={styles.optionGroup}>
+          {displayCurrencyOptions.map((option) => (
+            <Chip
+              key={option.value}
+              active={displayCurrency === option.value}
+              label={option.label}
+              onPress={() => setDisplayCurrency(option.value)}
+            />
+          ))}
+        </View>
         {submitMessage ? <Text style={styles.message}>{submitMessage}</Text> : null}
         <PrimaryButton
           disabled={saving}
@@ -175,51 +199,53 @@ export function ProfileEditScreen() {
         />
       </SurfaceCard>
 
-      <SurfaceCard>
-        <SectionHeading
-          title="비밀번호 변경"
-          description="현재 비밀번호를 확인한 뒤 새 비밀번호로 바꿉니다."
-        />
-        <View style={styles.inputGroup}>
-          <Text style={styles.label}>현재 비밀번호</Text>
-          <TextInput
-            autoCapitalize="none"
-            onChangeText={setCurrentPassword}
-            secureTextEntry
-            style={styles.input}
-            value={currentPassword}
+      {canManagePassword ? (
+        <SurfaceCard>
+          <SectionHeading
+            title="비밀번호 변경"
+            description="현재 비밀번호를 확인한 뒤 새 비밀번호로 바꿉니다."
           />
-        </View>
-        <View style={styles.inputGroup}>
-          <Text style={styles.label}>새 비밀번호</Text>
-          <TextInput
-            autoCapitalize="none"
-            onChangeText={setNewPassword}
-            secureTextEntry
-            style={styles.input}
-            value={newPassword}
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>현재 비밀번호</Text>
+            <TextInput
+              autoCapitalize="none"
+              onChangeText={setCurrentPassword}
+              secureTextEntry
+              style={styles.input}
+              value={currentPassword}
+            />
+          </View>
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>새 비밀번호</Text>
+            <TextInput
+              autoCapitalize="none"
+              onChangeText={setNewPassword}
+              secureTextEntry
+              style={styles.input}
+              value={newPassword}
+            />
+          </View>
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>새 비밀번호 확인</Text>
+            <TextInput
+              autoCapitalize="none"
+              onChangeText={setConfirmPassword}
+              secureTextEntry
+              style={styles.input}
+              value={confirmPassword}
+            />
+          </View>
+          <Text style={styles.passwordHint}>
+            영문, 숫자, 특수문자를 포함한 8자 이상 비밀번호를 사용해 주세요.
+          </Text>
+          {passwordMessage ? <Text style={styles.message}>{passwordMessage}</Text> : null}
+          <PrimaryButton
+            disabled={changingPassword}
+            label={changingPassword ? '변경 중...' : '비밀번호 변경'}
+            onPress={handleChangePassword}
           />
-        </View>
-        <View style={styles.inputGroup}>
-          <Text style={styles.label}>새 비밀번호 확인</Text>
-          <TextInput
-            autoCapitalize="none"
-            onChangeText={setConfirmPassword}
-            secureTextEntry
-            style={styles.input}
-            value={confirmPassword}
-          />
-        </View>
-        <Text style={styles.passwordHint}>
-          영문, 숫자, 특수문자를 포함한 8자 이상 비밀번호를 사용해 주세요.
-        </Text>
-        {passwordMessage ? <Text style={styles.message}>{passwordMessage}</Text> : null}
-        <PrimaryButton
-          disabled={changingPassword}
-          label={changingPassword ? '변경 중...' : '비밀번호 변경'}
-          onPress={handleChangePassword}
-        />
-      </SurfaceCard>
+        </SurfaceCard>
+      ) : null}
     </Page>
   );
 }
