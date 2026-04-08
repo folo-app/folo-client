@@ -5,6 +5,13 @@ export type PortfolioVisibility = 'PUBLIC' | 'FRIENDS_ONLY' | 'PRIVATE';
 export type ReturnVisibility = 'RATE_AND_AMOUNT' | 'RATE_ONLY' | 'PRIVATE';
 export type ReactionEmoji = 'FIRE' | 'EYES' | 'DIAMOND' | 'CLAP' | 'ROCKET';
 export type NotificationType = 'FOLLOW' | 'REACTION' | 'COMMENT' | 'REMINDER' | 'NUDGE';
+export type AuthProvider = 'EMAIL' | 'APPLE' | 'GOOGLE' | 'KAKAO' | 'NAVER';
+export type SocialAuthProvider = Exclude<AuthProvider, 'EMAIL'>;
+export type SocialAuthPlatform = 'IOS' | 'ANDROID' | 'WEB';
+export type SocialAuthExchangeStatus =
+  | 'AUTHENTICATED'
+  | 'PROFILE_SETUP_REQUIRED'
+  | 'ACCOUNT_LINK_REQUIRED';
 
 export type ApiError = {
   code: string;
@@ -71,10 +78,61 @@ export type ConfirmEmailRequest = {
 export type AuthResponse = {
   userId: number;
   nickname: string;
-  email: string;
+  email: string | null;
   profileImage: string | null;
+  authProvider: AuthProvider;
   accessToken: string;
   refreshToken: string;
+};
+
+export type SocialAuthStartRequest = {
+  platform?: SocialAuthPlatform;
+  deviceId?: string | null;
+  deviceName?: string | null;
+};
+
+export type SocialAuthStartResponse = {
+  provider: SocialAuthProvider;
+  authorizationUrl: string;
+  state: string;
+};
+
+export type SocialAuthExchangeRequest = {
+  handoffCode: string;
+  deviceId?: string | null;
+  deviceName?: string | null;
+};
+
+export type SocialAuthExchangeResponse = {
+  status: SocialAuthExchangeStatus;
+  session: AuthResponse | null;
+  pendingToken: string | null;
+  provider: SocialAuthProvider | null;
+  email: string | null;
+  nicknameSuggestion: string | null;
+  profileImage: string | null;
+  message: string | null;
+};
+
+export type SocialAuthCompleteProfileRequest = {
+  pendingToken: string;
+  nickname: string;
+  profileImage: string | null;
+};
+
+export type SocialAuthLinkRequest = {
+  pendingToken: string;
+};
+
+export type AppleNativeAuthRequest = {
+  identityToken: string;
+  userIdentifier?: string | null;
+  email?: string | null;
+  givenName?: string | null;
+  familyName?: string | null;
+  nonce?: string | null;
+  deviceId?: string | null;
+  deviceName?: string | null;
 };
 
 export type FeedTradeUser = {
